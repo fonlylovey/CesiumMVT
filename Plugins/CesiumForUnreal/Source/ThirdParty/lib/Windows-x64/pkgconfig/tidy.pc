@@ -1,0 +1,11 @@
+prefix=E:/WorkSpace/CesiumMVT/Plugins/CesiumForUnreal/extern/../Source/ThirdParty
+exec_prefix=${prefix}
+libdir=${exec_prefix}/E:/WorkSpace/CesiumMVT/Plugins/CesiumForUnreal/extern/../Source/ThirdParty/lib/Windows-x64
+includedir=${prefix}/include
+
+Name: tidy
+Description: tidy - HTML syntax checker
+URL: https://www.html-tidy.org
+Version: 5.9.14
+Libs: -L${libdir} -ltidy
+Cflags: -I${includedir}
