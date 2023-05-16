@@ -217,6 +217,10 @@ TilesetContentLoader* Tile::getLoader() const noexcept {
   return this->_pLoader;
 }
 
+TilesetVectorContentLoader* Tile::getVectorLoader() const noexcept {
+  return this->_pVectorLoader;
+}
+
 TileLoadState Tile::getState() const noexcept { return this->_loadState; }
 
 void Tile::setParent(Tile* pParent) noexcept { this->_pParent = pParent; }

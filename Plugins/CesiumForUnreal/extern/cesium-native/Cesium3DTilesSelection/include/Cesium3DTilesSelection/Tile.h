@@ -3,6 +3,8 @@
 #include "BoundingVolume.h"
 #include "Library.h"
 #include "RasterMappedTo3DTile.h"
+#include "VectorMappedTo3DTile.h"
+
 #include "TileContent.h"
 #include "TileID.h"
 #include "TileRefine.h"
@@ -23,6 +25,7 @@
 
 namespace Cesium3DTilesSelection {
 class TilesetContentLoader;
+class TilesetVectorContentLoader;
 
 /**
  * The current state of this tile in the loading process.
@@ -447,6 +450,18 @@ public:
     return this->_rasterTiles;
   }
 
+    /**
+   * @brief Returns the raster overlay tiles that have been mapped to this tile.
+   */
+  std::vector<VectorMappedTo3DTile>& getMappedVectorTiles() noexcept {
+    return this->_vectorTiles;
+  }
+
+  /** @copydoc Tile::getMappedRasterTiles() */
+  const std::vector<VectorMappedTo3DTile>& getMappedVectorTiles() const noexcept {
+    return this->_vectorTiles;
+  }
+
   /**
    * @brief get the content of the tile.
    */
@@ -479,6 +494,11 @@ public:
    * @brief get the loader that is used to load the tile content.
    */
   TilesetContentLoader* getLoader() const noexcept;
+
+    /**
+   * @brief get the loader that is used to load the tile content.
+   */
+  TilesetVectorContentLoader* getVectorLoader() const noexcept;
 
   /**
    * @brief Returns the {@link TileLoadState} of this tile.
@@ -528,13 +548,17 @@ private:
   CesiumUtility::DoublyLinkedListPointers<Tile> _loadedTilesLinks;
   TileContent _content;
   TilesetContentLoader* _pLoader;
+  TilesetVectorContentLoader* _pVectorLoader;
   TileLoadState _loadState;
   bool _shouldContentContinueUpdating;
 
   // mapped raster overlay
   std::vector<RasterMappedTo3DTile> _rasterTiles;
+  // mapped vector overlay
+  std::vector<VectorMappedTo3DTile> _vectorTiles;
 
   friend class TilesetContentManager;
+  friend class TilesetVectorContentManager;
   friend class MockTilesetContentManagerTestFixture;
 
 public:

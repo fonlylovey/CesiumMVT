@@ -25,30 +25,24 @@
 #include <sstream>
 #include <string>
 
-#define STB_IMAGE_IMPLEMENTATION
-#define STBI_FAILURE_USERMSG
-#include <stb_image.h>
-#include <stb_image_resize.h>
-#include <turbojpeg.h>
-
 using namespace CesiumAsync;
 using namespace CesiumGltf;
 using namespace CesiumGltfReader;
 using namespace CesiumJsonReader;
 using namespace CesiumUtility;
 
-namespace {
+namespace
+{
 
   VectorReaderResult readJsonVector(
       const CesiumJsonReader::ExtensionReaderContext& context,
       const gsl::span<const std::byte>& data)
-{
-
+  {
+    data.empty();
     CESIUM_TRACE("CesiumVectorReader::VectorReader::readJsonGltf");
 
     ModelJsonHandler modelHandler(context);
-    CesiumJsonReader::ReadJsonResult<VectorModel> jsonResult =
-        CesiumJsonReader::JsonReader::readJson(data, modelHandler);
+    CesiumJsonReader::ReadJsonResult<VectorModel> jsonResult;
 
     return VectorReaderResult{
         std::move(jsonResult.value),
@@ -58,7 +52,10 @@ namespace {
 
   VectorReaderResult readBinaryVector(
       const CesiumJsonReader::ExtensionReaderContext& context,
-      const gsl::span<const std::byte>& data) {
+      const gsl::span<const std::byte>& data)
+  {
+    data.empty();
+    ModelJsonHandler modelHandler(context);
     CESIUM_TRACE("CesiumVectorReader::VectorReader::readBinaryGltf");
 
     
@@ -87,12 +84,14 @@ VectorReaderResult VectorReader::readVector(
     const gsl::span<const std::byte>& data,
     const VectorReaderOptions& options) const
 {
-  const CesiumJsonReader::ExtensionReaderContext& context =
-      this->getExtensions();
+    data.empty();
+    options;
+    const CesiumJsonReader::ExtensionReaderContext& context =
+        this->getExtensions();
+    context;
+    VectorReaderResult result;
 
-  VectorReaderResult result;
-
-  return result;
+    return result;
 }
 
 /*static*/
@@ -102,8 +101,10 @@ Future<VectorReaderResult> VectorReader::resolveExternalData(
     const HttpHeaders& headers,
     std::shared_ptr<IAssetAccessor> pAssetAccessor,
     const VectorReaderOptions& options,
-    VectorReaderResult&& result) {
+    VectorReaderResult&& result)
+{
 
+  options;
   // TODO: Can we avoid this copy conversion?
   std::vector<IAssetAccessor::THeader> tHeaders(headers.begin(), headers.end());
 
