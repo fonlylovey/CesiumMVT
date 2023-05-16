@@ -121,7 +121,7 @@ void UCesiumVectorOverlay::RemoveFromTileset() {
       .thenInMainThread([this]() { --this->_overlaysBeingDestroyed; });
 
   this->OnRemove(pTileset, this->_pOverlay);
-  pTileset->getVectorOverlays.remove(this->_pOverlay);
+  pTileset->getVectorOverlays().remove(this->_pOverlay);
   this->_pOverlay = nullptr;
 }
 

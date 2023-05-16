@@ -8,6 +8,10 @@
 			"Name": "CesiumMVT",
 			"Type": "Runtime",
 			"LoadingPhase": "Default"
+		},
+		{
+			"Name": "CesiumForUnreal",
+			"Type": "Runtime"
 		}
 	],
 	"Plugins": [

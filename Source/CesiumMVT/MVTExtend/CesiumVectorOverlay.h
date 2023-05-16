@@ -23,7 +23,7 @@ DECLARE_MULTICAST_DELEGATE_OneParam(
     FCesiumVectorOverlayLoadFailure,
     const FCesiumVectorOverlayLoadFailureDetails&);
 
-CESIUMRUNTIME_API extern FCesiumVectorOverlayLoadFailure
+CESIUMMVT_API extern FCesiumVectorOverlayLoadFailure
     OnCesiumVectorOverlayLoadFailure;
 
 /**
@@ -47,7 +47,7 @@ struct FVCectorOverlayRendererOptions {
  * maps, and more.
  */
 UCLASS(Abstract)
-class CESIUMRUNTIME_API UCesiumVectorOverlay : public UActorComponent {
+class CESIUMMVT_API UCesiumVectorOverlay : public UActorComponent {
   GENERATED_BODY()
 
 public:

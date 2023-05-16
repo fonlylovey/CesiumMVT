@@ -8,7 +8,7 @@
 
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
-class RIGELGIS_API UCesiumMapboxVectorTileVectorOverlay : public UCesiumVectorOverlay
+class CESIUMMVT_API UCesiumMapboxVectorTileVectorOverlay : public UCesiumVectorOverlay
 {
 	GENERATED_BODY()
 

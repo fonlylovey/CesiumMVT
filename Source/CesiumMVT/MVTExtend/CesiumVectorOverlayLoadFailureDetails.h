@@ -26,7 +26,7 @@ enum class ECesiumVectorOverlayLoadType : uint8 {
 };
 
 USTRUCT(BlueprintType)
-struct CESIUMRUNTIME_API FCesiumVectorOverlayLoadFailureDetails {
+struct CESIUMMVT_API FCesiumVectorOverlayLoadFailureDetails {
   GENERATED_BODY()
 
 	/**
