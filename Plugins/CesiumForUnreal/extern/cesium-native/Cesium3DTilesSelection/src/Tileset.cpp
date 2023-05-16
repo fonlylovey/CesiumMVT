@@ -1,5 +1,6 @@
 #include "TileUtilities.h"
 #include "TilesetContentManager.h"
+#include "TilesetVectorContentManager.h"
 
 #include <Cesium3DTilesSelection/CreditSystem.h>
 #include <Cesium3DTilesSelection/ITileExcluder.h>
@@ -124,6 +125,14 @@ RasterOverlayCollection& Tileset::getOverlays() noexcept {
 
 const RasterOverlayCollection& Tileset::getOverlays() const noexcept {
   return this->_pTilesetContentManager->getRasterOverlayCollection();
+}
+
+VectorOverlayCollection& Tileset::getVectorOverlays() noexcept {
+  return this->_pTilesetVectorContentManager->getVectorOverlayCollection();
+}
+
+const VectorOverlayCollection& Tileset::getVectorOverlays() const noexcept {
+  return this->_pTilesetVectorContentManager->getVectorOverlayCollection();
 }
 
 static bool

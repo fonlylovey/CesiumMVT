@@ -2,6 +2,7 @@
 
 #include "Library.h"
 #include "RasterOverlayCollection.h"
+#include "VectorOverlayCollection.h"
 #include "Tile.h"
 #include "TilesetContentLoader.h"
 #include "TilesetExternals.h"
@@ -22,7 +23,7 @@
 
 namespace Cesium3DTilesSelection {
 class TilesetContentManager;
-
+class TilesetVectorContentManager;
 /**
  * @brief A <a
  * href="https://github.com/CesiumGS/3d-tiles/tree/master/specification">3D
@@ -153,6 +154,14 @@ public:
 
   /** @copydoc Tileset::getOverlays() */
   const RasterOverlayCollection& getOverlays() const noexcept;
+
+    /**
+   * @brief Returns the {@link VectorOverlayCollection} of this tileset.
+   */
+  VectorOverlayCollection& getVectorOverlays() noexcept;
+
+  /** @copydoc Tileset::getVectorOverlays() */
+  const VectorOverlayCollection& getVectorOverlays() const noexcept;
 
   /**
    * @brief Updates this view but waits for all tiles that meet sse to finish
@@ -447,6 +456,8 @@ private:
 
   CesiumUtility::IntrusivePointer<TilesetContentManager>
       _pTilesetContentManager;
+
+   CesiumUtility::IntrusivePointer<TilesetVectorContentManager> _pTilesetVectorContentManager;
 
   void addTileToLoadQueue(
       Tile& tile,
