@@ -4,7 +4,7 @@
 #include "VectorOverlay.h"
 #include "VectorOverlayTileProvider.h"
 #include "Tile.h"
-#include "TilesetExternals.h"
+#include "TilesetVectorExternals.h"
 
 #include <CesiumUtility/IntrusivePointer.h>
 #include <CesiumUtility/ReferenceCountedNonThreadSafe.h>
@@ -40,7 +40,7 @@ public:
    */
   VectorOverlayCollection(
       Tile::LoadedLinkedList& loadedTiles,
-      const TilesetExternals& externals) noexcept;
+      const TilesetVectorExternals& externals) noexcept;
 
   /**
    * @brief Deleted Copy constructor.
@@ -195,7 +195,7 @@ private:
   };
 
   Tile::LoadedLinkedList* _pLoadedTiles;
-  TilesetExternals _externals;
+  TilesetVectorExternals _externals;
   CesiumUtility::IntrusivePointer<OverlayList> _pOverlays;
   CESIUM_TRACE_DECLARE_TRACK_SET(_loadingSlots, "Vector Overlay Loading Slot");
 };
