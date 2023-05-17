@@ -58,6 +58,8 @@
 #include <glm/trigonometric.hpp>
 #include <memory>
 #include <spdlog/spdlog.h>
+#include "VectorResourceWorker.h"
+
 
 FCesium3DTilesetLoadFailure OnCesium3DTilesetLoadFailure{};
 
@@ -937,6 +939,7 @@ void ACesium3DTileset::LoadTileset() {
   Cesium3DTilesSelection::TilesetExternals externals{
       pAssetAccessor,
       std::make_shared<UnrealResourcePreparer>(this),
+      std::make_shared<VectorResourceWorker>(this),
       asyncSystem,
       pCreditSystem ? pCreditSystem->GetExternalCreditSystem() : nullptr,
       spdlog::default_logger(),

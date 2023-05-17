@@ -23,7 +23,7 @@ DECLARE_MULTICAST_DELEGATE_OneParam(
     FCesiumVectorOverlayLoadFailure,
     const FCesiumVectorOverlayLoadFailureDetails&);
 
-CESIUMMVT_API extern FCesiumVectorOverlayLoadFailure
+CESIUMRUNTIME_API extern FCesiumVectorOverlayLoadFailure
     OnCesiumVectorOverlayLoadFailure;
 
 /**
@@ -31,7 +31,7 @@ CESIUMMVT_API extern FCesiumVectorOverlayLoadFailure
  * `prepareRasterInLoadThread` is called.
  */
 USTRUCT(BlueprintType)
-struct FVCectorOverlayRendererOptions {
+struct FVectorOverlayRendererOptions {
   GENERATED_BODY()
 
   UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cesium")
@@ -47,7 +47,7 @@ struct FVCectorOverlayRendererOptions {
  * maps, and more.
  */
 UCLASS(Abstract)
-class CESIUMMVT_API UCesiumVectorOverlay : public UActorComponent {
+class CESIUMRUNTIME_API UCesiumVectorOverlay : public UActorComponent {
   GENERATED_BODY()
 
 public:
@@ -69,7 +69,7 @@ public:
    * have the best quality.
    */
   UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cesium")
-  FVCectorOverlayRendererOptions rendererOptions;
+  FVectorOverlayRendererOptions rendererOptions;
 
   // Sets default values for this component's properties
   UCesiumVectorOverlay();

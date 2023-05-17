@@ -48,6 +48,13 @@ Tileset::Tileset(
           RasterOverlayCollection{_loadedTiles, externals},
           std::vector<CesiumAsync::IAssetAccessor::THeader>{},
           std::move(pCustomLoader),
+          std::move(pRootTile))},
+      _pTilesetVectorContentManager{new TilesetVectorContentManager(
+          _externals,
+          _options,
+          VectorOverlayCollection{_loadedTiles, externals},
+          std::vector<CesiumAsync::IAssetAccessor::THeader>{},
+          std::move(pCustomLoader),
           std::move(pRootTile))} {}
 
 Tileset::Tileset(
@@ -64,6 +71,11 @@ Tileset::Tileset(
           _externals,
           _options,
           RasterOverlayCollection{_loadedTiles, externals},
+          url)},
+      _pTilesetVectorContentManager{new TilesetVectorContentManager(
+          _externals,
+          _options,
+          VectorOverlayCollection{_loadedTiles, externals},
           url)} {}
 
 Tileset::Tileset(

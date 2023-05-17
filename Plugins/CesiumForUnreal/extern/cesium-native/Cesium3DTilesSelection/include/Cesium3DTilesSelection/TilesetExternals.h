@@ -16,6 +16,7 @@ class ITaskProcessor;
 namespace Cesium3DTilesSelection {
 class CreditSystem;
 class IPrepareRendererResources;
+class IRendererResourcesWorker;
 
 /**
  * @brief External interfaces used by a {@link Tileset}.
@@ -34,6 +35,10 @@ public:
    */
   std::shared_ptr<IPrepareRendererResources> pPrepareRendererResources;
 
+  /**
+   * @brief An external {@link IRendererResourcesWorker}.
+   */
+  std::shared_ptr<IRendererResourcesWorker> pRendererResourcesWorker;
   /**
    * @brief The async system to use to do work in threads.
    *

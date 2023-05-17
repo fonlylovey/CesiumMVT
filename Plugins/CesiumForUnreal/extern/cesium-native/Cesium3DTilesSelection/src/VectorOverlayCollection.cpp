@@ -30,7 +30,7 @@ const std::vector<CesiumUtility::IntrusivePointer<VectorOverlayTileProvider>>
 
 VectorOverlayCollection::VectorOverlayCollection(
     Tile::LoadedLinkedList& loadedTiles,
-    const TilesetVectorExternals& externals) noexcept
+    const TilesetExternals& externals) noexcept
     : _pLoadedTiles(&loadedTiles), _externals{externals}, _pOverlays(nullptr) {}
 
 VectorOverlayCollection::~VectorOverlayCollection() noexcept {

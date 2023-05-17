@@ -8,7 +8,7 @@
 
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
-class CESIUMMVT_API UCesiumMapboxVectorTileVectorOverlay : public UCesiumVectorOverlay
+class CESIUMRUNTIME_API UCesiumMapboxVectorTileVectorOverlay : public UCesiumVectorOverlay
 {
 	GENERATED_BODY()
 
