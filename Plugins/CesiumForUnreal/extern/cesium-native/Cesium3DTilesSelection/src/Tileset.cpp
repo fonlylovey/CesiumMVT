@@ -96,6 +96,13 @@ Tileset::Tileset(
           RasterOverlayCollection{_loadedTiles, externals},
           ionAssetID,
           ionAccessToken,
+          ionAssetEndpointUrl)},
+      _pTilesetVectorContentManager{new TilesetVectorContentManager(
+          _externals,
+          _options,
+          VectorOverlayCollection{_loadedTiles, externals},
+          ionAssetID,
+          ionAccessToken,
           ionAssetEndpointUrl)} {}
 
 CesiumAsync::SharedFuture<void>& Tileset::getAsyncDestructionCompleteEvent() {
@@ -372,6 +379,12 @@ Tileset::updateView(const std::vector<ViewState>& frustums, float deltaTime) {
       static_cast<int32_t>(this->_workerThreadLoadQueue.size());
   result.mainThreadTileLoadQueueLength =
       static_cast<int32_t>(this->_mainThreadLoadQueue.size());
+
+  if (result.workerThreadTileLoadQueueLength > 0 ||
+      result.mainThreadTileLoadQueueLength > 0)
+  {
+    int a = 1 + 1;
+  }
 
   const std::shared_ptr<TileOcclusionRendererProxyPool>& pOcclusionPool =
       this->getExternals().pTileOcclusionProxyPool;

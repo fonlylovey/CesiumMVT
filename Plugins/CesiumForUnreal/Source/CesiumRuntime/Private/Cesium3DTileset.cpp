@@ -59,6 +59,7 @@
 #include <memory>
 #include <spdlog/spdlog.h>
 #include "VectorResourceWorker.h"
+#include "CesiumVectorOverlay.h"
 
 
 FCesium3DTilesetLoadFailure OnCesium3DTilesetLoadFailure{};
@@ -1070,6 +1071,17 @@ void ACesium3DTileset::LoadTileset() {
     }
   }
 
+  //增加VectorOverlay的处理代码
+  TArray<UCesiumVectorOverlay*> vectorOverlays;
+  this->GetComponents<UCesiumVectorOverlay>(vectorOverlays);
+  for (UCesiumVectorOverlay* pOverlay : vectorOverlays)
+  {
+      if (pOverlay->IsActive()) 
+      {
+          pOverlay->AddToTileset();
+      }
+  }
+
   switch (this->TilesetSource) {
   case ETilesetSource::FromUrl:
     UE_LOG(
@@ -1135,6 +1147,17 @@ void ACesium3DTileset::DestroyTileset() {
     if (pOverlay->IsActive()) {
       pOverlay->RemoveFromTileset();
     }
+  }
+
+  //增加VectorOverlay的析构代码
+  TArray<UCesiumVectorOverlay*> vectorOverlays;
+  this->GetComponents<UCesiumVectorOverlay>(vectorOverlays);
+  for (UCesiumVectorOverlay* pOverlay : vectorOverlays)
+  {
+      if (pOverlay->IsActive())
+      {
+          pOverlay->RemoveFromTileset();
+      }
   }
 
   if (!this->_pTileset) {
