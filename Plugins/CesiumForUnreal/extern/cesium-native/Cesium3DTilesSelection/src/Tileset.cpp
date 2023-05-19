@@ -384,6 +384,7 @@ Tileset::updateView(const std::vector<ViewState>& frustums, float deltaTime) {
       result.mainThreadTileLoadQueueLength > 0)
   {
     int a = 1 + 1;
+    a++;
   }
 
   const std::shared_ptr<TileOcclusionRendererProxyPool>& pOcclusionPool =
@@ -778,6 +779,12 @@ Tileset::TraversalDetails Tileset::_visitTileIfNeeded(
       computeTilePriority(tile, frameState.frustums, distances);
 
   this->_pTilesetContentManager->updateTileContent(
+      tile,
+      tilePriority,
+      _options);
+
+  // vector
+   this->_pTilesetVectorContentManager->updateTileContent(
       tile,
       tilePriority,
       _options);
@@ -1430,6 +1437,17 @@ void Tileset::_processWorkerThreadLoadQueue() {
       break;
     }
   }
+
+  //vector tile load
+  for (TileLoadTask& task : queue)
+  {
+    this->_pTilesetVectorContentManager->loadTileContent(*task.pTile, _options);
+    if (this->_pTilesetVectorContentManager->getNumberOfTilesLoading() >=
+        maximumSimultaneousTileLoads)
+    {
+      break;
+    }
+  }
 }
 void Tileset::_processMainThreadLoadQueue() {
   CESIUM_TRACE("Tileset::_processMainThreadLoadQueue");
@@ -1526,6 +1544,16 @@ void Tileset::addTileToLoadQueue(
   if (this->_pTilesetContentManager->tileNeedsWorkerThreadLoading(tile)) {
     this->_workerThreadLoadQueue.push_back({&tile, priorityGroup, priority});
   } else if (this->_pTilesetContentManager->tileNeedsMainThreadLoading(tile)) {
+    this->_mainThreadLoadQueue.push_back({&tile, priorityGroup, priority});
+  }
+
+  //vector 
+  if (this->_pTilesetVectorContentManager->tileNeedsWorkerThreadLoading(tile))
+  {
+    this->_workerThreadLoadQueue.push_back({&tile, priorityGroup, priority});
+  }
+  else if (this->_pTilesetVectorContentManager->tileNeedsMainThreadLoading(tile))
+  {
     this->_mainThreadLoadQueue.push_back({&tile, priorityGroup, priority});
   }
 }

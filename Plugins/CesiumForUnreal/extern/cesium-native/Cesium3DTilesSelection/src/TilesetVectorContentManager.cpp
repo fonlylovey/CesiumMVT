@@ -442,10 +442,11 @@ TilesetVectorContentManager::TilesetVectorContentManager(
       _tileLoadsInProgress{0},
       _loadedTilesCount{0},
       _tilesDataUsed{0},
-      _destructionCompletePromise{externals.asyncSystem.createPromise<void>()},
-      _destructionCompleteFuture{
-          this->_destructionCompletePromise.getFuture().share()} {
-  if (!url.empty()) {
+      _destructionCompletePromise {externals.asyncSystem.createPromise<void>()},
+      _destructionCompleteFuture { this->_destructionCompletePromise.getFuture().share() }
+{
+  if (!url.empty())
+  {
     this->notifyTileStartLoading(nullptr);
 
     CesiumUtility::IntrusivePointer<TilesetVectorContentManager> thiz = this;
@@ -459,12 +460,14 @@ TilesetVectorContentManager::TilesetVectorContentManager(
              contentOptions = tilesetOptions.contentOptions,
              showCreditsOnScreen = tilesetOptions.showCreditsOnScreen](
                 const std::shared_ptr<CesiumAsync::IAssetRequest>&
-                    pCompletedRequest) {
+                    pCompletedRequest)
+          {
               // Check if request is successful
               const CesiumAsync::IAssetResponse* pResponse =
                   pCompletedRequest->response();
               const std::string& url = pCompletedRequest->url();
-              if (!pResponse) {
+              if (!pResponse)
+              {
                 TilesetContentLoaderResult<TilesetContentLoader> result;
                 result.errors.emplaceError(fmt::format(
                     "Did not receive a valid response for tileset {}",
@@ -473,7 +476,8 @@ TilesetVectorContentManager::TilesetVectorContentManager(
               }
 
               uint16_t statusCode = pResponse->statusCode();
-              if (statusCode != 0 && (statusCode < 200 || statusCode >= 300)) {
+              if (statusCode != 0 && (statusCode < 200 || statusCode >= 300))
+              {
                 TilesetContentLoaderResult<TilesetContentLoader> result;
                 result.errors.emplaceError(fmt::format(
                     "Received status code {} for tileset {}",
@@ -485,10 +489,11 @@ TilesetVectorContentManager::TilesetVectorContentManager(
               // Parse Json response
               gsl::span<const std::byte> tilesetJsonBinary = pResponse->data();
               rapidjson::Document tilesetJson;
-              tilesetJson.Parse(
-                  reinterpret_cast<const char*>(tilesetJsonBinary.data()),
-                  tilesetJsonBinary.size());
-              if (tilesetJson.HasParseError()) {
+              auto aaaa = reinterpret_cast<const char*>(tilesetJsonBinary.data());
+              std::string strAAA = aaaa;
+              tilesetJson.Parse(aaaa);
+              if (tilesetJson.HasParseError())
+              {
                 TilesetContentLoaderResult<TilesetContentLoader> result;
                 result.errors.emplaceError(fmt::format(
                     "Error when parsing tileset JSON, error code {} at byte "
@@ -501,11 +506,14 @@ TilesetVectorContentManager::TilesetVectorContentManager(
               // Check if the json is a tileset.json format or layer.json format
               // and create corresponding loader
               const auto rootIt = tilesetJson.FindMember("root");
-              if (rootIt != tilesetJson.MemberEnd()) {
+              if (rootIt != tilesetJson.MemberEnd())
+              {
                 TilesetContentLoaderResult<TilesetContentLoader> result =
                     TilesetJsonLoader::createLoader(pLogger, url, tilesetJson);
                 return asyncSystem.createResolvedFuture(std::move(result));
-              } else {
+              }
+              else
+              {
                 const auto formatIt = tilesetJson.FindMember("format");
                 bool isLayerJsonFormat = formatIt != tilesetJson.MemberEnd() &&
                                          formatIt->value.IsString();
@@ -528,7 +536,9 @@ TilesetVectorContentManager::TilesetVectorContentManager(
                              tilesetJson)
                       .thenImmediately(
                           [](TilesetContentLoaderResult<TilesetContentLoader>&&
-                                 result) { return std::move(result); });
+                                 result) {
+                            return std::move(result);
+                          });
                 }
 
                 TilesetContentLoaderResult<TilesetContentLoader> result;
@@ -536,16 +546,16 @@ TilesetVectorContentManager::TilesetVectorContentManager(
                 return asyncSystem.createResolvedFuture(std::move(result));
               }
             })
-        .thenInMainThread(
-            [thiz, errorCallback = tilesetOptions.loadErrorCallback](
-                TilesetContentLoaderResult<TilesetContentLoader>&& result) {
+        .thenInMainThread([thiz, errorCallback = tilesetOptions.loadErrorCallback](TilesetContentLoaderResult<TilesetContentLoader>&& result)
+            {
               thiz->notifyTileDoneLoading(result.pRootTile.get());
               thiz->propagateTilesetContentLoaderResult(
                   TilesetLoadType::TilesetJson,
                   errorCallback,
                   std::move(result));
             })
-        .catchInMainThread([thiz](std::exception&& e) {
+        .catchInMainThread([thiz](std::exception&& e)
+        {
           thiz->notifyTileDoneLoading(nullptr);
           SPDLOG_LOGGER_ERROR(
               thiz->_externals.pLogger,
