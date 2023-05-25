@@ -1,0 +1,6 @@
+[submodule "Plugins/CesiumForUnreal/extern/cesium-native/extern/vtzero"]
+	path = Plugins/CesiumForUnreal/extern/cesium-native/extern/vtzero
+	url = https://github.com/mapbox/vtzero.git
+[submodule "Plugins/CesiumForUnreal/extern/cesium-native/extern/protozero"]
+	path = Plugins/CesiumForUnreal/extern/cesium-native/extern/protozero
+	url = https://github.com/mapbox/protozero.git
