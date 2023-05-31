@@ -1,6 +1,5 @@
 #include "TileUtilities.h"
 #include "TilesetContentManager.h"
-#include "TilesetVectorContentManager.h"
 
 #include <Cesium3DTilesSelection/CreditSystem.h>
 #include <Cesium3DTilesSelection/ITileExcluder.h>
@@ -46,12 +45,6 @@ Tileset::Tileset(
           _externals,
           _options,
           RasterOverlayCollection{_loadedTiles, externals},
-          std::vector<CesiumAsync::IAssetAccessor::THeader>{},
-          std::move(pCustomLoader),
-          std::move(pRootTile))},
-      _pTilesetVectorContentManager{new TilesetVectorContentManager(
-          _externals,
-          _options,
           VectorOverlayCollection{_loadedTiles, externals},
           std::vector<CesiumAsync::IAssetAccessor::THeader>{},
           std::move(pCustomLoader),
@@ -71,10 +64,6 @@ Tileset::Tileset(
           _externals,
           _options,
           RasterOverlayCollection{_loadedTiles, externals},
-          url)},
-      _pTilesetVectorContentManager{new TilesetVectorContentManager(
-          _externals,
-          _options,
           VectorOverlayCollection{_loadedTiles, externals},
           url)} {}
 
@@ -94,12 +83,6 @@ Tileset::Tileset(
           _externals,
           _options,
           RasterOverlayCollection{_loadedTiles, externals},
-          ionAssetID,
-          ionAccessToken,
-          ionAssetEndpointUrl)},
-      _pTilesetVectorContentManager{new TilesetVectorContentManager(
-          _externals,
-          _options,
           VectorOverlayCollection{_loadedTiles, externals},
           ionAssetID,
           ionAccessToken,
@@ -147,11 +130,11 @@ const RasterOverlayCollection& Tileset::getOverlays() const noexcept {
 }
 
 VectorOverlayCollection& Tileset::getVectorOverlays() noexcept {
-  return this->_pTilesetVectorContentManager->getVectorOverlayCollection();
+  return _pTilesetContentManager->getVectorOverlayCollection();
 }
 
 const VectorOverlayCollection& Tileset::getVectorOverlays() const noexcept {
-  return this->_pTilesetVectorContentManager->getVectorOverlayCollection();
+  return _pTilesetContentManager->getVectorOverlayCollection();
 }
 
 static bool
@@ -379,13 +362,6 @@ Tileset::updateView(const std::vector<ViewState>& frustums, float deltaTime) {
       static_cast<int32_t>(this->_workerThreadLoadQueue.size());
   result.mainThreadTileLoadQueueLength =
       static_cast<int32_t>(this->_mainThreadLoadQueue.size());
-
-  if (result.workerThreadTileLoadQueueLength > 0 ||
-      result.mainThreadTileLoadQueueLength > 0)
-  {
-    int a = 1 + 1;
-    a++;
-  }
 
   const std::shared_ptr<TileOcclusionRendererProxyPool>& pOcclusionPool =
       this->getExternals().pTileOcclusionProxyPool;
@@ -779,12 +755,6 @@ Tileset::TraversalDetails Tileset::_visitTileIfNeeded(
       computeTilePriority(tile, frameState.frustums, distances);
 
   this->_pTilesetContentManager->updateTileContent(
-      tile,
-      tilePriority,
-      _options);
-
-  // vector
-   this->_pTilesetVectorContentManager->updateTileContent(
       tile,
       tilePriority,
       _options);
@@ -1437,17 +1407,6 @@ void Tileset::_processWorkerThreadLoadQueue() {
       break;
     }
   }
-
-  //vector tile load
-  for (TileLoadTask& task : queue)
-  {
-    this->_pTilesetVectorContentManager->loadTileContent(*task.pTile, _options);
-    if (this->_pTilesetVectorContentManager->getNumberOfTilesLoading() >=
-        maximumSimultaneousTileLoads)
-    {
-      break;
-    }
-  }
 }
 void Tileset::_processMainThreadLoadQueue() {
   CESIUM_TRACE("Tileset::_processMainThreadLoadQueue");
@@ -1544,16 +1503,6 @@ void Tileset::addTileToLoadQueue(
   if (this->_pTilesetContentManager->tileNeedsWorkerThreadLoading(tile)) {
     this->_workerThreadLoadQueue.push_back({&tile, priorityGroup, priority});
   } else if (this->_pTilesetContentManager->tileNeedsMainThreadLoading(tile)) {
-    this->_mainThreadLoadQueue.push_back({&tile, priorityGroup, priority});
-  }
-
-  //vector 
-  if (this->_pTilesetVectorContentManager->tileNeedsWorkerThreadLoading(tile))
-  {
-    this->_workerThreadLoadQueue.push_back({&tile, priorityGroup, priority});
-  }
-  else if (this->_pTilesetVectorContentManager->tileNeedsMainThreadLoading(tile))
-  {
     this->_mainThreadLoadQueue.push_back({&tile, priorityGroup, priority});
   }
 }

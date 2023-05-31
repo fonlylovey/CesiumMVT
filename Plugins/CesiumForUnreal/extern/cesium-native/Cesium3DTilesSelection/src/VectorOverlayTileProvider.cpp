@@ -11,6 +11,8 @@
 #include <CesiumUtility/Tracing.h>
 #include <CesiumUtility/joinToString.h>
 
+#include <rapidjson/document.h>
+
 using namespace CesiumAsync;
 using namespace CesiumGeometry;
 using namespace CesiumGeospatial;
@@ -176,7 +178,11 @@ VectorOverlayTileProvider::loadTileDataFromUrl(
             }
 
             const gsl::span<const std::byte> data = pResponse->data();
-
+            const char* charData = reinterpret_cast<const char*>(data.data());
+            size_t aaa = data.size();
+            if (aaa > 1500) {
+              std::string strTest(charData);
+            }
             CesiumGltfReader::VectorReaderResult loadedData = _vectorReader.readVector(data);
             if (!loadedData.errors.empty())
             {
@@ -291,7 +297,8 @@ void VectorOverlayTileProvider::doLoad(VectorOverlayTile& tile, bool isThrottled
           [pRendererResourcesWorker = this->getRendererResourcesWorker(),
            pLogger = this->getLogger(),
            rendererOptions = this->_pOwner->getOptions().rendererOptions](
-              LoadedVectorOverlayData&& loadedData) {
+              LoadedVectorOverlayData&& loadedData)
+        {
             return createLoadResultFromLoadedData(
                 pRendererResourcesWorker,
                 pLogger,
@@ -299,7 +306,8 @@ void VectorOverlayTileProvider::doLoad(VectorOverlayTile& tile, bool isThrottled
                 rendererOptions);
           })
       .thenInMainThread(
-          [thisPtr, pTile, isThrottledLoad](LoadResult&& result) noexcept {
+          [thisPtr, pTile, isThrottledLoad](LoadResult&& result) noexcept
+        {
             pTile->_rectangle = result.rectangle;
             pTile->_pRendererResources = result.pRendererResources;
             pTile->_vectorModel = std::move(result.model);
@@ -312,7 +320,8 @@ void VectorOverlayTileProvider::doLoad(VectorOverlayTile& tile, bool isThrottled
             thisPtr->finalizeTileLoad(isThrottledLoad);
           })
       .catchInMainThread(
-          [thisPtr, pTile, isThrottledLoad](const std::exception& /*e*/) {
+          [thisPtr, pTile, isThrottledLoad](const std::exception& /*e*/)
+        {
             pTile->_pRendererResources = nullptr;
             pTile->_vectorModel = {};
             pTile->_tileCredits = {};

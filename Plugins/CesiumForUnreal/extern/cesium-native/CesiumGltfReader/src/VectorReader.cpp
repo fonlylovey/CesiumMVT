@@ -18,7 +18,7 @@
 #include <ktx.h>
 #include <rapidjson/reader.h>
 #include <webp/decode.h>
-
+#include <mvt_utils.hpp>
 #include <algorithm>
 #include <cstddef>
 #include <iomanip>
@@ -33,37 +33,34 @@ using namespace CesiumUtility;
 
 namespace
 {
-
-  VectorReaderResult readJsonVector(
-      const CesiumJsonReader::ExtensionReaderContext& context,
-      const gsl::span<const std::byte>& data)
-  {
-    data.empty();
-    CESIUM_TRACE("CesiumVectorReader::VectorReader::readJsonGltf");
-
-    ModelJsonHandler modelHandler(context);
-    CesiumJsonReader::ReadJsonResult<VectorModel> jsonResult;
-
-    return VectorReaderResult{
-        std::move(jsonResult.value),
-        std::move(jsonResult.errors),
-        std::move(jsonResult.warnings)};
-  }
-
   VectorReaderResult readBinaryVector(
       const CesiumJsonReader::ExtensionReaderContext& context,
       const gsl::span<const std::byte>& data)
   {
-    data.empty();
-    ModelJsonHandler modelHandler(context);
-    CESIUM_TRACE("CesiumVectorReader::VectorReader::readBinaryGltf");
+    context;
+    const char* charData = reinterpret_cast<const char*>(data.data());
+    mvt_pbf::mvtpbf_reader mvtReader(charData,
+        mvt_pbf::mvtpbf_reader::ePathType::eData);
 
-    
     VectorReaderResult result;
-
+    try
+    {
+      mvt_pbf::mvtpbf_reader::GeomVector geoms;
+      mvtReader.getVectileData(geoms);
+    }
+    catch (...)
+    {
+      result.errors.push_back("Failed to process data!");
+    }
+   
     return result;
   }
-  
+
+  // ½âÂëÊý¾Ý
+  void decodeData(GltfReaderResult& readVector) {
+    readVector;
+  }
+
 } // namespace
 
 
@@ -84,12 +81,12 @@ VectorReaderResult VectorReader::readVector(
     const gsl::span<const std::byte>& data,
     const VectorReaderOptions& options) const
 {
-    data.empty();
-    options;
     const CesiumJsonReader::ExtensionReaderContext& context =
         this->getExtensions();
-    context;
-    VectorReaderResult result;
+    VectorReaderResult result = readBinaryVector(context, data);
+    if (options.decodeDraco) {
+      //decodeData(result);
+    }
 
     return result;
 }

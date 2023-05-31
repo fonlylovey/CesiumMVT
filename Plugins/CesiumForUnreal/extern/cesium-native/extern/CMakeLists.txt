@@ -72,9 +72,8 @@ add_subdirectory(modp_b64)
 
 add_subdirectory(expected-lite)
 
+# mapmost add
 add_subdirectory(VectorTile)
-
-add_subdirectory(protobuf)
 
 # s2geometry's CMake requires OpenSSL, even though it's not needed for any of
 # the functionality we actually use. So a simple library with enough functionality
@@ -157,6 +156,11 @@ set(CESIUM_NATIVE_STB_INCLUDE_DIR "${CMAKE_CURRENT_LIST_DIR}/stb" CACHE INTERNAL
 
 set(CESIUM_NATIVE_LIBMORTON_INCUDE_DIR "${CMAKE_CURRENT_LIST_DIR}/libmorton/include" CACHE INTERNAL
     "Include directory for libmorton libraries"
+)
+
+# mapmost add
+set(CESIUM_NATIVE_EXTERN_DIR "${CMAKE_CURRENT_LIST_DIR}/" CACHE INTERNAL
+    "Include directory extern"
 )
 
 set(BUILD_TESTING OFF CACHE INTERNAL "Disable libmorton Testing")

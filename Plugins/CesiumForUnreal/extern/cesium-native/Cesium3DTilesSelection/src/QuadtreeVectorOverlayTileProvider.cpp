@@ -98,7 +98,8 @@ std::vector<CesiumAsync::SharedFuture<
     QuadtreeVectorOverlayTileProvider::LoadedQuadtreeData>>
 QuadtreeVectorOverlayTileProvider::mapVectorTilesToGeometryTile(
     const CesiumGeometry::Rectangle& geometryRectangle,
-    const glm::dvec2 targetScreenPixels) {
+    const glm::dvec2 targetScreenPixels)
+{
   std::vector<CesiumAsync::SharedFuture<LoadedQuadtreeData>> result;
 
   const QuadtreeTilingScheme& tilingScheme = this->getTilingScheme();
@@ -125,9 +126,12 @@ QuadtreeVectorOverlayTileProvider::mapVectorTilesToGeometryTile(
   CesiumGeometry::Rectangle intersection(0.0, 0.0, 0.0, 0.0);
   std::optional<CesiumGeometry::Rectangle> maybeIntersection =
       geometryRectangle.computeIntersection(rectangle);
-  if (maybeIntersection) {
+  if (maybeIntersection)
+  {
     intersection = maybeIntersection.value();
-  } else {
+  }
+  else
+  {
     // There is no overlap between this terrain tile and this imagery
     // provider.  Unless this is the base layer, no skeletons need to be
     // created. We stretch texels at the edge of the base layer over the entire
@@ -137,11 +141,15 @@ QuadtreeVectorOverlayTileProvider::mapVectorTilesToGeometryTile(
     // if (!this.isBaseLayer()) {
     //     return false;
     // }
-    if (geometryRectangle.minimumY >= rectangle.maximumY) {
+    if (geometryRectangle.minimumY >= rectangle.maximumY)
+    {
       intersection.minimumY = intersection.maximumY = rectangle.maximumY;
-    } else if (geometryRectangle.maximumY <= rectangle.minimumY) {
+    }
+    else if (geometryRectangle.maximumY <= rectangle.minimumY)
+    {
       intersection.minimumY = intersection.maximumY = rectangle.minimumY;
-    } else {
+    } else
+    {
       intersection.minimumY =
           glm::max(geometryRectangle.minimumY, rectangle.minimumY);
 
@@ -149,11 +157,16 @@ QuadtreeVectorOverlayTileProvider::mapVectorTilesToGeometryTile(
           glm::min(geometryRectangle.maximumY, rectangle.maximumY);
     }
 
-    if (geometryRectangle.minimumX >= rectangle.maximumX) {
+    if (geometryRectangle.minimumX >= rectangle.maximumX)
+    {
       intersection.minimumX = intersection.maximumX = rectangle.maximumX;
-    } else if (geometryRectangle.maximumX <= rectangle.minimumX) {
+    }
+    else if (geometryRectangle.maximumX <= rectangle.minimumX)
+    {
       intersection.minimumX = intersection.maximumX = rectangle.minimumX;
-    } else {
+    }
+    else
+    {
       intersection.minimumX =
           glm::max(geometryRectangle.minimumX, rectangle.minimumX);
 
@@ -174,7 +187,8 @@ QuadtreeVectorOverlayTileProvider::mapVectorTilesToGeometryTile(
 
   // Because of the intersection, we should always have valid tile coordinates.
   // But give up if we don't.
-  if (!southwestTileCoordinatesOpt || !northeastTileCoordinatesOpt) {
+  if (!southwestTileCoordinatesOpt || !northeastTileCoordinatesOpt)
+  {
     return result;
   }
 
@@ -196,13 +210,15 @@ QuadtreeVectorOverlayTileProvider::mapVectorTilesToGeometryTile(
 
   if (glm::abs(southwestTileRectangle.maximumY - geometryRectangle.minimumY) <
           veryCloseY &&
-      southwestTileCoordinates.y < northeastTileCoordinates.y) {
+      southwestTileCoordinates.y < northeastTileCoordinates.y)
+  {
     ++southwestTileCoordinates.y;
   }
 
   if (glm::abs(southwestTileRectangle.maximumX - geometryRectangle.minimumX) <
           veryCloseX &&
-      southwestTileCoordinates.x < northeastTileCoordinates.x) {
+      southwestTileCoordinates.x < northeastTileCoordinates.x)
+  {
     ++southwestTileCoordinates.x;
   }
 
@@ -211,13 +227,15 @@ QuadtreeVectorOverlayTileProvider::mapVectorTilesToGeometryTile(
 
   if (glm::abs(northeastTileRectangle.maximumY - geometryRectangle.minimumY) <
           veryCloseY &&
-      northeastTileCoordinates.y > southwestTileCoordinates.y) {
+      northeastTileCoordinates.y > southwestTileCoordinates.y)
+  {
     --northeastTileCoordinates.y;
   }
 
   if (glm::abs(northeastTileRectangle.minimumX - geometryRectangle.maximumX) <
           veryCloseX &&
-      northeastTileCoordinates.x > southwestTileCoordinates.x) {
+      northeastTileCoordinates.x > southwestTileCoordinates.x)
+  {
     --northeastTileCoordinates.x;
   }
 
@@ -229,7 +247,8 @@ QuadtreeVectorOverlayTileProvider::mapVectorTilesToGeometryTile(
   uint32_t tilesY = northeastTileCoordinates.y - southwestTileCoordinates.y + 1;
 
   while (level > 0U && (tilesX * this->getWidth() > maxTextureSize ||
-                        tilesY * this->getHeight() > maxTextureSize)) {
+                        tilesY * this->getHeight() > maxTextureSize))
+  {
     --level;
     northeastTileCoordinates = northeastTileCoordinates.getParent();
     southwestTileCoordinates = southwestTileCoordinates.getParent();
@@ -245,27 +264,31 @@ QuadtreeVectorOverlayTileProvider::mapVectorTilesToGeometryTile(
       std::nullopt;
 
   for (uint32_t i = southwestTileCoordinates.x; i <= northeastTileCoordinates.x;
-       ++i) {
+       ++i)
+  {
 
     rectangle = tilingScheme.tileToRectangle(
         QuadtreeTileID(level, i, southwestTileCoordinates.y));
     clippedImageryRectangle =
         rectangle.computeIntersection(imageryBounds);
 
-    if (!clippedImageryRectangle) {
+    if (!clippedImageryRectangle)
+    {
       continue;
     }
 
     for (uint32_t j = southwestTileCoordinates.y;
          j <= northeastTileCoordinates.y;
-         ++j) {
+         ++j)
+    {
 
       rectangle =
           tilingScheme.tileToRectangle(QuadtreeTileID(level, i, j));
       clippedImageryRectangle =
           rectangle.computeIntersection(imageryBounds);
 
-      if (!clippedImageryRectangle) {
+      if (!clippedImageryRectangle)
+      {
         continue;
       }
 

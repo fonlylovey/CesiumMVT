@@ -24,6 +24,9 @@ class IRendererResourcesWorker;
 class VectorOverlayTileProvider;
 class VectorOverlayCollection;
 
+using VectorOverlayLoadFailureDetails = RasterOverlayLoadFailureDetails;
+using VectorOverlayLoadType = RasterOverlayLoadType;
+
 /**
  * @brief Options for loading Vector overlays.
  */

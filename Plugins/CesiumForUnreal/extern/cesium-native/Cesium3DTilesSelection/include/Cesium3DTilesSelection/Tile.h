@@ -6,6 +6,7 @@
 #include "VectorMappedTo3DTile.h"
 
 #include "TileContent.h"
+#include "VectorTileContent.h"
 #include "TileID.h"
 #include "TileRefine.h"
 #include "TileSelectionState.h"
@@ -108,6 +109,8 @@ public:
    * @param pLoader The {@link TilesetContentLoader} that is used to load the tile.
    */
   explicit Tile(TilesetContentLoader* pLoader) noexcept;
+
+  explicit Tile(TilesetVectorContentLoader* pLoader) noexcept;
 
   /**
    * @brief Construct a tile with an external content and a loader that is
@@ -470,6 +473,16 @@ public:
   /** @copydoc Tile::getContent() */
   TileContent& getContent() noexcept { return _content; }
 
+    /**
+   * @brief get the content of the vector tile.
+   */
+  const VectorTileContent& getVectorContent() const noexcept {
+    return _vectorContent;
+  }
+
+  /** @copydoc Tile::getContent() */
+  VectorTileContent& getVectorContent() noexcept { return _vectorContent; }
+
   /**
    * @brief Determines if this tile is currently renderable.
    */
@@ -494,11 +507,6 @@ public:
    * @brief get the loader that is used to load the tile content.
    */
   TilesetContentLoader* getLoader() const noexcept;
-
-    /**
-   * @brief get the loader that is used to load the tile content.
-   */
-  TilesetVectorContentLoader* getVectorLoader() const noexcept;
 
   /**
    * @brief Returns the {@link TileLoadState} of this tile.
@@ -547,6 +555,7 @@ private:
   // tile content
   CesiumUtility::DoublyLinkedListPointers<Tile> _loadedTilesLinks;
   TileContent _content;
+  VectorTileContent _vectorContent;
   TilesetContentLoader* _pLoader;
   TilesetVectorContentLoader* _pVectorLoader;
   TileLoadState _loadState;
@@ -558,7 +567,6 @@ private:
   std::vector<VectorMappedTo3DTile> _vectorTiles;
 
   friend class TilesetContentManager;
-  friend class TilesetVectorContentManager;
   friend class MockTilesetContentManagerTestFixture;
 
 public:

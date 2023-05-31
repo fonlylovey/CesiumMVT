@@ -296,8 +296,10 @@ VectorMappedTo3DTile* addRealTile(
     VectorOverlayTileProvider& tileProvider,
     VectorOverlayTileProvider& placeholder,
     Tile& tile,
-    std::vector<Projection>& missingProjections) {
-  if (tileProvider.isPlaceholder()) {
+    std::vector<Projection>& missingProjections)
+{
+  if (tileProvider.isPlaceholder())
+  {
     // Provider not created yet, so add a placeholder tile.
     return &tile.getMappedVectorTiles().emplace_back(
         VectorMappedTo3DTile(getPlaceholderTile(placeholder), -1));
@@ -316,18 +318,18 @@ VectorMappedTo3DTile* addRealTile(
   const Projection& projection = tileProvider.getProjection();
 
   // If the tile is loaded, use the precise rectangle computed from the content.
-  const TileContent& content = tile.getContent();
-  const TileRenderContent* pRenderContent = content.getRenderContent();
+  const VectorTileContent& content = tile.getVectorContent();
+  const VectorTileRenderContent* pRenderContent = content.getRenderContent();
   if (pRenderContent)
   {
-    const RasterOverlayDetails& overlayDetails =
-        pRenderContent->getRasterOverlayDetails();
+    const VectorOverlayDetails& overlayDetails =
+        pRenderContent->getVectorOverlayDetails();
     const Rectangle* pRectangle =
         overlayDetails.findRectangleForOverlayProjection(projection);
-    if (pRectangle) {
+    if (pRectangle)
+    {
       // We have a rectangle and texture coordinates for this projection.
-      int32_t index =
-          int32_t(pRectangle - &overlayDetails.rasterOverlayRectangles[0]);
+      int32_t index =int32_t(pRectangle - &overlayDetails.rasterOverlayRectangles[0]);
       const glm::dvec2 screenPixels = computeDesiredScreenPixels(
           tile,
           projection,
@@ -336,7 +338,9 @@ VectorMappedTo3DTile* addRealTile(
           maximumScreenSpaceError,
           Ellipsoid::WGS84);
       return addRealTile(tile, tileProvider, *pRectangle, screenPixels, index);
-    } else {
+    }
+    else
+    {
       // We don't have a precise rectangle for this projection, which means the
       // tile was loaded before we knew we needed this projection. We'll need to
       // reload the tile (later).
@@ -357,7 +361,8 @@ VectorMappedTo3DTile* addRealTile(
       getPreciseRectangleFromBoundingVolume(
           tileProvider.getProjection(),
           tile.getBoundingVolume());
-  if (maybeRectangle) {
+  if (maybeRectangle)
+  {
     const glm::dvec2 screenPixels = computeDesiredScreenPixels(
         tile,
         projection,
@@ -386,14 +391,14 @@ void VectorMappedTo3DTile::computeTranslationAndScale(const Tile& tile) {
     return;
   }
 
-  const TileRenderContent* pRenderContent =
-      tile.getContent().getRenderContent();
+  const VectorTileRenderContent* pRenderContent =
+      tile.getVectorContent().getRenderContent();
   if (!pRenderContent) {
     return;
   }
 
-  const RasterOverlayDetails& overlayDetails =
-      pRenderContent->getRasterOverlayDetails();
+  const VectorOverlayDetails& overlayDetails =
+      pRenderContent->getVectorOverlayDetails();
   const VectorOverlayTileProvider& tileProvider =
       this->_pReadyTile->getTileProvider();
 

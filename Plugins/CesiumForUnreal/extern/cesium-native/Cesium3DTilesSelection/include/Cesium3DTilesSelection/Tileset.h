@@ -23,7 +23,7 @@
 
 namespace Cesium3DTilesSelection {
 class TilesetContentManager;
-class TilesetVectorContentManager;
+
 /**
  * @brief A <a
  * href="https://github.com/CesiumGS/3d-tiles/tree/master/specification">3D
@@ -155,12 +155,12 @@ public:
   /** @copydoc Tileset::getOverlays() */
   const RasterOverlayCollection& getOverlays() const noexcept;
 
-    /**
+   /**
    * @brief Returns the {@link VectorOverlayCollection} of this tileset.
    */
   VectorOverlayCollection& getVectorOverlays() noexcept;
 
-  /** @copydoc Tileset::getVectorOverlays() */
+  /** @copydoc Tileset::getOverlays() */
   const VectorOverlayCollection& getVectorOverlays() const noexcept;
 
   /**
@@ -456,8 +456,6 @@ private:
 
   CesiumUtility::IntrusivePointer<TilesetContentManager>
       _pTilesetContentManager;
-
-   CesiumUtility::IntrusivePointer<TilesetVectorContentManager> _pTilesetVectorContentManager;
 
   void addTileToLoadQueue(
       Tile& tile,

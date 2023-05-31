@@ -1,10 +1,12 @@
 #pragma once
 
 #include "RasterOverlayUpsampler.h"
+#include "TilesetVectorLoader.h"
 #include "TilesetContentLoaderResult.h"
 
 #include <Cesium3DTilesSelection/CreditSystem.h>
 #include <Cesium3DTilesSelection/RasterOverlayCollection.h>
+#include <Cesium3DTilesSelection/VectorOverlayCollection.h>
 #include <Cesium3DTilesSelection/Tile.h>
 #include <Cesium3DTilesSelection/TileContent.h>
 #include <Cesium3DTilesSelection/TilesetContentLoader.h>
@@ -26,6 +28,7 @@ public:
       const TilesetExternals& externals,
       const TilesetOptions& tilesetOptions,
       RasterOverlayCollection&& overlayCollection,
+      VectorOverlayCollection&& vectorCollection,
       std::vector<CesiumAsync::IAssetAccessor::THeader>&& requestHeaders,
       std::unique_ptr<TilesetContentLoader>&& pLoader,
       std::unique_ptr<Tile>&& pRootTile);
@@ -34,15 +37,24 @@ public:
       const TilesetExternals& externals,
       const TilesetOptions& tilesetOptions,
       RasterOverlayCollection&& overlayCollection,
+      VectorOverlayCollection&& vectorCollection,
       const std::string& url);
 
   TilesetContentManager(
       const TilesetExternals& externals,
       const TilesetOptions& tilesetOptions,
       RasterOverlayCollection&& overlayCollection,
+      VectorOverlayCollection&& vectorCollection,
       int64_t ionAssetID,
       const std::string& ionAccessToken,
       const std::string& ionAssetEndpointUrl = "https://api.cesium.com/");
+
+  TilesetContentManager(
+      const TilesetExternals& externals,
+      const TilesetOptions& tilesetOptions,
+      VectorOverlayCollection&& vectorCollection,
+      std::vector<CesiumAsync::IAssetAccessor::THeader>&& requestHeaders,
+      const std::string& url);
 
   /**
    * @brief A future that resolves after all async operations initiated by this
@@ -85,6 +97,10 @@ public:
   const RasterOverlayCollection& getRasterOverlayCollection() const noexcept;
 
   RasterOverlayCollection& getRasterOverlayCollection() noexcept;
+
+  const VectorOverlayCollection& getVectorOverlayCollection() const noexcept;
+
+  VectorOverlayCollection& getVectorOverlayCollection() noexcept;
 
   const Credit* getUserCredit() const noexcept;
 
@@ -139,7 +155,9 @@ private:
   std::optional<Credit> _userCredit;
   std::vector<Credit> _tilesetCredits;
   RasterOverlayUpsampler _upsampler;
+  TilesetVectorLoader _vertorLoder;
   RasterOverlayCollection _overlayCollection;
+  VectorOverlayCollection _vectorCollection;
   int32_t _tileLoadsInProgress;
   int32_t _loadedTilesCount;
   int64_t _tilesDataUsed;

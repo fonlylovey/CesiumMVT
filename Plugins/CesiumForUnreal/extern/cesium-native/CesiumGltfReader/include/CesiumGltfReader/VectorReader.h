@@ -100,11 +100,11 @@ public:
   const CesiumJsonReader::ExtensionReaderContext& getExtensions() const;
 
   /**
-   * @brief Reads a glTF or binary glTF (GLB) from a buffer.
+   * @brief Reads a vector or binary pbf/mvt from a buffer.
    *
-   * @param data The buffer from which to read the glTF.
-   * @param options Options for how to read the glTF.
-   * @return The result of reading the glTF.
+   * @param data The buffer from which to read the vector.
+   * @param options Options for how to read the vector.
+   * @return The result of reading the vector.
    */
   VectorReaderResult readVector(
       const gsl::span<const std::byte>& data,

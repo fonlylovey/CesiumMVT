@@ -4,7 +4,7 @@
 #include "LayerJsonTerrainLoader.h"
 #include "TileContentLoadInfo.h"
 #include "TilesetJsonLoader.h"
-
+#include <Cesium3DTilesSelection/VectorTileContent.h>
 #include <Cesium3DTilesSelection/GltfUtilities.h>
 #include <Cesium3DTilesSelection/IPrepareRendererResources.h>
 #include <Cesium3DTilesSelection/RasterOverlay.h>
@@ -51,7 +51,19 @@ struct ContentKindSetter {
     tileContent.setContentKind(std::move(pRenderContent));
   }
 
+  void operator()(CesiumGltf::VectorModel&& model)
+  {
+    auto pRenderContent = std::make_unique<VectorTileRenderContent>(std::move(model));
+    pRenderContent->setRenderResources(pRenderResources);
+    if (rasterOverlayDetails) {
+      pRenderContent->setVectorOverlayDetails(std::move(*rasterOverlayDetails));
+    }
+
+    vectorContent.setContentKind(std::move(pRenderContent));
+  }
+
   TileContent& tileContent;
+  VectorTileContent& vectorContent;
   std::optional<RasterOverlayDetails> rasterOverlayDetails;
   void* pRenderResources;
 };
@@ -578,6 +590,7 @@ TilesetContentManager::TilesetContentManager(
     const TilesetExternals& externals,
     const TilesetOptions& tilesetOptions,
     RasterOverlayCollection&& overlayCollection,
+    VectorOverlayCollection&& vectorCollection,
     std::vector<CesiumAsync::IAssetAccessor::THeader>&& requestHeaders,
     std::unique_ptr<TilesetContentLoader>&& pLoader,
     std::unique_ptr<Tile>&& pRootTile)
@@ -593,6 +606,7 @@ TilesetContentManager::TilesetContentManager(
               : std::nullopt),
       _tilesetCredits{},
       _overlayCollection{std::move(overlayCollection)},
+      _vectorCollection{std::move(vectorCollection)},
       _tileLoadsInProgress{0},
       _loadedTilesCount{0},
       _tilesDataUsed{0},
@@ -604,6 +618,7 @@ TilesetContentManager::TilesetContentManager(
     const TilesetExternals& externals,
     const TilesetOptions& tilesetOptions,
     RasterOverlayCollection&& overlayCollection,
+    VectorOverlayCollection&& vectorCollection,
     const std::string& url)
     : _externals{externals},
       _requestHeaders{},
@@ -617,6 +632,7 @@ TilesetContentManager::TilesetContentManager(
               : std::nullopt),
       _tilesetCredits{},
       _overlayCollection{std::move(overlayCollection)},
+      _vectorCollection{std::move(vectorCollection)},
       _tileLoadsInProgress{0},
       _loadedTilesCount{0},
       _tilesDataUsed{0},
@@ -737,6 +753,7 @@ TilesetContentManager::TilesetContentManager(
     const TilesetExternals& externals,
     const TilesetOptions& tilesetOptions,
     RasterOverlayCollection&& overlayCollection,
+    VectorOverlayCollection&& vectorCollection,
     int64_t ionAssetID,
     const std::string& ionAccessToken,
     const std::string& ionAssetEndpointUrl)
@@ -752,6 +769,7 @@ TilesetContentManager::TilesetContentManager(
               : std::nullopt),
       _tilesetCredits{},
       _overlayCollection{std::move(overlayCollection)},
+      _vectorCollection{std::move(vectorCollection)},
       _tileLoadsInProgress{0},
       _loadedTilesCount{0},
       _tilesDataUsed{0},
@@ -826,13 +844,19 @@ void TilesetContentManager::loadTileContent(
     // We can't load a tile that is unloading; it has to finish unloading first.
     return;
   }
-
+  
   if (tile.getState() != TileLoadState::Unloaded &&
-      tile.getState() != TileLoadState::FailedTemporarily) {
+      tile.getState() != TileLoadState::FailedTemporarily)
+  {
     // No need to load geometry, but give previously-throttled
     // raster overlay tiles a chance to load.
     for (RasterMappedTo3DTile& rasterTile : tile.getMappedRasterTiles()) {
       rasterTile.loadThrottled();
+    }
+
+    //Mapmost VectorOverlay fengya
+    for (VectorMappedTo3DTile& vectorTile : tile.getMappedVectorTiles()) {
+      vectorTile.loadThrottled();
     }
 
     return;
@@ -868,6 +892,12 @@ void TilesetContentManager::loadTileContent(
   // map raster overlay to tile
   std::vector<CesiumGeospatial::Projection> projections =
       mapOverlaysToTile(tile, this->_overlayCollection, tilesetOptions);
+
+  //
+  _vertorLoder.mapOverlaysToTile(
+      tile,
+      this->_vectorCollection,
+      tilesetOptions);
 
   // begin loading tile
   notifyTileStartLoading(&tile);
@@ -1094,6 +1124,18 @@ TilesetContentManager::getRasterOverlayCollection() noexcept {
   return this->_overlayCollection;
 }
 
+const VectorOverlayCollection&
+TilesetContentManager::getVectorOverlayCollection() const noexcept
+{
+  return _vectorCollection;
+}
+
+VectorOverlayCollection&
+TilesetContentManager::getVectorOverlayCollection() noexcept
+{
+  return _vectorCollection;
+}
+
 const Credit* TilesetContentManager::getUserCredit() const noexcept {
   if (this->_userCredit) {
     return &*this->_userCredit;
@@ -1192,9 +1234,11 @@ void TilesetContentManager::setTileContent(
     }
 
     auto& content = tile.getContent();
+    auto& vecContent = tile.getVectorContent();
     std::visit(
         ContentKindSetter{
             content,
+            vecContent,
             std::move(result.rasterOverlayDetails),
             pWorkerRenderResources},
         std::move(result.contentKind));
