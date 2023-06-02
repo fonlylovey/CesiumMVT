@@ -179,28 +179,25 @@ VectorOverlayTileProvider::loadTileDataFromUrl(
 
             const gsl::span<const std::byte> data = pResponse->data();
             const char* charData = reinterpret_cast<const char*>(data.data());
-            size_t aaa = data.size();
-            if (aaa > 1500) {
-              std::string strTest(charData);
-            }
+            charData;
+            std::string tileUrl = pRequest->url();
             CesiumGltfReader::VectorReaderResult loadedData = _vectorReader.readVector(data);
             if (!loadedData.errors.empty())
             {
-              loadedData.errors.push_back("Image url: " + pRequest->url());
+              loadedData.errors.push_back("Image url: " + tileUrl);
             }
             if (!loadedData.warnings.empty())
             {
-              loadedData.warnings.push_back("Image url: " + pRequest->url());
+              loadedData.warnings.push_back("Image url: " + tileUrl);
             }
 
-            return LoadedVectorOverlayData
-            {
+            LoadedVectorOverlayData resurl = LoadedVectorOverlayData{
                 loadedData.model,
                 options.rectangle,
                 std::move(options.credits),
                 std::move(loadedData.errors),
-                std::move(loadedData.warnings)
-            };
+                std::move(loadedData.warnings)};
+            return resurl;
           });
 }
 

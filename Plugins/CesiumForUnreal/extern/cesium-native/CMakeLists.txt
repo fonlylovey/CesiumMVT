@@ -205,4 +205,4 @@ install(TARGETS s2geometry)
 install(TARGETS expected-lite)
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/extern/expected-lite/include/nonstd TYPE INCLUDE)
 
-install(TARGETS VectorTile)
+install(TARGETS VectorTileReader)

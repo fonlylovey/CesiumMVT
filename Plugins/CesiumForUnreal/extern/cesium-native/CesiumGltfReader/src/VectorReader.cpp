@@ -18,7 +18,7 @@
 #include <ktx.h>
 #include <rapidjson/reader.h>
 #include <webp/decode.h>
-#include <mvt_utils.hpp>
+#include <VectorTileReader.hpp>
 #include <algorithm>
 #include <cstddef>
 #include <iomanip>
@@ -39,16 +39,18 @@ namespace
   {
     context;
     const char* charData = reinterpret_cast<const char*>(data.data());
-    mvt_pbf::mvtpbf_reader mvtReader(charData,
-        mvt_pbf::mvtpbf_reader::ePathType::eData);
+    VTR::mvtpbf_reader mvtReader(charData,
+        VTR::mvtpbf_reader::ePathType::eData);
 
     VectorReaderResult result;
     try
     {
-      mvt_pbf::mvtpbf_reader::GeomVector geoms;
+      std::vector<VTR::GeometryHandler*> geoms;
       mvtReader.getVectileData(geoms);
+      CesiumGltf::VectorModel model;
+      result.model = model;
     }
-    catch (...)
+    catch (std::runtime_error ex)
     {
       result.errors.push_back("Failed to process data!");
     }

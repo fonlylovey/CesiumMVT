@@ -73,7 +73,7 @@ add_subdirectory(modp_b64)
 add_subdirectory(expected-lite)
 
 # mapmost add
-add_subdirectory(VectorTile)
+add_subdirectory(VectorTileReader)
 
 # s2geometry's CMake requires OpenSSL, even though it's not needed for any of
 # the functionality we actually use. So a simple library with enough functionality

@@ -23,6 +23,7 @@ documentation.
 #include <protozero/pbf_message.hpp>
 
 #include <cstddef>
+#include <cstdlib>
 #include <cstring>
 #include <iterator>
 #include <string>
@@ -30,32 +31,124 @@ documentation.
 namespace vtzero {
 
     /**
+     * @brief For iterating over all layers in a vector tile.
+     *
+     * Usage:
+     * @code
+     * vtzero::vector_tile tile = ...;
+     * for (auto layer : tile) {
+     *   ...
+     * }
+     * @endcode
+     */
+    class layer_iterator {
+
+        data_view m_data{};
+        std::size_t m_layer_num = 0;
+
+        void skip_non_layers() {
+            protozero::pbf_message<detail::pbf_tile> reader{m_data};
+            while (reader.next()) {
+                if (reader.tag() == detail::pbf_tile::layers) {
+                    if (reader.wire_type() != protozero::pbf_wire_type::length_delimited) {
+                        throw format_exception{"Layer message has wrong protobuf type", m_layer_num};
+                    }
+                    return;
+                }
+                reader.skip();
+                m_data = reader.data();
+            }
+            m_data = reader.data();
+        }
+
+    public:
+
+        /// @cond usual iterator functions not documented
+
+        using iterator_category = std::forward_iterator_tag;
+        using value_type        = layer;
+        using difference_type   = std::ptrdiff_t;
+        using pointer           = value_type*;
+        using reference         = value_type&;
+
+        layer_iterator() noexcept = default;
+
+        explicit layer_iterator(data_view data) :
+            m_data(data) {
+            skip_non_layers();
+        }
+
+        layer operator*() const {
+            protozero::pbf_message<detail::pbf_tile> reader{m_data};
+            if (reader.next(detail::pbf_tile::layers,
+                            protozero::pbf_wire_type::length_delimited)) {
+                return layer{reader.get_view(), m_layer_num};
+            }
+
+            // abort if caller tried to dereference an invalid iterator
+            std::abort();
+        }
+
+        layer_iterator& operator++() {
+            if (!m_data.empty()) {
+                protozero::pbf_message<detail::pbf_tile> reader{m_data};
+                if (reader.next(detail::pbf_tile::layers,
+                                protozero::pbf_wire_type::length_delimited)) {
+                    reader.skip();
+                    m_data = reader.data();
+                    skip_non_layers();
+                }
+                ++m_layer_num;
+            }
+            return *this;
+        }
+
+        layer_iterator operator++(int) {
+            const layer_iterator tmp{*this};
+            ++(*this);
+            return tmp;
+        }
+
+        friend bool operator==(layer_iterator lhs, layer_iterator rhs) noexcept {
+            return lhs.m_data == rhs.m_data;
+        }
+
+        friend bool operator!=(layer_iterator lhs, layer_iterator rhs) noexcept {
+            return !(lhs == rhs);
+        }
+
+        /// @endcond
+
+    }; // class layer_iterator
+
+    /**
+     * @brief Vector tile
+     *
      * A vector tile is basically nothing more than an ordered collection
-     * of named layers. For the most efficient way to access the layers,
-     * call next_layer() until it returns an invalid layer:
+     * of named layers. For the most efficient way to access the layers
+     * iterate over them using a range-for:
      *
      * @code
      *   std::string data = ...;
-     *   vector_tile tile{data};
-     *   while (auto layer = tile.next_layer()) {
+     *   const vtzero::vector_tile tile{data};
+     *   for (auto layer : tile) {
      *     ...
      *   }
      * @endcode
      *
      * If you know the index of the layer, you can get it directly with
      * @code
-     *   tile.get_layer(4);
+     *   auto layer = tile.get_layer(4);
      * @endcode
      *
      * You can also access the layer by name:
      * @code
-     *   tile.get_layer_by_name("foobar");
+     *   auto layer = tile.get_layer_by_name("foobar");
      * @endcode
      */
     class vector_tile {
 
         data_view m_data;
-        protozero::pbf_message<detail::pbf_tile> m_tile_reader;
 
     public:
 
@@ -65,8 +158,7 @@ namespace vtzero {
          * copy of the data is created.
          */
         explicit vector_tile(const data_view data) noexcept :
-            m_data(data),
-            m_tile_reader(m_data) {
+            m_data(data) {
         }
 
         /**
@@ -75,8 +167,7 @@ namespace vtzero {
          * copy of the data is created.
          */
         explicit vector_tile(const std::string& data) noexcept :
-            m_data(data.data(), data.size()),
-            m_tile_reader(m_data) {
+            m_data(data.data(), data.size()) {
         }
 
         /**
@@ -85,14 +176,18 @@ namespace vtzero {
          * created.
          */
         vector_tile(const char* data, std::size_t size) noexcept :
-            m_data(data, size),
-            m_tile_reader(m_data) {
+            m_data(data, size) {
         }
 
         /**
          * Is this vector tile empty?
          *
-         * @returns true if there are no layers in this vector tile, false
+         * Note that this can return false even if there are no layers in
+         * the tile if there is some other data in the tile. Usually there
+         * should be no other data, but it is possible to store extended
+         * data there that the spec doesn't know about.
+         *
+         * @returns true if there are is no data in this vector tile, false
          *          otherwise
          * Complexity: Constant.
          */
@@ -122,56 +217,6 @@ namespace vtzero {
         }
 
         /**
-         * Get the next layer in this tile.
-         *
-         * Complexity: Constant.
-         *
-         * @returns layer The next layer or the invalid layer if there are no
-         *                more layers.
-         * @throws format_exception if the tile data is ill-formed.
-         * @throws any protozero exception if the protobuf encoding is invalid.
-         */
-        layer next_layer() {
-            const bool has_next = m_tile_reader.next(detail::pbf_tile::layers,
-                                                     protozero::pbf_wire_type::length_delimited);
-
-            return has_next ? layer{m_tile_reader.get_view()} : layer{};
-        }
-
-        /**
-         * Reset the layer iterator. The next time next_layer() is called,
-         * it will begin from the first layer again.
-         *
-         * Complexity: Constant.
-         */
-        void reset_layer() noexcept {
-            m_tile_reader = protozero::pbf_message<detail::pbf_tile>{m_data};
-        }
-
-        /**
-         * Call a function for each layer in this tile.
-         *
-         * @tparam The type of the function. It must take a single argument
-         *         of type layer&& and return a bool. If the function returns
-         *         false, the iteration will be stopped.
-         * @param func The function to call.
-         * @returns true if the iteration was completed and false otherwise.
-         */
-        template <typename TFunc>
-        bool for_each_layer(TFunc&& func) const {
-            protozero::pbf_message<detail::pbf_tile> tile_reader{m_data};
-
-            while (tile_reader.next(detail::pbf_tile::layers,
-                                    protozero::pbf_wire_type::length_delimited)) {
-                if (!std::forward<TFunc>(func)(layer{tile_reader.get_view()})) {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        /**
          * Returns the layer with the specified zero-based index.
          *
          * Complexity: Linear in the number of layers.
@@ -184,10 +229,11 @@ namespace vtzero {
         layer get_layer(std::size_t index) const {
             protozero::pbf_message<detail::pbf_tile> tile_reader{m_data};
 
+            const std::size_t layer_num = index;
             while (tile_reader.next(detail::pbf_tile::layers,
                                     protozero::pbf_wire_type::length_delimited)) {
                 if (index == 0) {
-                    return layer{tile_reader.get_view()};
+                    return layer{tile_reader.get_view(), layer_num};
                 }
                 tile_reader.skip();
                 --index;
@@ -214,6 +260,7 @@ namespace vtzero {
         layer get_layer_by_name(const data_view name) const {
             protozero::pbf_message<detail::pbf_tile> tile_reader{m_data};
 
+            std::size_t layer_num = 0;
             while (tile_reader.next(detail::pbf_tile::layers,
                                     protozero::pbf_wire_type::length_delimited)) {
                 const auto layer_data = tile_reader.get_view();
@@ -221,12 +268,13 @@ namespace vtzero {
                 if (layer_reader.next(detail::pbf_layer::name,
                                       protozero::pbf_wire_type::length_delimited)) {
                     if (layer_reader.get_view() == name) {
-                        return layer{layer_data};
+                        return layer{layer_data, layer_num};
                     }
                 } else {
                     // 4.1 "A layer MUST contain a name field."
-                    throw format_exception{"missing name in layer (spec 4.1)"};
+                    throw format_exception{"Missing name in layer (spec 4.1)", layer_num};
                 }
+                ++layer_num;
             }
 
             return layer{};
@@ -268,6 +316,16 @@ namespace vtzero {
          */
         layer get_layer_by_name(const char* name) const {
             return get_layer_by_name(data_view{name, std::strlen(name)});
+        }
+
+        /// Get a (const) iterator to the first layer in this vector tile.
+        layer_iterator begin() const {
+            return layer_iterator{m_data};
+        }
+
+        /// Get a (const) iterator one past the end layer in this vector tile.
+        layer_iterator end() const {
+            return layer_iterator{data_view{m_data.data() + m_data.size(), 0}};
         }
 
     }; // class vector_tile

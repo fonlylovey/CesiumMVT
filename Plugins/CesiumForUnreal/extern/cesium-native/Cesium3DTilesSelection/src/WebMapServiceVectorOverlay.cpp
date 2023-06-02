@@ -154,7 +154,7 @@ WebMapServiceVectorOverlay::createTileProvider(
 
   std::string xmlUrlGetcapabilities =
       CesiumUtility::Uri::substituteTemplateParameters(
-          "{baseUrl}?request=GetCapabilities&version={version}&service=WMS",
+          "{baseUrl}?request=GetCapabilities&version={version}&service=WMTS",
           [this](const std::string& placeholder) {
             if (placeholder == "baseUrl") {
               return this->_baseUrl;

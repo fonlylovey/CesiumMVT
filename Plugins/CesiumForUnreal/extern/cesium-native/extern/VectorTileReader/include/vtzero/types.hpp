@@ -18,11 +18,9 @@ documentation.
 // @cond internal
 // Wrappers for assert() used for testing
 #ifndef vtzero_assert
-// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 # define vtzero_assert(x) assert(x)
 #endif
 #ifndef vtzero_assert_in_noexcept_function
-// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 # define vtzero_assert_in_noexcept_function(x) assert(x)
 #endif
 // @endcond
@@ -48,22 +46,34 @@ namespace vtzero {
     // based on https://github.com/mapbox/vector-tile-spec/blob/master/2.1/vector_tile.proto
 
     /// The geometry type as specified in the vector tile spec
-    enum class GeomType {
+    enum class GeomType : int32_t {
         UNKNOWN    = 0,
         POINT      = 1,
         LINESTRING = 2,
-        POLYGON    = 3
+        POLYGON    = 3,
+        SPLINE     = 4,
+        max        = 4
     };
 
     /**
      * Return the name of a GeomType (for debug output etc.)
      */
     inline const char* geom_type_name(GeomType type) noexcept {
-        static const std::array<const char*, 4> names = {
-            {"unknown", "point", "linestring", "polygon"}
+        static const std::array<const char*, 5> names = {
+            {"unknown", "point", "linestring", "polygon", "spline"}
         };
         return names[static_cast<std::size_t>(type)]; // NOLINT(cppcoreguidelines-pro-bounds-constant-array-index)
     }
+
+    /**
+     * Type of a polygon ring. This can either be "outer", "inner", or
+     * "invalid". Invalid is used when the area of the ring is 0.
+     */
+    enum class ring_type {
+        outer   = 0,
+        inner   = 1,
+        invalid = 2
+    }; // enum class ring_type
 
     /// The property value type as specified in the vector tile spec
     enum class property_value_type : protozero::pbf_tag_type {
@@ -92,25 +102,50 @@ namespace vtzero {
             layers = 3
         };
 
+        enum class pbf_scaling : protozero::pbf_tag_type {
+            offset     = 1,
+            multiplier = 2,
+            base       = 3
+        };
+
         enum class pbf_layer : protozero::pbf_tag_type {
-            name     =  1,
-            features =  2,
-            keys     =  3,
-            values   =  4,
-            extent   =  5,
-            version  = 15
+            name               =  1,
+            features           =  2,
+            keys               =  3,
+            values             =  4,
+            extent             =  5,
+            string_values      =  6,
+            float_values       =  7,
+            double_values      =  8,
+            int_values         =  9,
+            elevation_scaling  = 10,
+            attribute_scalings = 11,
+            tile_x             = 12,
+            tile_y             = 13,
+            tile_zoom          = 14,
+            version            = 15
         };
 
         enum class pbf_feature : protozero::pbf_tag_type {
-            id       = 1,
-            tags     = 2,
-            type     = 3,
-            geometry = 4
+            id                   =  1,
+            tags                 =  2,
+            type                 =  3,
+            geometry             =  4,
+            attributes           =  5,
+            geometric_attributes =  6,
+            elevations           =  7,
+            spline_knots         =  8,
+            spline_degree        =  9,
+            string_id            = 10
         };
 
         using pbf_value = property_value_type;
 
     } // namespace detail
+
+    /// The "null" value type.
+    struct null_type {
+    };
 
     /// property value type holding a reference to a string
     struct string_value_type {
@@ -286,7 +321,9 @@ namespace vtzero {
      */
     class index_value {
 
-        static const uint32_t invalid_value = std::numeric_limits<uint32_t>::max();
+        enum : uint32_t {
+            invalid_value = std::numeric_limits<uint32_t>::max()
+        };
 
         uint32_t m_value = invalid_value;
 
@@ -376,56 +413,6 @@ namespace vtzero {
         }
 
     }; // class index_value_pair
-
-    /**
-     * The geometry class holds a geometry type and a reference to the data
-     * defining this geometry. To actually decode these geometries, use the
-     * decode_point_geometry(), decode_linestring_geometry(), and
-     * decode_polygon_geometry() classes.
-     */
-    class geometry {
-
-        data_view m_data{};
-        GeomType m_type = GeomType::UNKNOWN;
-
-    public:
-
-        /**
-         * A forward iterator yielding 32bit unsigned integers with the
-         * geometry encoded according to spec 4.3.
-         */
-        using const_iterator = protozero::pbf_reader::const_uint32_iterator;
-
-        /// Default construct to an invalid value.
-        constexpr geometry() noexcept = default;
-
-        /// Construct with the given values.
-        constexpr geometry(data_view data, GeomType type) noexcept :
-            m_data(data),
-            m_type(type) {
-        }
-
-        /// The data of this geometry
-        constexpr data_view data() const noexcept {
-            return m_data;
-        }
-
-        /// The type of this geometry
-        constexpr GeomType type() const noexcept {
-            return m_type;
-        }
-
-        /// Return iterator to the beginning of the data.
-        const_iterator begin() const noexcept {
-            return {m_data.data(), m_data.data() + m_data.size()};
-        }
-
-        /// Return iterator to one past the end of the data.
-        const_iterator end() const noexcept {
-            return {m_data.data() + m_data.size(), m_data.data() + m_data.size()};
-        }
-
-    }; // class geometry
 
 } // namespace vtzero
 

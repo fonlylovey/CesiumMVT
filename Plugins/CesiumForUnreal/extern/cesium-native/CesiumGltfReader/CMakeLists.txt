@@ -66,7 +66,7 @@ target_link_libraries(CesiumGltfReader
         webp
         webpdecoder
         turbojpeg
-        VectorTile
+        VectorTileReader
 )
 
 install(TARGETS CesiumGltfReader
