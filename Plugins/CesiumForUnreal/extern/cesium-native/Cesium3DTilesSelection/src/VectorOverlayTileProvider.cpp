@@ -129,76 +129,74 @@ VectorOverlayTileProvider::loadTileDataFromUrl(
     const std::vector<IAssetAccessor::THeader>& headers,
     LoadVectorTileDataFromUrlOptions&& options) const
 {
-
   return this->getAssetAccessor()
       ->get(this->getAsyncSystem(), url, headers)
       .thenInWorkerThread(
-          [options = std::move(options)]( std::shared_ptr<IAssetRequest>&& pRequest) mutable
+      [options = std::move(options)](
+          std::shared_ptr<IAssetRequest>&& pRequest) mutable
+      {
+        std::string tileUrl = pRequest->url();
+        CESIUM_TRACE("load: " + tileUrl);
+        const IAssetResponse* pResponse = pRequest->response();
+        if (pResponse == nullptr)
         {
-            CESIUM_TRACE("load image");
-            const IAssetResponse* pResponse = pRequest->response();
-            if (pResponse == nullptr)
-            {
-              return LoadedVectorOverlayData{
-                  std::nullopt,
-                  options.rectangle,
-                  std::move(options.credits),
-                  {"Image request for " + pRequest->url() + " failed."},
-                  {}};
-            }
+          return LoadedVectorOverlayData{
+              std::nullopt,
+              options.rectangle,
+              std::move(options.credits),
+              {"Vector request for " + tileUrl + " failed."},
+              {}};
+        }
 
-            if (pResponse->statusCode() != 0 &&
-                (pResponse->statusCode() < 200 ||
-                 pResponse->statusCode() >= 300))
-            {
-              std::string message = "Image response code " +
-                                    std::to_string(pResponse->statusCode()) +
-                                    " for " + pRequest->url();
-              return LoadedVectorOverlayData
-              {
-                  std::nullopt,
-                  options.rectangle,
-                  std::move(options.credits),
-                  {message},
-                  {}
-              };
-            }
+        if (pResponse->statusCode() != 0 &&
+            (pResponse->statusCode() < 200 || pResponse->statusCode() >= 300))
+        {
+          std::string message = "vector response code " +
+                                std::to_string(pResponse->statusCode()) +
+                                " for " + tileUrl;
+          return LoadedVectorOverlayData{
+              std::nullopt,
+              options.rectangle,
+              std::move(options.credits),
+              {message},
+              {}};
+        }
 
-            if (pResponse->data().empty())
-              {
+        if (pResponse->data().empty())
+        {
 
-              return LoadedVectorOverlayData
-                     {
-                         std::nullopt,
-                         options.rectangle,
-                         std::move(options.credits),
-                         {"Image request for " + pRequest->url() + " failed."},
-                         {}
-                     };
-            }
+          return LoadedVectorOverlayData{
+              std::nullopt,
+              options.rectangle,
+              std::move(options.credits),
+              {"vector request for " + tileUrl + " failed."},
+              {}};
+        }
 
-            const gsl::span<const std::byte> data = pResponse->data();
-            const char* charData = reinterpret_cast<const char*>(data.data());
-            charData;
-            std::string tileUrl = pRequest->url();
-            CesiumGltfReader::VectorReaderResult loadedData = _vectorReader.readVector(data);
-            if (!loadedData.errors.empty())
-            {
-              loadedData.errors.push_back("Image url: " + tileUrl);
-            }
-            if (!loadedData.warnings.empty())
-            {
-              loadedData.warnings.push_back("Image url: " + tileUrl);
-            }
+        const gsl::span<const std::byte> data = pResponse->data();
+        std::string strDataLength = pResponse->headers().at("Content-Length");
+        size_t dataSize = std::stoll(strDataLength);
+        const char* charData = reinterpret_cast<const char*>(data.data());
+        const std::string stringData(charData, dataSize);
+        CesiumGltfReader::VectorReaderResult loadedData = _vectorReader.readVector(stringData);
 
-            LoadedVectorOverlayData resurl = LoadedVectorOverlayData{
-                loadedData.model,
-                options.rectangle,
-                std::move(options.credits),
-                std::move(loadedData.errors),
-                std::move(loadedData.warnings)};
-            return resurl;
-          });
+        if (!loadedData.errors.empty()) {
+          loadedData.errors.push_back("Image url: " + tileUrl);
+        }
+        if (!loadedData.warnings.empty()) {
+          loadedData.warnings.push_back("Image url: " + tileUrl);
+        }
+
+        LoadedVectorOverlayData resurl = LoadedVectorOverlayData{
+            loadedData.model,
+            options.rectangle,
+            std::move(options.credits),
+            std::move(loadedData.errors),
+            std::move(loadedData.warnings)};
+        return resurl;
+      }
+  );
+ 
 }
 
 namespace {

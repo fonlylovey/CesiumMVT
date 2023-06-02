@@ -107,7 +107,7 @@ public:
    * @return The result of reading the vector.
    */
   VectorReaderResult readVector(
-      const gsl::span<const std::byte>& data,
+      const std::string& data,
       const VectorReaderOptions& options = VectorReaderOptions()) const;
 
   /**

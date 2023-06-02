@@ -302,6 +302,9 @@ public:
             case pbf_wire_type::length_delimited:
             case pbf_wire_type::fixed32:
                 break;
+            case 3:
+            case 4:
+                return false;
             default:
                 throw unknown_pbf_wire_type_exception{};
         }

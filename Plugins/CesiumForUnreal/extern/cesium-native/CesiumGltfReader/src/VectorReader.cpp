@@ -35,18 +35,15 @@ namespace
 {
   VectorReaderResult readBinaryVector(
       const CesiumJsonReader::ExtensionReaderContext& context,
-      const gsl::span<const std::byte>& data)
+    const std::string& data)
   {
     context;
-    const char* charData = reinterpret_cast<const char*>(data.data());
-    VTR::mvtpbf_reader mvtReader(charData,
-        VTR::mvtpbf_reader::ePathType::eData);
+    VTR::VectorTileReader mvtReader(data, VTR::DataType::Byte);
 
     VectorReaderResult result;
     try
     {
-      std::vector<VTR::GeometryHandler*> geoms;
-      mvtReader.getVectileData(geoms);
+      std::vector<VTR::GeometryHandler*> geoms = mvtReader.getGeoData();
       CesiumGltf::VectorModel model;
       result.model = model;
     }
@@ -80,7 +77,7 @@ const CesiumJsonReader::ExtensionReaderContext& VectorReader::getExtensions() co
 }
 
 VectorReaderResult VectorReader::readVector(
-    const gsl::span<const std::byte>& data,
+    const std::string& data,
     const VectorReaderOptions& options) const
 {
     const CesiumJsonReader::ExtensionReaderContext& context =

@@ -361,46 +361,47 @@ namespace VTR
         }
     }
 
-    class mvtpbf_reader
+    enum class DataType
+    {
+        File,
+        Byte
+    };
+
+    class VectorTileReader
     {
     public:
-        enum class ePathType{ eFile,eData};
-        mvtpbf_reader(const std::string &path,ePathType type = ePathType::eFile)
-    	:mpath(path)
-    	,mtype(type)
+        VectorTileReader(const std::string& data, DataType type = DataType::Byte)
         {
+            m_type = type;
+            m_data = (m_type == DataType::File) ? read_file(data) : data;
+            
         }
-        /*
-         * get vector tile geo datas
-         */
-        void getVectileData(std::vector<GeometryHandler*> &geoms)
+
+        std::vector<GeometryHandler*> getGeoData() const
         {
-            geoms.clear();
-            const auto data = (mtype == ePathType::eFile) ? read_file(mpath) : mpath;
-            vtzero::vector_tile tile(data);
-            bool isTile = vtzero::is_vector_tile(data);
-            size_t layerCount = tile.count_layers();
+            std::vector<GeometryHandler*> geoms;
+            vtzero::vector_tile tile(m_data);
             for (const auto layer : tile)
             {
-                for (const auto& feature : layer)
+                for (const auto feature : layer)
                 {
                     MVTPolygonHandler* handler = new MVTPolygonHandler;
                     handler->layerID = (int)layer.layer_num();
                     handler->featureID = feature.has_integer_id()
-                            ? std::to_string(feature.integer_id()) 
-                                             : feature.string_id().to_string();
+                        ? std::to_string(feature.integer_id())
+                        : feature.string_id().to_string();
                     handler->type = feature.geometry_type();
                     feature.decode_polygon_geometry(*handler);
                     geoms.push_back(handler);
                 }
             }
-            
-            std::cout << " load geometries successfully! " << geoms.size() << " gemos have been loaded." << std::endl;
+            return std::move(geoms);
         }
-    protected:
-        std::string mpath;
-        ePathType   mtype;
+
+        std::string m_data;
+        DataType m_type;
     };
+    
 }
 
 
