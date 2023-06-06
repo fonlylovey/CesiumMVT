@@ -2,11 +2,11 @@
 
 #include "BoundingVolume.h"
 #include "RasterOverlayDetails.h"
-#include "TileContent.h"
+#include "VectorTileContent.h"
 
 #include <CesiumAsync/IAssetRequest.h>
 #include <CesiumGeometry/Axis.h>
-#include <CesiumGltf/Model.h>
+#include <CesiumGltf/VectorModel.h>
 
 #include <functional>
 #include <memory>

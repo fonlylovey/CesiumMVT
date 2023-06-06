@@ -28,14 +28,14 @@ void* VectorResourceWorker::prepareInMainThread(Cesium3DTilesSelection::Tile& ti
     return nullptr;
 }
 
-CesiumAsync::Future<Cesium3DTilesSelection::TileLoadResultAndRenderResources> VectorResourceWorker::prepareInLoadThread(
-	const CesiumAsync::AsyncSystem& asyncSystem, Cesium3DTilesSelection::TileLoadResult&& tileLoadResult,
+CesiumAsync::Future<Cesium3DTilesSelection::VectorTileLoadResultAndRenderResources> VectorResourceWorker::prepareInLoadThread(
+	const CesiumAsync::AsyncSystem& asyncSystem, Cesium3DTilesSelection::VectorTileLoadResult&& tileLoadResult,
 	const glm::dmat4& transform, const std::any& rendererOptions)
 {
 	CreateGltfOptions::CreateModelOptions options;
 	TUniquePtr<UCesiumGltfComponent::HalfConstructed> pHalf =
 		UCesiumGltfComponent::CreateOffGameThread(transform, options);
-	return asyncSystem.createResolvedFuture(Cesium3DTilesSelection::TileLoadResultAndRenderResources{
+	return asyncSystem.createResolvedFuture(Cesium3DTilesSelection::VectorTileLoadResultAndRenderResources{
 		std::move(tileLoadResult),
 		pHalf.Release()});
 }

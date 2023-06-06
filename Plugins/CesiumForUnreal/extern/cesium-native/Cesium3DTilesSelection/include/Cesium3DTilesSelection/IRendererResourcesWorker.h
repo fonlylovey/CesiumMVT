@@ -2,6 +2,7 @@
 
 #include "Library.h"
 #include "TileLoadResult.h"
+#include "VectorTileLoadResult.h"
 
 #include <CesiumAsync/Future.h>
 
@@ -27,7 +28,10 @@ namespace Cesium3DTilesSelection {
 
 class Tile;
 class VectorOverlayTile;
-struct TileLoadResultAndRenderResources;
+struct VectorTileLoadResultAndRenderResources {
+  VectorTileLoadResult result;
+  void* pResourcesWorker{nullptr};
+};
 
 /**
  * @brief When implemented for a rendering engine, allows renderer resources to
@@ -60,10 +64,10 @@ public:
    * method, or it may be modified. The render resources are passed to
    * {@link prepareInMainThread} as the `pLoadThreadResult` parameter.
    */
-  virtual CesiumAsync::Future<TileLoadResultAndRenderResources>
+  virtual CesiumAsync::Future<VectorTileLoadResultAndRenderResources>
   prepareInLoadThread(
       const CesiumAsync::AsyncSystem& asyncSystem,
-      TileLoadResult&& tileLoadResult,
+      VectorTileLoadResult&& tileLoadResult,
       const glm::dmat4& transform,
       const std::any& rendererOptions) = 0;
 

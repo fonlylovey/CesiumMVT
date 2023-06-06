@@ -181,10 +181,10 @@ VectorOverlayTileProvider::loadTileDataFromUrl(
         CesiumGltfReader::VectorReaderResult loadedData = _vectorReader.readVector(stringData);
 
         if (!loadedData.errors.empty()) {
-          loadedData.errors.push_back("Image url: " + tileUrl);
+          loadedData.errors.push_back("tile url: " + tileUrl);
         }
         if (!loadedData.warnings.empty()) {
-          loadedData.warnings.push_back("Image url: " + tileUrl);
+          loadedData.warnings.push_back("tile url: " + tileUrl);
         }
 
         LoadedVectorOverlayData resurl = LoadedVectorOverlayData{

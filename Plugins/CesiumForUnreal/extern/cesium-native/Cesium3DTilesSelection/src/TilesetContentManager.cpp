@@ -893,7 +893,7 @@ void TilesetContentManager::loadTileContent(
   std::vector<CesiumGeospatial::Projection> projections =
       mapOverlaysToTile(tile, this->_overlayCollection, tilesetOptions);
 
-  //
+  //mapmost fengya 主要是为了实现对tile.getMappedVectorTiles()数据的管理
   _vertorLoder.mapOverlaysToTile(
       tile,
       this->_vectorCollection,
