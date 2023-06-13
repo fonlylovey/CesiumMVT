@@ -70,61 +70,25 @@ namespace VTR
         stream.close();
     }
 
-    class Result
-	{
-
-        int resultCode = 0;
-
-    public:
-
-        void hasWarning() noexcept
-    	{
-            if (resultCode < 1) 
-            {
-                resultCode = 1;
-            }
-        }
-
-        void hasError() noexcept
-    	{
-            if (resultCode < 2)
-            {
-                resultCode = 2;
-            }
-        }
-
-        void hasFatalError() noexcept
-    	{
-            if (resultCode < 3) {
-                resultCode = 3;
-            }
-        }
-
-        int return_code() const noexcept
-    	{
-            return resultCode;
-        }
-
-    };
-
-
     class GeometryHandler
     {
     public:
-        int layerID;
+        virtual ~GeometryHandler() = default;
+        int layerID = 0;
         std::string featureID;
-        int geoCount;
-        Result result;
-        vtzero::GeomType type;
+        vtzero::GeomType featureType = vtzero::GeomType::UNKNOWN;
+        int geoCount = 0;
         constexpr static const int dimensions = 3;
         constexpr static const unsigned int max_geometric_attributes = 0;
     };
+
     /*
      *  point geometry storage
      */
     class MVTPointHandler : public GeometryHandler
     {
     public:
+        ~MVTPointHandler() override = default;
 
         virtual void points_begin(uint32_t count)
         {
@@ -155,12 +119,14 @@ namespace VTR
     struct MVTRing
     {
         std::vector<vtzero::point_3d> line;
-        vtzero::ring_type type;
+        vtzero::ring_type type = vtzero::ring_type::invalid;
     };
 
     class MVTLineHandler : public GeometryHandler
     {
     public:
+        ~MVTLineHandler() override = default;
+        
         virtual void linestring_begin(uint32_t count)
         {
             lineString.line.reserve(count);
@@ -190,6 +156,8 @@ namespace VTR
     class MVTPolygonHandler : public GeometryHandler
     {
     public:
+        ~MVTPolygonHandler() override = default;
+
         virtual void ring_begin(uint32_t count)
         {
             MVTRing ring;
@@ -215,110 +183,6 @@ namespace VTR
         std::vector<MVTRing> polygon;
 
     };
-
-    /*
-     *  point geometry display
-     */
-    class display_point : public GeometryHandler
-    {
-    public:
-
-        virtual void points_begin(uint32_t count)
-        {
-
-        }
-
-        virtual void points_point(const vtzero::point_3d&pt)
-        {
-            std::cout << "      POINT(" << pt.x << ',' << pt.y << ")\n";
-        }
-
-        virtual void points_end(vtzero::ring_type type = vtzero::ring_type::invalid)
-        {
-
-        }
-    };
-
-    /*
-     *  line geometry display
-     */
-    class display_line : public GeometryHandler
-    {
-        std::string output{};
-    public:
-        virtual void linestring_begin(uint32_t count)
-        {
-            output = "      LINESTRING[count=";
-            output += std::to_string(count);
-            output += "](";
-        }
-
-        virtual void linestring_point(const vtzero::point_3d&pt)
-        {
-            output += std::to_string(pt.x);
-            output += ' ';
-            output += std::to_string(pt.y);
-            output += ',';
-        }
-
-        virtual void linestring_end(vtzero::ring_type type = vtzero::ring_type::invalid)
-        {
-            if (output.empty()) {
-                return;
-            }
-            if (output.back() == ',') {
-                output.resize(output.size() - 1);
-            }
-            output += ")\n";
-            std::cout << output;
-        }
-    };
-
-    /*
-     *  polygon geometry display
-     */
-    class display_polygon : public GeometryHandler
-    {
-        std::string output{};
-    public:
-        virtual void ring_begin(uint32_t count)
-        {
-            output = "      RING[count=";
-            output += std::to_string(count);
-            output += "](";
-        }
-
-        virtual void ring_point(const vtzero::point_3d&pt)
-        {
-            output += std::to_string(pt.x);
-            output += ' ';
-            output += std::to_string(pt.y);
-            output += ',';
-        }
-
-        virtual void ring_end(vtzero::ring_type type = vtzero::ring_type::invalid)
-        {
-            if (output.empty()) {
-                return;
-            }
-            if (output.back() == ',') {
-                output.back() = ')';
-            }
-            switch (type) {
-                case vtzero::ring_type::outer:
-                    output += "[OUTER]\n";
-                    break;
-                case vtzero::ring_type::inner:
-                    output += "[INNER]\n";
-                    break;
-                default:
-                    output += "[INVALID]\n";
-            }
-            std::cout << output;
-        }
-
-    };
-
     /*
      *   generate a geometry data storage object
      *
@@ -370,36 +234,21 @@ namespace VTR
     class VectorTileReader
     {
     public:
-        VectorTileReader(const std::string& data, DataType type = DataType::Byte)
+        VectorTileReader()
         {
+        }
+
+		/*
+		* 如果是二进制数据就什么都不做，如果是文件路径就读取出二进制数据
+		*/
+        std::string readData(const std::string& data, DataType type = DataType::Byte)
+		{
             m_type = type;
             m_data = (m_type == DataType::File) ? read_file(data) : data;
-            
-        }
-
-        std::vector<GeometryHandler*> getGeoData() const
-        {
-            std::vector<GeometryHandler*> geoms;
-            vtzero::vector_tile tile(m_data);
-            for (const auto layer : tile)
-            {
-                for (const auto feature : layer)
-                {
-                    MVTPolygonHandler* handler = new MVTPolygonHandler;
-                    handler->layerID = (int)layer.layer_num();
-                    handler->featureID = feature.has_integer_id()
-                        ? std::to_string(feature.integer_id())
-                        : feature.string_id().to_string();
-                    handler->type = feature.geometry_type();
-                    feature.decode_polygon_geometry(*handler);
-                    geoms.push_back(handler);
-                }
-            }
-            return std::move(geoms);
-        }
-
+		}
+       
         std::string m_data;
-        DataType m_type;
+        DataType m_type = DataType::Byte;
     };
     
 }

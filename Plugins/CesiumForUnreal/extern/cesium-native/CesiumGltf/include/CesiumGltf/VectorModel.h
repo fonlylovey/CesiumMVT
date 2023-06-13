@@ -1,9 +1,10 @@
 #pragma once
 
 #include "CesiumGltf/Buffer.h"
+#include "CesiumGltf/BufferView.h"
 #include "CesiumGltf/Library.h"
 #include "CesiumUtility/ExtensibleObject.h"
-
+#include "glm/vec3.hpp"
 #include <functional>
 
 namespace CesiumGltf
@@ -13,27 +14,29 @@ enum class FeatureType {
 };
 
 //一个矢量要素
-struct FeatureBuffer {
-  /**
-   * @brief An array of buffers.
-   *
-   * A buffer points to binary geometry
-   */
-  std::vector<CesiumGltf::Buffer> buffers;
+struct VectorFeature
+{
 
-  /**
-   * @brief An array of bufferViews.
-   *
-   * A bufferView is a view into a buffer generally representing a subset of the
-   * buffer.
-   */
-  std::vector<CesiumGltf::BufferView> bufferViews;
+  //要素坐标集合
+  std::vector<glm::ivec3> points;
 
-  /**
-   * @brief 矢量数据的类型
-   *
-   */
-  FeatureType mvtType;
+  // 矢量要素的类型
+  FeatureType mvtType = FeatureType::Point;
+
+  //要素ID
+  int featureID = -1;
+
+  //要素个数
+  size_t featureCount = 0;
+
+  int ringType = -1;
+};
+
+// 一个矢量图层
+struct VectorLayer
+{
+  std::vector<VectorFeature> features;
+  int layerID = -1;
 };
 
 /** @copydoc VectorModel */
@@ -41,8 +44,8 @@ struct CESIUMGLTF_API VectorModel : public CesiumUtility::ExtensibleObject
 {
   static inline constexpr const char* TypeName = "VectorModel";
 
-  //一个瓦片中的所有要素
-  std::vector<FeatureBuffer> features;
+  //一个瓦片中的所有图层
+  std::vector<VectorLayer> layers;
 
   std::vector<std::string> styles = {};
 };

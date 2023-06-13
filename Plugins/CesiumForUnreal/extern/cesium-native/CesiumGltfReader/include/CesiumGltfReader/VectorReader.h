@@ -28,7 +28,7 @@ struct CESIUMGLTFREADER_API VectorReaderResult {
   /**
    * @brief The read model, or std::nullopt if the model could not be read.
    */
-  std::optional<CesiumGltf::VectorModel> model;
+  CesiumGltf::VectorModel model;
 
   /**
    * @brief Errors, if any, that occurred during the load process.
@@ -109,26 +109,6 @@ public:
   VectorReaderResult readVector(
       const std::string& data,
       const VectorReaderOptions& options = VectorReaderOptions()) const;
-
-  /**
-   * @brief Accepts the result of {@link readGltf} and resolves any remaining
-   * external buffers and images.
-   *
-   * @param asyncSystem The async system to use for resolving external data.
-   * @param baseUrl The base url that all the external uris are relative to.
-   * @param headers The http headers needed to make any external data requests.
-   * @param pAssetAccessor The asset accessor to use to request the external
-   * buffers and images.
-   * @param options Options for how to read the glTF.
-   * @param result The result of the synchronous readGltf invocation.
-   */
-  static CesiumAsync::Future<VectorReaderResult> resolveExternalData(
-      CesiumAsync::AsyncSystem asyncSystem,
-      const std::string& baseUrl,
-      const CesiumAsync::HttpHeaders& headers,
-      std::shared_ptr<CesiumAsync::IAssetAccessor> pAssetAccessor,
-      const VectorReaderOptions& options,
-      VectorReaderResult&& result);
 
 private:
   CesiumJsonReader::ExtensionReaderContext _context;

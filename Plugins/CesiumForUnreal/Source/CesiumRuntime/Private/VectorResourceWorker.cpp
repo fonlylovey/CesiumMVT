@@ -61,16 +61,16 @@ void* VectorResourceWorker::prepareVectorInLoadThread(CesiumGltf::VectorModel& m
     if (ppOptions == nullptr || *ppOptions == nullptr) {
         return nullptr;
     }
-
     auto pOptions = *ppOptions;
 
-    return nullptr;
+    return &model;
 }
 
 void VectorResourceWorker::attachVectorInMainThread(const Cesium3DTilesSelection::Tile& tile,
 	int32_t overlayTextureCoordinateID, const Cesium3DTilesSelection::VectorOverlayTile& VectorTile,
 	void* pMainThreadRendererResources, const glm::dvec2& translation, const glm::dvec2& scale)
 {
+
 }
 
 void VectorResourceWorker::detachVectorInMainThread(const Cesium3DTilesSelection::Tile& tile,

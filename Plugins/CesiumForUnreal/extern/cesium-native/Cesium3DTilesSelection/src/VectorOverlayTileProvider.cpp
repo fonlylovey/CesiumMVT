@@ -310,7 +310,7 @@ void VectorOverlayTileProvider::doLoad(VectorOverlayTile& tile, bool isThrottled
             pTile->setState(result.state);
             //ÒªÖØÐ´
             thisPtr->_tileDataBytes +=
-                int64_t(pTile->getVectorModel().styles.size());
+                int64_t(pTile->getVectorModel().layers.size());
 
             thisPtr->finalizeTileLoad(isThrottledLoad);
           })

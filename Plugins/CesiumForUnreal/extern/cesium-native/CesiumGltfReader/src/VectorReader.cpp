@@ -1,29 +1,12 @@
 #include "CesiumGltfReader/VectorReader.h"
-
-#include "ModelJsonHandler.h"
-#include "decodeDataUrls.h"
-#include "decodeDraco.h"
 #include "registerExtensions.h"
 
 #include <CesiumAsync/IAssetRequest.h>
 #include <CesiumAsync/IAssetResponse.h>
-#include <CesiumGltf/ExtensionKhrTextureBasisu.h>
-#include <CesiumGltf/ExtensionTextureWebp.h>
-#include <CesiumJsonReader/ExtensionReaderContext.h>
-#include <CesiumJsonReader/JsonHandler.h>
-#include <CesiumJsonReader/JsonReader.h>
-#include <CesiumUtility/Tracing.h>
-#include <CesiumUtility/Uri.h>
 
-#include <ktx.h>
-#include <rapidjson/reader.h>
-#include <webp/decode.h>
+#include <CesiumUtility/Uri.h>
 #include <VectorTileReader.hpp>
-#include <algorithm>
-#include <cstddef>
-#include <iomanip>
-#include <sstream>
-#include <string>
+
 
 using namespace CesiumAsync;
 using namespace CesiumGltf;
@@ -33,19 +16,134 @@ using namespace CesiumUtility;
 
 namespace
 {
+  class VectorGeomHandler : public VTR::GeometryHandler
+  {
+  public:
+    CesiumGltf::VectorLayer layer;
+    virtual void points_begin(uint32_t count)
+    {
+      geoCount = count;
+	  VectorFeature feature;
+      layer.features.emplace_back(feature);
+    }
+
+    virtual void points_point(const vtzero::point_3d &pt)
+    {
+      layer.features.rbegin()->points.emplace_back(pt.x, pt.y, pt.z);
+    }
+
+    virtual void points_end(vtzero::ring_type type = vtzero::ring_type::invalid)
+    {
+      layer.features.rbegin()->ringType = static_cast<int>(type);
+    }
+
+    virtual void linestring_begin(uint32_t count)
+    {
+		geoCount = count;
+		VectorFeature feature;
+		layer.features.emplace_back(feature);
+    }
+
+    virtual void linestring_point(const vtzero::point_3d&pt)
+    {
+       layer.features.rbegin()->points.emplace_back(pt.x, pt.y, pt.z);
+    }
+
+    virtual void linestring_end(vtzero::ring_type type = vtzero::ring_type::invalid)
+    {
+        layer.features.rbegin()->ringType = static_cast<int>(type);
+    }
+
+    virtual void ring_begin(uint32_t count)
+    {
+        geoCount = count;
+		VectorFeature feature;
+		layer.features.emplace_back(feature);
+    }
+
+    virtual void ring_point(const vtzero::point_3d &pt)
+    {
+         layer.features.rbegin()->points.emplace_back(pt.x, pt.y, pt.z);
+    }
+
+    virtual void ring_end(vtzero::ring_type type = vtzero::ring_type::invalid)
+    {
+         layer.features.rbegin()->ringType = static_cast<int>(type);
+    }
+
+	void controlpoints_begin(const uint32_t count) 
+	{
+         geoCount = count;
+         VectorFeature feature;
+         layer.features.emplace_back(feature);
+    }
+
+    void controlpoints_point(const vtzero::point_3d pt) 
+	{
+        layer.features.rbegin()->points.emplace_back(pt.x, pt.y, pt.z);
+    }
+
+    void controlpoints_end() 
+	{
+        
+    }
+
+	void knots_begin(const uint32_t count, vtzero::index_value /*scaling*/) 
+	{
+        geoCount = count;
+		VectorFeature feature;
+		layer.features.emplace_back(feature);
+    }
+
+    void knots_value(const int64_t /*value*/) 
+	{
+    }
+
+    void knots_end() 
+	{
+    }
+  };
+
+  //解析二进制的矢量数据
+  std::vector<VectorGeomHandler*> resolvingGeoData(const std::string& strData) 
+  {
+		std::vector<VectorGeomHandler*> geoms;
+		vtzero::vector_tile tile(strData);
+		for (const auto layer : tile)
+		{
+			for (const auto feature : layer)
+			{
+				VectorGeomHandler* handler = new VectorGeomHandler;
+				handler->layerID = (int)layer.layer_num();
+				handler->featureID = feature.has_integer_id()
+					? std::to_string(feature.integer_id())
+					: feature.string_id().to_string();
+				handler->featureType = feature.geometry_type();
+				feature.decode_geometry(*handler);
+				geoms.push_back(handler);
+			}
+		}
+        return geoms;
+  }
+
+
   VectorReaderResult readBinaryVector(
       const CesiumJsonReader::ExtensionReaderContext& context,
     const std::string& data)
   {
     context;
-    VTR::VectorTileReader mvtReader(data, VTR::DataType::Byte);
-
+    //VTR::VectorTileReader mvtReader;
+    //std::string strData = mvtReader.readData(data, da);
     VectorReaderResult result;
     try
     {
-      std::vector<VTR::GeometryHandler*> geoms = mvtReader.getGeoData();
+      std::vector<VectorGeomHandler*> geoms = resolvingGeoData(data);
+      
       CesiumGltf::VectorModel model;
-      result.model = model;
+      for (auto geom : geoms)
+      {
+        result.model.layers.emplace_back(geom->layer);
+      }
     }
     catch (std::runtime_error ex)
     {
@@ -56,7 +154,7 @@ namespace
   }
 
   // 解码数据
-  void decodeData(GltfReaderResult& readVector) {
+  void decodeData(VectorReaderResult& readVector) {
     readVector;
   }
 
@@ -90,88 +188,4 @@ VectorReaderResult VectorReader::readVector(
     }
 
     return result;
-}
-
-/*static*/
-Future<VectorReaderResult> VectorReader::resolveExternalData(
-    AsyncSystem asyncSystem,
-    const std::string& baseUrl,
-    const HttpHeaders& headers,
-    std::shared_ptr<IAssetAccessor> pAssetAccessor,
-    const VectorReaderOptions& options,
-    VectorReaderResult&& result)
-{
-
-  options;
-  // TODO: Can we avoid this copy conversion?
-  std::vector<IAssetAccessor::THeader> tHeaders(headers.begin(), headers.end());
-
-  if (!result.model) {
-    return asyncSystem.createResolvedFuture(std::move(result));
-  }
-
-  // Get a rough count of how many external buffers we may have.
-  // Some of these may be data uris though.
-  size_t uriBuffersCount = 0;
-  for (const Buffer& buffer : result.model->buffers) {
-    if (buffer.uri) {
-      ++uriBuffersCount;
-    }
-  }
-
-  if (uriBuffersCount == 0) {
-    return asyncSystem.createResolvedFuture(std::move(result));
-  }
-
-  auto pResult = std::make_unique<VectorReaderResult>(std::move(result));
-
-  struct ExternalBufferLoadResult {
-    bool success = false;
-    std::string bufferUri;
-  };
-
-  std::vector<Future<ExternalBufferLoadResult>> resolvedBuffers;
-  resolvedBuffers.reserve(uriBuffersCount);
-
-  // We need to skip data uris.
-  constexpr std::string_view dataPrefix = "data:";
-  constexpr size_t dataPrefixLength = dataPrefix.size();
-
-  for (Buffer& buffer : pResult->model->buffers) {
-    if (buffer.uri && buffer.uri->substr(0, dataPrefixLength) != dataPrefix) {
-      resolvedBuffers.push_back(
-          pAssetAccessor
-              ->get(asyncSystem, Uri::resolve(baseUrl, *buffer.uri), tHeaders)
-              .thenInWorkerThread(
-                  [pBuffer =
-                       &buffer](std::shared_ptr<IAssetRequest>&& pRequest) {
-                    const IAssetResponse* pResponse = pRequest->response();
-
-                    std::string bufferUri = *pBuffer->uri;
-
-                    if (pResponse) {
-                      pBuffer->uri = std::nullopt;
-                      pBuffer->cesium.data = std::vector<std::byte>(
-                          pResponse->data().begin(),
-                          pResponse->data().end());
-                      return ExternalBufferLoadResult{true, bufferUri};
-                    }
-
-                    return ExternalBufferLoadResult{false, bufferUri};
-                  }));
-    }
-  }
-  return asyncSystem.all(std::move(resolvedBuffers))
-      .thenInWorkerThread(
-          [pResult = std::move(pResult)](
-              std::vector<ExternalBufferLoadResult>&& loadResults) mutable {
-            for (auto& bufferResult : loadResults) {
-              if (!bufferResult.success) {
-                pResult->warnings.push_back(
-                    "Could not load the external gltf buffer: " +
-                    bufferResult.bufferUri);
-              }
-            }
-            return std::move(*pResult.release());
-          });
 }

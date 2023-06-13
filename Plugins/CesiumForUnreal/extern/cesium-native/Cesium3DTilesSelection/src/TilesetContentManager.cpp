@@ -1023,6 +1023,18 @@ bool TilesetContentManager::unloadTileContent(Tile& tile) {
     return false;
   }
 
+  //mapmost add
+  VectorTileContent& vectorContent = tile.getVectorContent();
+  if (vectorContent.isEmptyContent()) 
+  {
+    return false;
+  }
+
+  for (VectorMappedTo3DTile& mapped : tile.getMappedVectorTiles()) {
+    mapped.detachFromTile(*this->_externals.pRendererResourcesWorker, tile);
+  }
+  tile.getMappedVectorTiles().clear();
+
   // Detach raster tiles first so that the renderer's tile free
   // process doesn't need to worry about them.
   for (RasterMappedTo3DTile& mapped : tile.getMappedRasterTiles()) {
@@ -1207,6 +1219,22 @@ void TilesetContentManager::finishLoading(
   pRenderContent->setRenderResources(pMainThreadRenderResources);
   tile.setState(TileLoadState::Done);
 
+  //mapmost add
+  VectorTileContent& vectorContent = tile.getVectorContent();
+  VectorTileRenderContent* pVecRenderContent = vectorContent.getRenderContent();
+
+  //assert(pVecRenderContent != nullptr);
+  if(pVecRenderContent != nullptr)
+  {
+    void* pVecRenderResources = pVecRenderContent->getRenderResources();
+    void* pVecMainThreadRenderResources =
+        this->_externals.pRendererResourcesWorker->prepareInMainThread(
+            tile,
+            pVecRenderResources);
+    pVecRenderContent->setRenderResources(pVecMainThreadRenderResources);
+
+  }
+
   // This allows the raster tile to be updated and children to be created, if
   // necessary.
   // Priority doesn't matter here since loading is complete.
@@ -1216,14 +1244,24 @@ void TilesetContentManager::finishLoading(
 void TilesetContentManager::setTileContent(
     Tile& tile,
     TileLoadResult&& result,
-    void* pWorkerRenderResources) {
-  if (result.state == TileLoadResultState::Failed) {
+    void* pWorkerRenderResources) 
+{
+  if (result.state == TileLoadResultState::Failed) 
+  {
+	//mapmost add
+    tile.getMappedVectorTiles().clear();
     tile.getMappedRasterTiles().clear();
     tile.setState(TileLoadState::Failed);
-  } else if (result.state == TileLoadResultState::RetryLater) {
+  } 
+  else if (result.state == TileLoadResultState::RetryLater) 
+  {
+	//mapmost add
+    tile.getMappedVectorTiles().clear();
     tile.getMappedRasterTiles().clear();
     tile.setState(TileLoadState::FailedTemporarily);
-  } else {
+  }
+  else 
+  {
     // update tile if the result state is success
     if (result.updatedBoundingVolume) {
       tile.setBoundingVolume(*result.updatedBoundingVolume);
@@ -1235,15 +1273,15 @@ void TilesetContentManager::setTileContent(
 
     auto& content = tile.getContent();
     auto& vecContent = tile.getVectorContent();
-    std::visit(
-        ContentKindSetter{
-            content,
-            vecContent,
-            std::move(result.rasterOverlayDetails),
-            pWorkerRenderResources},
-        std::move(result.contentKind));
+    ContentKindSetter contentSet = ContentKindSetter{
+        content,
+        vecContent,
+        std::move(result.rasterOverlayDetails),
+        pWorkerRenderResources};
+    std::visit(contentSet, std::move(result.contentKind));
 
-    if (result.tileInitializer) {
+    if (result.tileInitializer) 
+	{
       result.tileInitializer(tile);
     }
 
@@ -1301,6 +1339,33 @@ void TilesetContentManager::updateContentLoadedState(
 
     tile.setState(TileLoadState::Done);
   }
+
+  //mapmost add
+  VectorTileContent& vectorContent = tile.getVectorContent();
+  if(vectorContent.isRenderContent()) 
+  {
+	  if(tilesetOptions.mainThreadLoadingTimeLimit <= 0.0)
+	  {
+		  finishLoading(tile, tilesetOptions);
+	  }
+  } 
+  else if (vectorContent.isEmptyContent())
+  {
+          double myGeometricError = tile.getNonZeroGeometricError();
+          const Tile* pAncestor = tile.getParent();
+          while (pAncestor && pAncestor->getUnconditionallyRefine()) {
+                  pAncestor = pAncestor->getParent();
+          }
+
+          double parentGeometricError =
+              pAncestor ? pAncestor->getNonZeroGeometricError()
+                        : myGeometricError * 2.0;
+          if (myGeometricError >= parentGeometricError) {
+                  tile.setUnconditionallyRefine();
+          }
+
+          tile.setState(TileLoadState::Done);
+  }
 }
 
 void TilesetContentManager::updateDoneState(
@@ -1325,6 +1390,13 @@ void TilesetContentManager::updateDoneState(
   // update raster overlay
   TileContent& content = tile.getContent();
   const TileRenderContent* pRenderContent = content.getRenderContent();
+
+  // mapmost add
+    // update vector overlay
+    VectorTileContent& vectorContent = tile.getVectorContent();
+    const VectorTileRenderContent* pVecRenderContent =
+        vectorContent.getRenderContent();
+    
   if (pRenderContent) {
     bool moreRasterDetailAvailable = false;
     bool skippedUnknown = false;
@@ -1397,11 +1469,63 @@ void TilesetContentManager::updateDoneState(
         tile.getChildren().empty()) {
       createQuadtreeSubdividedChildren(tile, this->_upsampler);
     }
-  } else {
+  }
+  else if(pVecRenderContent)
+  {
+     std::vector<VectorMappedTo3DTile>& vectorTiles =
+          tile.getMappedVectorTiles();
+      for (size_t i = 0; i < vectorTiles.size(); ++i) {
+		  VectorMappedTo3DTile& mapVectorTile = vectorTiles[i];
+		  VectorOverlayTile* pLoadingTile = mapVectorTile.getLoadingTile();
+		if (pLoadingTile 
+		&& pLoadingTile->getState() == VectorOverlayTile::LoadState::Placeholder)
+		{
+			VectorOverlayTileProvider* pProvider = 
+			this->_vectorCollection.findTileProviderForOverlay(pLoadingTile->getOverlay());
+			VectorOverlayTileProvider* pPlaceholder = 
+			this->_vectorCollection.findPlaceholderTileProviderForOverlay(pLoadingTile->getOverlay());
+            // Try to replace this placeholder with real tiles.
+            if (pProvider && pPlaceholder &&!pProvider->isPlaceholder()) 
+			{
+				// Remove the existing placeholder mapping
+				vectorTiles.erase(
+					vectorTiles.begin() +
+					static_cast<std::vector<VectorMappedTo3DTile>::difference_type>(
+						i));
+				--i;
+
+				// Add a new mapping.
+				std::vector<CesiumGeospatial::Projection> missingProjections;
+				VectorMappedTo3DTile::mapOverlayToTile(
+					tilesetOptions.maximumScreenSpaceError,
+					*pProvider,
+					*pPlaceholder,
+					tile,
+					missingProjections);
+
+				if (!missingProjections.empty()) {
+				  // The mesh doesn't have the right texture coordinates for this
+				  // overlay's projection, so we need to kick it back to the
+				  // unloaded state to fix that. In the future, we could add the
+				  // ability to add the required texture coordinates without
+				  // starting over from scratch.
+				  unloadTileContent(tile);
+				  return;
+				}
+			}
+
+				continue;
+            }
+            mapVectorTile.update( *this->_externals.pRendererResourcesWorker, tile);
+      }
+  }
+  else {
     // We can't hang raster images on a tile without geometry, and their
     // existence can prevent the tile from being deemed done loading. So clear
     // them out here.
     tile.getMappedRasterTiles().clear();
+	//mapmost add
+	tile.getMappedVectorTiles().clear();
   }
 }
 
@@ -1416,6 +1540,21 @@ void TilesetContentManager::unloadContentLoadedState(Tile& tile) {
       pWorkerRenderResources,
       nullptr);
   pRenderContent->setRenderResources(nullptr);
+
+  //mapmost add
+  VectorTileContent& vectorContent = tile.getVectorContent();
+  VectorTileRenderContent* pVectorRenderContent = vectorContent.getRenderContent();
+  //assert(pVectorRenderContent && "Tile must have render content to be unloaded");
+  if(pVectorRenderContent != nullptr)
+  {
+        void* pVectoRenderResources = pRenderContent->getRenderResources();
+        _externals.pRendererResourcesWorker->free(
+            tile,
+            pVectoRenderResources,
+            nullptr);
+        pVectorRenderContent->setRenderResources(nullptr);
+
+  }
 }
 
 void TilesetContentManager::unloadDoneState(Tile& tile) {
@@ -1428,7 +1567,21 @@ void TilesetContentManager::unloadDoneState(Tile& tile) {
       tile,
       nullptr,
       pMainThreadRenderResources);
-  pRenderContent->setRenderResources(nullptr);
+  pRenderContent->setRenderResources(nullptr); 
+
+  // mapmost add
+  VectorTileContent& vectorContent = tile.getVectorContent();
+  VectorTileRenderContent* pVectorRenderContent =
+      vectorContent.getRenderContent();
+  //assert(pVectorRenderContent && "Tile must have render content to be unloaded");
+  if (pVectorRenderContent != nullptr) {
+        void* pVectoRenderResources = pRenderContent->getRenderResources();
+        _externals.pRendererResourcesWorker->free(
+            tile,
+            nullptr,
+            pVectoRenderResources);
+        pVectorRenderContent->setRenderResources(nullptr);
+  }
 }
 
 void TilesetContentManager::notifyTileStartLoading(

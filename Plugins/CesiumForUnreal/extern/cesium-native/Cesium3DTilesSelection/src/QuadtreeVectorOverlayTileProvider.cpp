@@ -104,12 +104,11 @@ QuadtreeVectorOverlayTileProvider::mapVectorTilesToGeometryTile(
 
   const QuadtreeTilingScheme& tilingScheme = this->getTilingScheme();
 
-  // Use Web Mercator for our texture coordinate computations if this imagery
-  // layer uses that projection and the terrain tile falls entirely inside the
-  // valid bounds of the projection. bool useWebMercatorT =
-  //     pWebMercatorProjection &&
-  //     tileRectangle.getNorth() <= WebMercatorProjection::MAXIMUM_LATITUDE &&
-  //     tileRectangle.getSouth() >= -WebMercatorProjection::MAXIMUM_LATITUDE;
+  //如果此影像图层使用该投影并且地形切片完全位于投影的有效范围内，
+  //则使用 Web 墨卡托进行纹理坐标计算。
+  //bool useWebMercatorT = pWebMercatorProjection 
+  //&& tileRectangle.getNorth（）<= WebMercatorProjection：：MAXIMUM_LATITUDE 
+  //&& tileRectangle.getSouth（） >= -WebMercatorProjection：：MAXIMUM_LATITUDE;
 
   const CesiumGeometry::Rectangle& providerRectangle =
       this->getCoverageRectangle();
@@ -353,7 +352,7 @@ QuadtreeVectorOverlayTileProvider::getQuadtreeTile(
                 loaded.vectorModel.has_value())
             {
               // Successfully loaded, continue.
-              cachedBytes += int64_t(loaded.vectorModel->buffers.size());
+              cachedBytes += int64_t(loaded.vectorModel->layers.size());
 
 #if SHOW_TILE_BOUNDARIES
               // Highlight the edges in red to show tile boundaries.
@@ -477,7 +476,9 @@ QuadtreeVectorOverlayTileProvider::loadTileData(
               {},
               {}};
         }
-        return LoadedVectorOverlayData{VectorModel(), Rectangle(), {}, {}, {}};
+
+        VectorModel model = models.at(0).pLoaded->vectorModel.value();
+        return LoadedVectorOverlayData{std::move(model), rectangle, {}, {}, {}};
       });
 }
 
@@ -512,7 +513,7 @@ void QuadtreeVectorOverlayTileProvider::unloadCachedTiles() {
     // pointer goes out of scope, so reduce the cachedBytes accordingly.
     if (pData.use_count() == 1) {
       if (pData->vectorModel) {
-        this->_cachedBytes -= int64_t(pData->vectorModel->buffers.size());
+        this->_cachedBytes -= int64_t(pData->vectorModel->layers.size());
         assert(this->_cachedBytes >= 0);
       }
     }
