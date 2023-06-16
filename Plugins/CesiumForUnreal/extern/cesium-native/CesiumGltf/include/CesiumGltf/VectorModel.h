@@ -40,12 +40,16 @@ struct VectorLayer
 };
 
 /** @copydoc VectorModel */
-struct CESIUMGLTF_API VectorModel : public CesiumUtility::ExtensibleObject
+struct CESIUMGLTF_API VectorModel
 {
   static inline constexpr const char* TypeName = "VectorModel";
-
+  ~VectorModel()
+  {
+	  layers.clear();
+	  styles.clear();
+  }
   //一个瓦片中的所有图层
-  std::vector<VectorLayer> layers;
+  std::vector<VectorLayer> layers {};
 
   std::vector<std::string> styles = {};
 };

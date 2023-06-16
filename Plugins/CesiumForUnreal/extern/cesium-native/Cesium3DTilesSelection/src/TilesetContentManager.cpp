@@ -4,7 +4,7 @@
 #include "LayerJsonTerrainLoader.h"
 #include "TileContentLoadInfo.h"
 #include "TilesetJsonLoader.h"
-#include <Cesium3DTilesSelection/VectorTileContent.h>
+
 #include <Cesium3DTilesSelection/GltfUtilities.h>
 #include <Cesium3DTilesSelection/IPrepareRendererResources.h>
 #include <Cesium3DTilesSelection/RasterOverlay.h>
@@ -51,19 +51,7 @@ struct ContentKindSetter {
     tileContent.setContentKind(std::move(pRenderContent));
   }
 
-  void operator()(CesiumGltf::VectorModel&& model)
-  {
-    auto pRenderContent = std::make_unique<VectorTileRenderContent>(std::move(model));
-    pRenderContent->setRenderResources(pRenderResources);
-    if (rasterOverlayDetails) {
-      pRenderContent->setVectorOverlayDetails(std::move(*rasterOverlayDetails));
-    }
-
-    vectorContent.setContentKind(std::move(pRenderContent));
-  }
-
   TileContent& tileContent;
-  VectorTileContent& vectorContent;
   std::optional<RasterOverlayDetails> rasterOverlayDetails;
   void* pRenderResources;
 };
@@ -287,6 +275,40 @@ std::vector<CesiumGeospatial::Projection> mapOverlaysToTile(
     RasterOverlayTileProvider& placeholder = *placeholders[i];
 
     RasterMappedTo3DTile* pMapped = RasterMappedTo3DTile::mapOverlayToTile(
+        tilesetOptions.maximumScreenSpaceError,
+        tileProvider,
+        placeholder,
+        tile,
+        projections);
+    if (pMapped) {
+      // Try to load now, but if the mapped raster tile is a placeholder this
+      // won't do anything.
+      pMapped->loadThrottled();
+    }
+  }
+
+  return projections;
+}
+
+std::vector<CesiumGeospatial::Projection> mapVectorOverlaysToTile(
+    Tile& tile,
+    VectorOverlayCollection& overlays,
+    const TilesetOptions& tilesetOptions) 
+{
+  // 清空VectorMappedTo3DTile，然后再VectorMappedTo3DTile::mapOverlayToTile中重新添加
+  tile.getMappedVectorTiles().clear();
+  std::vector<CesiumGeospatial::Projection> projections;
+  const std::vector<CesiumUtility::IntrusivePointer<VectorOverlayTileProvider>>&
+      tileProviders = overlays.getTileProviders();
+  const std::vector<CesiumUtility::IntrusivePointer<VectorOverlayTileProvider>>&
+      placeholders = overlays.getPlaceholderTileProviders();
+  assert(tileProviders.size() == placeholders.size());
+
+  for (size_t i = 0; i < tileProviders.size() && i < placeholders.size(); ++i) {
+    VectorOverlayTileProvider& tileProvider = *tileProviders[i];
+    VectorOverlayTileProvider& placeholder = *placeholders[i];
+
+    VectorMappedTo3DTile* pMapped = VectorMappedTo3DTile::mapOverlayToTile(
         tilesetOptions.maximumScreenSpaceError,
         tileProvider,
         placeholder,
@@ -844,10 +866,9 @@ void TilesetContentManager::loadTileContent(
     // We can't load a tile that is unloading; it has to finish unloading first.
     return;
   }
-  
+
   if (tile.getState() != TileLoadState::Unloaded &&
-      tile.getState() != TileLoadState::FailedTemporarily)
-  {
+      tile.getState() != TileLoadState::FailedTemporarily) {
     // No need to load geometry, but give previously-throttled
     // raster overlay tiles a chance to load.
     for (RasterMappedTo3DTile& rasterTile : tile.getMappedRasterTiles()) {
@@ -893,11 +914,9 @@ void TilesetContentManager::loadTileContent(
   std::vector<CesiumGeospatial::Projection> projections =
       mapOverlaysToTile(tile, this->_overlayCollection, tilesetOptions);
 
-  //mapmost fengya 主要是为了实现对tile.getMappedVectorTiles()数据的管理
-  _vertorLoder.mapOverlaysToTile(
-      tile,
-      this->_vectorCollection,
-      tilesetOptions);
+  //mapmost add fengya
+  std::vector<CesiumGeospatial::Projection> vectorProjections =
+      mapVectorOverlaysToTile(tile, this->_vectorCollection, tilesetOptions);
 
   // begin loading tile
   notifyTileStartLoading(&tile);
@@ -1023,24 +1042,18 @@ bool TilesetContentManager::unloadTileContent(Tile& tile) {
     return false;
   }
 
-  //mapmost add
-  VectorTileContent& vectorContent = tile.getVectorContent();
-  if (vectorContent.isEmptyContent()) 
-  {
-    return false;
-  }
-
-  for (VectorMappedTo3DTile& mapped : tile.getMappedVectorTiles()) {
-    mapped.detachFromTile(*this->_externals.pRendererResourcesWorker, tile);
-  }
-  tile.getMappedVectorTiles().clear();
-
   // Detach raster tiles first so that the renderer's tile free
   // process doesn't need to worry about them.
   for (RasterMappedTo3DTile& mapped : tile.getMappedRasterTiles()) {
     mapped.detachFromTile(*this->_externals.pPrepareRendererResources, tile);
   }
   tile.getMappedRasterTiles().clear();
+
+  //mapmost add fengya
+  for (VectorMappedTo3DTile& mapped : tile.getMappedVectorTiles()) {
+    mapped.detachFromTile(*this->_externals.pRendererResourcesWorker, tile);
+  }
+  tile.getMappedVectorTiles().clear();
 
   // Unload the renderer resources and clear any raster overlay tiles. We can do
   // this even if the tile can't be fully unloaded because this tile's geometry
@@ -1219,22 +1232,6 @@ void TilesetContentManager::finishLoading(
   pRenderContent->setRenderResources(pMainThreadRenderResources);
   tile.setState(TileLoadState::Done);
 
-  //mapmost add
-  VectorTileContent& vectorContent = tile.getVectorContent();
-  VectorTileRenderContent* pVecRenderContent = vectorContent.getRenderContent();
-
-  //assert(pVecRenderContent != nullptr);
-  if(pVecRenderContent != nullptr)
-  {
-    void* pVecRenderResources = pVecRenderContent->getRenderResources();
-    void* pVecMainThreadRenderResources =
-        this->_externals.pRendererResourcesWorker->prepareInMainThread(
-            tile,
-            pVecRenderResources);
-    pVecRenderContent->setRenderResources(pVecMainThreadRenderResources);
-
-  }
-
   // This allows the raster tile to be updated and children to be created, if
   // necessary.
   // Priority doesn't matter here since loading is complete.
@@ -1244,24 +1241,18 @@ void TilesetContentManager::finishLoading(
 void TilesetContentManager::setTileContent(
     Tile& tile,
     TileLoadResult&& result,
-    void* pWorkerRenderResources) 
-{
-  if (result.state == TileLoadResultState::Failed) 
-  {
-	//mapmost add
-    tile.getMappedVectorTiles().clear();
+    void* pWorkerRenderResources) {
+  if (result.state == TileLoadResultState::Failed) {
     tile.getMappedRasterTiles().clear();
+    // mapmost add
+    tile.getMappedVectorTiles().clear();
     tile.setState(TileLoadState::Failed);
-  } 
-  else if (result.state == TileLoadResultState::RetryLater) 
-  {
-	//mapmost add
-    tile.getMappedVectorTiles().clear();
+  } else if (result.state == TileLoadResultState::RetryLater) {
     tile.getMappedRasterTiles().clear();
+    // mapmost add
+    tile.getMappedVectorTiles().clear();
     tile.setState(TileLoadState::FailedTemporarily);
-  }
-  else 
-  {
+  } else {
     // update tile if the result state is success
     if (result.updatedBoundingVolume) {
       tile.setBoundingVolume(*result.updatedBoundingVolume);
@@ -1272,16 +1263,14 @@ void TilesetContentManager::setTileContent(
     }
 
     auto& content = tile.getContent();
-    auto& vecContent = tile.getVectorContent();
-    ContentKindSetter contentSet = ContentKindSetter{
-        content,
-        vecContent,
-        std::move(result.rasterOverlayDetails),
-        pWorkerRenderResources};
-    std::visit(contentSet, std::move(result.contentKind));
+    std::visit(
+        ContentKindSetter{
+            content,
+            std::move(result.rasterOverlayDetails),
+            pWorkerRenderResources},
+        std::move(result.contentKind));
 
-    if (result.tileInitializer) 
-	{
+    if (result.tileInitializer) {
       result.tileInitializer(tile);
     }
 
@@ -1339,33 +1328,6 @@ void TilesetContentManager::updateContentLoadedState(
 
     tile.setState(TileLoadState::Done);
   }
-
-  //mapmost add
-  VectorTileContent& vectorContent = tile.getVectorContent();
-  if(vectorContent.isRenderContent()) 
-  {
-	  if(tilesetOptions.mainThreadLoadingTimeLimit <= 0.0)
-	  {
-		  finishLoading(tile, tilesetOptions);
-	  }
-  } 
-  else if (vectorContent.isEmptyContent())
-  {
-          double myGeometricError = tile.getNonZeroGeometricError();
-          const Tile* pAncestor = tile.getParent();
-          while (pAncestor && pAncestor->getUnconditionallyRefine()) {
-                  pAncestor = pAncestor->getParent();
-          }
-
-          double parentGeometricError =
-              pAncestor ? pAncestor->getNonZeroGeometricError()
-                        : myGeometricError * 2.0;
-          if (myGeometricError >= parentGeometricError) {
-                  tile.setUnconditionallyRefine();
-          }
-
-          tile.setState(TileLoadState::Done);
-  }
 }
 
 void TilesetContentManager::updateDoneState(
@@ -1390,13 +1352,6 @@ void TilesetContentManager::updateDoneState(
   // update raster overlay
   TileContent& content = tile.getContent();
   const TileRenderContent* pRenderContent = content.getRenderContent();
-
-  // mapmost add
-    // update vector overlay
-    VectorTileContent& vectorContent = tile.getVectorContent();
-    const VectorTileRenderContent* pVecRenderContent =
-        vectorContent.getRenderContent();
-    
   if (pRenderContent) {
     bool moreRasterDetailAvailable = false;
     bool skippedUnknown = false;
@@ -1462,6 +1417,57 @@ void TilesetContentManager::updateDoneState(
           moreDetailAvailable == RasterOverlayTile::MoreDetailAvailable::Yes;
     }
 
+	//mapmost add fengya
+    std::vector<VectorMappedTo3DTile>& vectorTiles =
+        tile.getMappedVectorTiles();
+    for (size_t i = 0; i < vectorTiles.size(); ++i) {
+      VectorMappedTo3DTile& mappedVectorTile = vectorTiles[i];
+
+      VectorOverlayTile* pLoadingTile = mappedVectorTile.getLoadingTile();
+      if (pLoadingTile && pLoadingTile->getState() ==
+                              VectorOverlayTile::LoadState::Placeholder) {
+        VectorOverlayTileProvider* pProvider =
+            this->_vectorCollection.findTileProviderForOverlay(
+                pLoadingTile->getOverlay());
+        VectorOverlayTileProvider* pPlaceholder =
+            this->_vectorCollection.findPlaceholderTileProviderForOverlay(
+                pLoadingTile->getOverlay());
+
+        // Try to replace this placeholder with real tiles.
+        if (pProvider && pPlaceholder && !pProvider->isPlaceholder()) {
+          // Remove the existing placeholder mapping
+          vectorTiles.erase(
+              vectorTiles.begin() +
+              static_cast<std::vector<VectorMappedTo3DTile>::difference_type>(
+                  i));
+          --i;
+
+          // Add a new mapping.
+          std::vector<CesiumGeospatial::Projection> missingProjections;
+          VectorMappedTo3DTile::mapOverlayToTile(
+              tilesetOptions.maximumScreenSpaceError,
+              *pProvider,
+              *pPlaceholder,
+              tile,
+              missingProjections);
+
+          if (!missingProjections.empty()) {
+            // The mesh doesn't have the right texture coordinates for this
+            // overlay's projection, so we need to kick it back to the unloaded
+            // state to fix that.
+            // In the future, we could add the ability to add the required
+            // texture coordinates without starting over from scratch.
+            unloadTileContent(tile);
+            return;
+          }
+        }
+
+        continue;
+      }
+
+      mappedVectorTile.update(*this->_externals.pRendererResourcesWorker, tile);
+    }
+
     // If this tile still has no children after it's done loading, but it does
     // have raster tiles that are not the most detailed available, create fake
     // children to hang more detailed rasters on by subdividing this tile.
@@ -1469,57 +1475,7 @@ void TilesetContentManager::updateDoneState(
         tile.getChildren().empty()) {
       createQuadtreeSubdividedChildren(tile, this->_upsampler);
     }
-  }
-  else if(pVecRenderContent)
-  {
-     std::vector<VectorMappedTo3DTile>& vectorTiles =
-          tile.getMappedVectorTiles();
-      for (size_t i = 0; i < vectorTiles.size(); ++i) {
-		  VectorMappedTo3DTile& mapVectorTile = vectorTiles[i];
-		  VectorOverlayTile* pLoadingTile = mapVectorTile.getLoadingTile();
-		if (pLoadingTile 
-		&& pLoadingTile->getState() == VectorOverlayTile::LoadState::Placeholder)
-		{
-			VectorOverlayTileProvider* pProvider = 
-			this->_vectorCollection.findTileProviderForOverlay(pLoadingTile->getOverlay());
-			VectorOverlayTileProvider* pPlaceholder = 
-			this->_vectorCollection.findPlaceholderTileProviderForOverlay(pLoadingTile->getOverlay());
-            // Try to replace this placeholder with real tiles.
-            if (pProvider && pPlaceholder &&!pProvider->isPlaceholder()) 
-			{
-				// Remove the existing placeholder mapping
-				vectorTiles.erase(
-					vectorTiles.begin() +
-					static_cast<std::vector<VectorMappedTo3DTile>::difference_type>(
-						i));
-				--i;
-
-				// Add a new mapping.
-				std::vector<CesiumGeospatial::Projection> missingProjections;
-				VectorMappedTo3DTile::mapOverlayToTile(
-					tilesetOptions.maximumScreenSpaceError,
-					*pProvider,
-					*pPlaceholder,
-					tile,
-					missingProjections);
-
-				if (!missingProjections.empty()) {
-				  // The mesh doesn't have the right texture coordinates for this
-				  // overlay's projection, so we need to kick it back to the
-				  // unloaded state to fix that. In the future, we could add the
-				  // ability to add the required texture coordinates without
-				  // starting over from scratch.
-				  unloadTileContent(tile);
-				  return;
-				}
-			}
-
-				continue;
-            }
-            mapVectorTile.update( *this->_externals.pRendererResourcesWorker, tile);
-      }
-  }
-  else {
+  } else {
     // We can't hang raster images on a tile without geometry, and their
     // existence can prevent the tile from being deemed done loading. So clear
     // them out here.
@@ -1540,21 +1496,6 @@ void TilesetContentManager::unloadContentLoadedState(Tile& tile) {
       pWorkerRenderResources,
       nullptr);
   pRenderContent->setRenderResources(nullptr);
-
-  //mapmost add
-  VectorTileContent& vectorContent = tile.getVectorContent();
-  VectorTileRenderContent* pVectorRenderContent = vectorContent.getRenderContent();
-  //assert(pVectorRenderContent && "Tile must have render content to be unloaded");
-  if(pVectorRenderContent != nullptr)
-  {
-        void* pVectoRenderResources = pRenderContent->getRenderResources();
-        _externals.pRendererResourcesWorker->free(
-            tile,
-            pVectoRenderResources,
-            nullptr);
-        pVectorRenderContent->setRenderResources(nullptr);
-
-  }
 }
 
 void TilesetContentManager::unloadDoneState(Tile& tile) {
@@ -1567,21 +1508,7 @@ void TilesetContentManager::unloadDoneState(Tile& tile) {
       tile,
       nullptr,
       pMainThreadRenderResources);
-  pRenderContent->setRenderResources(nullptr); 
-
-  // mapmost add
-  VectorTileContent& vectorContent = tile.getVectorContent();
-  VectorTileRenderContent* pVectorRenderContent =
-      vectorContent.getRenderContent();
-  //assert(pVectorRenderContent && "Tile must have render content to be unloaded");
-  if (pVectorRenderContent != nullptr) {
-        void* pVectoRenderResources = pRenderContent->getRenderResources();
-        _externals.pRendererResourcesWorker->free(
-            tile,
-            nullptr,
-            pVectoRenderResources);
-        pVectorRenderContent->setRenderResources(nullptr);
-  }
+  pRenderContent->setRenderResources(nullptr);
 }
 
 void TilesetContentManager::notifyTileStartLoading(

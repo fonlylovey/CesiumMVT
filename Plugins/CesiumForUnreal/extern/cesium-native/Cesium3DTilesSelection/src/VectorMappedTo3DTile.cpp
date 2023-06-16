@@ -318,12 +318,12 @@ VectorMappedTo3DTile* addRealTile(
   const Projection& projection = tileProvider.getProjection();
 
   // If the tile is loaded, use the precise rectangle computed from the content.
-  const VectorTileContent& content = tile.getVectorContent();
-  const VectorTileRenderContent* pRenderContent = content.getRenderContent();
+  const TileContent& content = tile.getContent();
+  const TileRenderContent* pRenderContent = content.getRenderContent();
   if (pRenderContent)
   {
-    const VectorOverlayDetails& overlayDetails =
-        pRenderContent->getVectorOverlayDetails();
+    const RasterOverlayDetails& overlayDetails =
+        pRenderContent->getRasterOverlayDetails();
     const Rectangle* pRectangle =
         overlayDetails.findRectangleForOverlayProjection(projection);
     if (pRectangle)
@@ -391,14 +391,14 @@ void VectorMappedTo3DTile::computeTranslationAndScale(const Tile& tile) {
     return;
   }
 
-  const VectorTileRenderContent* pRenderContent =
-      tile.getVectorContent().getRenderContent();
+  const TileRenderContent* pRenderContent =
+      tile.getContent().getRenderContent();
   if (!pRenderContent) {
     return;
   }
 
-  const VectorOverlayDetails& overlayDetails =
-      pRenderContent->getVectorOverlayDetails();
+  const RasterOverlayDetails& overlayDetails =
+      pRenderContent->getRasterOverlayDetails();
   const VectorOverlayTileProvider& tileProvider =
       this->_pReadyTile->getTileProvider();
 

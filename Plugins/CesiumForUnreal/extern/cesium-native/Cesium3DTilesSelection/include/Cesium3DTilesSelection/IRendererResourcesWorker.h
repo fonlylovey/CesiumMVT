@@ -2,7 +2,6 @@
 
 #include "Library.h"
 #include "TileLoadResult.h"
-#include "VectorTileLoadResult.h"
 
 #include <CesiumAsync/Future.h>
 
@@ -28,10 +27,6 @@ namespace Cesium3DTilesSelection {
 
 class Tile;
 class VectorOverlayTile;
-struct VectorTileLoadResultAndRenderResources {
-  VectorTileLoadResult result;
-  void* pResourcesWorker{nullptr};
-};
 
 /**
  * @brief When implemented for a rendering engine, allows renderer resources to
@@ -48,65 +43,6 @@ struct VectorTileLoadResultAndRenderResources {
 class CESIUM3DTILESSELECTION_API IRendererResourcesWorker {
 public:
   virtual ~IRendererResourcesWorker() = default;
-
-  /**
-   * @brief Prepares renderer resources for the given tile. This method is
-   * invoked in the load thread.
-   *
-   * @param asyncSystem The AsyncSystem used to do work in threads.
-   * @param tileLoadResult The tile data loaded so far.
-   * @param transform The tile's transformation.
-   * @param rendererOptions Renderer options associated with the tile from
-   * {@link TilesetOptions::rendererOptions}.
-   * @returns A future that resolves to the loaded tile data along with
-   * arbitrary "render resources" data representing the result of the load
-   * process. The loaded data may be the same as was originally given to this
-   * method, or it may be modified. The render resources are passed to
-   * {@link prepareInMainThread} as the `pLoadThreadResult` parameter.
-   */
-  virtual CesiumAsync::Future<VectorTileLoadResultAndRenderResources>
-  prepareInLoadThread(
-      const CesiumAsync::AsyncSystem& asyncSystem,
-      VectorTileLoadResult&& tileLoadResult,
-      const glm::dmat4& transform,
-      const std::any& rendererOptions) = 0;
-
-  /**
-   * @brief Further prepares renderer resources.
-   *
-   * This is called after {@link prepareInLoadThread}, and unlike that method,
-   * this one is called from the same thread that called
-   * {@link Tileset::updateView}.
-   *
-   * @param tile The tile to prepare.
-   * @param pLoadThreadResult The value returned from
-   * {@link prepareInLoadThread}.
-   * @returns Arbitrary data representing the result of the load process.
-   * Note that the value returned by {@link prepareInLoadThread} will _not_ be
-   * automatically preserved and passed to {@link free}. If you need to free
-   * that value, do it in this method before returning. If you need that value
-   * later, add it to the object returned from this method.
-   */
-  virtual void* prepareInMainThread(Tile& tile, void* pLoadThreadResult) = 0;
-
-  /**
-   * @brief Frees previously-prepared renderer resources.
-   *
-   * This method is always called from the thread that called
-   * {@link Tileset::updateView} or deleted the tileset.
-   *
-   * @param tile The tile for which to free renderer resources.
-   * @param pLoadThreadResult The result returned by
-   * {@link prepareInLoadThread}. If {@link prepareInMainThread} has
-   * already been called, this parameter will be `nullptr`.
-   * @param pMainThreadResult The result returned by
-   * {@link prepareInMainThread}. If {@link prepareInMainThread} has
-   * not yet been called, this parameter will be `nullptr`.
-   */
-  virtual void free(
-      Tile& tile,
-      void* pLoadThreadResult,
-      void* pMainThreadResult) noexcept = 0;
 
   /**
    * @brief Prepares a Vector overlay tile.

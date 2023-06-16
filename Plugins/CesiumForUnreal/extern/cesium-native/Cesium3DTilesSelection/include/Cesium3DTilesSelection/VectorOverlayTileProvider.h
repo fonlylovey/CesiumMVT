@@ -26,41 +26,24 @@ class IRendererResourcesWorker;
  * @brief Summarizes the result of loading an image of a {@link VectorOverlay}.
  */
 struct CESIUM3DTILESSELECTION_API LoadedVectorOverlayData {
-  /**
-   * @brief The loaded image.
-   *
-   * This will be an empty optional if the loading failed. In this case,
-   * the `errors` vector will contain the corresponding error messages.
-   */
+
   std::optional<CesiumGltf::VectorModel> vectorModel = {};
-  /**
-   * @brief The projected rectangle defining the bounds of this image.
-   *
-   * The rectangle extends from the left side of the leftmost pixel to the
-   * right side of the rightmost pixel, and similar for the vertical direction.
-   */
+
   CesiumGeometry::Rectangle rectangle = {};
 
-  /**
-   * @brief The {@link Credit} objects that decribe the attributions that
-   * are required when using the image.
-   */
   std::vector<Credit> credits = {};
 
-  /**
-   * @brief Error messages from loading the image.
-   *
-   * If the image was loaded successfully, this should be empty.
-   */
   std::vector<std::string> errors = {};
 
-  /**
-   * @brief Warnings from loading the image.
-   */
-  // Implementation note: In the current implementation, this will
-  // always be empty, but it might contain warnings in the future,
-  // when other image types or loaders are used.
   std::vector<std::string> warnings = {};
+
+  // 判断是否为有效的数据请求
+  bool isSuccess() {
+    if (errors.empty() && warnings.empty()) {
+      return true;
+    }
+    return false;
+  }
 };
 
 /**

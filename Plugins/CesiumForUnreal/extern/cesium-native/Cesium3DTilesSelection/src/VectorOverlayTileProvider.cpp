@@ -141,7 +141,7 @@ VectorOverlayTileProvider::loadTileDataFromUrl(
         if (pResponse == nullptr)
         {
           return LoadedVectorOverlayData{
-              std::nullopt,
+              {},
               options.rectangle,
               std::move(options.credits),
               {"Vector request for " + tileUrl + " failed."},
@@ -155,7 +155,7 @@ VectorOverlayTileProvider::loadTileDataFromUrl(
                                 std::to_string(pResponse->statusCode()) +
                                 " for " + tileUrl;
           return LoadedVectorOverlayData{
-              std::nullopt,
+              {},
               options.rectangle,
               std::move(options.credits),
               {message},
@@ -166,7 +166,7 @@ VectorOverlayTileProvider::loadTileDataFromUrl(
         {
 
           return LoadedVectorOverlayData{
-              std::nullopt,
+              {},
               options.rectangle,
               std::move(options.credits),
               {"vector request for " + tileUrl + " failed."},
@@ -236,16 +236,12 @@ static LoadResult createLoadResultFromLoadedData(
   }
 
   CesiumGltf::VectorModel& model = loadedData.vectorModel.value();
-  if (model.styles.size() == 0)
+  if (model.layers.size() > 0)
   {
-    CESIUM_TRACE(
-        "Prepare Vector " + std::to_string(image.width) + "x" +
-        std::to_string(image.height) + "x" + std::to_string(image.channels) +
-        "x" + std::to_string(image.bytesPerChannel));
-
-   void* pRendererResources = nullptr;
-    if (pRendererResourcesWorker) {
-     pRendererResources = pRendererResourcesWorker->prepareVectorInLoadThread(
+    void* pRendererResources = nullptr;
+    if (pRendererResourcesWorker) 
+	{
+      pRendererResources = pRendererResourcesWorker->prepareVectorInLoadThread(
           model,
           rendererOptions);
     }

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "RasterOverlayUpsampler.h"
-#include "TilesetVectorLoader.h"
 #include "TilesetContentLoaderResult.h"
 
 #include <Cesium3DTilesSelection/CreditSystem.h>
@@ -48,13 +47,6 @@ public:
       int64_t ionAssetID,
       const std::string& ionAccessToken,
       const std::string& ionAssetEndpointUrl = "https://api.cesium.com/");
-
-  TilesetContentManager(
-      const TilesetExternals& externals,
-      const TilesetOptions& tilesetOptions,
-      VectorOverlayCollection&& vectorCollection,
-      std::vector<CesiumAsync::IAssetAccessor::THeader>&& requestHeaders,
-      const std::string& url);
 
   /**
    * @brief A future that resolves after all async operations initiated by this
@@ -155,7 +147,6 @@ private:
   std::optional<Credit> _userCredit;
   std::vector<Credit> _tilesetCredits;
   RasterOverlayUpsampler _upsampler;
-  TilesetVectorLoader _vertorLoder;
   RasterOverlayCollection _overlayCollection;
   VectorOverlayCollection _vectorCollection;
   int32_t _tileLoadsInProgress;

@@ -1,57 +1,10 @@
 #include "VectorResourceWorker.h"
 #include "CesiumGltfComponent.h"
+#include "CesiumVectorComponent.h"
 #include "CreateGltfOptions.h"
 #include "CesiumVectorOverlay.h"
+#include "Cesium3DTilesSelection/VectorOverlayTile.h"
 
-void* VectorResourceWorker::prepareInMainThread(Cesium3DTilesSelection::Tile& tile, void* pLoadThreadResult)
-{
-    const Cesium3DTilesSelection::TileContent& content = tile.getContent();
-    if (content.isRenderContent()) {
-        TUniquePtr<UCesiumGltfComponent::HalfConstructed> pHalf(
-            reinterpret_cast<UCesiumGltfComponent::HalfConstructed*>(
-                pLoadThreadResult));
-        const Cesium3DTilesSelection::TileRenderContent& renderContent =
-            *content.getRenderContent();
-        return UCesiumGltfComponent::CreateOnGameThread(
-            renderContent.getModel(),
-            this->_pActor,
-            std::move(pHalf),
-            _pActor->GetCesiumTilesetToUnrealRelativeWorldTransform(),
-            this->_pActor->GetMaterial(),
-            this->_pActor->GetTranslucentMaterial(),
-            this->_pActor->GetWaterMaterial(),
-            this->_pActor->GetCustomDepthParameters(),
-            tile.getContentBoundingVolume().value_or(tile.getBoundingVolume()),
-            this->_pActor->GetCreateNavCollision());
-    }
-    // UE_LOG(LogCesium, VeryVerbose, TEXT("No content for tile"));
-    return nullptr;
-}
-
-CesiumAsync::Future<Cesium3DTilesSelection::VectorTileLoadResultAndRenderResources> VectorResourceWorker::prepareInLoadThread(
-	const CesiumAsync::AsyncSystem& asyncSystem, Cesium3DTilesSelection::VectorTileLoadResult&& tileLoadResult,
-	const glm::dmat4& transform, const std::any& rendererOptions)
-{
-	CreateGltfOptions::CreateModelOptions options;
-	TUniquePtr<UCesiumGltfComponent::HalfConstructed> pHalf =
-		UCesiumGltfComponent::CreateOffGameThread(transform, options);
-	return asyncSystem.createResolvedFuture(Cesium3DTilesSelection::VectorTileLoadResultAndRenderResources{
-		std::move(tileLoadResult),
-		pHalf.Release()});
-}
-
-void* VectorResourceWorker::prepareVectorInMainThread(Cesium3DTilesSelection::VectorOverlayTile& vectorTile,
-    void* pLoadThreadResult)
-{
-    TUniquePtr<CesiumTextureUtility::LoadedTextureResult> pLoadedTexture{
-         static_cast<CesiumTextureUtility::LoadedTextureResult*>(
-             pLoadThreadResult) };
-
-    if (!pLoadedTexture) {
-        return nullptr;
-    }
-    return pLoadThreadResult;
-}
 
 void* VectorResourceWorker::prepareVectorInLoadThread(CesiumGltf::VectorModel& model, const std::any& rendererOptions)
 {
@@ -62,25 +15,69 @@ void* VectorResourceWorker::prepareVectorInLoadThread(CesiumGltf::VectorModel& m
         return nullptr;
     }
     auto pOptions = *ppOptions;
+	CesiumGltf::VectorModel* theModel = new CesiumGltf::VectorModel;
+	if(model.layers.size() > 0)
+	{
+		theModel->layers = model.layers;
+	}
+	
+    return theModel;
+}
 
-    return &model;
+void* VectorResourceWorker::prepareVectorInMainThread(Cesium3DTilesSelection::VectorOverlayTile& vectorTile,
+    void* pLoadThreadResult)
+{
+	CesiumGltf::VectorModel* pModelData = static_cast<CesiumGltf::VectorModel*>(pLoadThreadResult);
+	std::cout << "MainThread" << pLoadThreadResult << std::endl;
+	if(pModelData->layers.size() > 0)
+	{
+		glm::dmat4x4 transform;
+		ULineBatchComponent* lineBatch = UCesiumVectorComponent::CreateTest(*pModelData, _pActor, transform);
+		return pLoadThreadResult;
+	}
+	//TUniquePtr<Cesium3DTilesSelection::LoadedVectorOverlayData> pLoadedOverlayData{
+	//		static_cast<Cesium3DTilesSelection::LoadedVectorOverlayData*>(
+	//			pLoadThreadResult)};
+	return nullptr;
 }
 
 void VectorResourceWorker::attachVectorInMainThread(const Cesium3DTilesSelection::Tile& tile,
 	int32_t overlayTextureCoordinateID, const Cesium3DTilesSelection::VectorOverlayTile& VectorTile,
 	void* pMainThreadRendererResources, const glm::dvec2& translation, const glm::dvec2& scale)
 {
+	const Cesium3DTilesSelection::TileContent& content = tile.getContent();
+    const Cesium3DTilesSelection::TileRenderContent* pRenderContent = content.getRenderContent();
+	if(pRenderContent != nullptr)
+	{
+		 UCesiumGltfComponent* pGltfContent = reinterpret_cast<UCesiumGltfComponent*>(
+              pRenderContent->getRenderResources());
+		CesiumGltf::VectorModel vectorModel = VectorTile.getVectorModel();
+		CesiumGltf::VectorModel* ptrModel = static_cast<CesiumGltf::VectorModel*>(pMainThreadRendererResources);
+		
+		if(pMainThreadRendererResources != nullptr && ptrModel->layers.size() > 0)
+		{
+			glm::dmat4x4 transform;
+			transform;
+			//ULineBatchComponent* lineBatch = UCesiumVectorComponent::CreateTest(vectorModel, _pActor, transform);
+		}
+		/*
+		 CesiumGltf::VectorModel* vectorModel = static_cast<CesiumGltf::VectorModel*>(pMainThreadRendererResources);
+		 auto ptrLoaded = static_cast<Cesium3DTilesSelection::LoadedVectorOverlayData*>(pMainThreadRendererResources);
+		 TUniquePtr<Cesium3DTilesSelection::LoadedVectorOverlayData> pLoadedVector;
+		 pLoadedVector.Reset(ptrLoaded);
+		 if(vectorModel->layers.size() > 0)
+		 {
+			 glm::dmat4x4 transform;
+			 //ULineBatchComponent* lineBatch = UCesiumVectorComponent::CreateTest(*vectorModel, _pActor, transform);
+		 }
+		 */
+	}
 
 }
 
 void VectorResourceWorker::detachVectorInMainThread(const Cesium3DTilesSelection::Tile& tile,
 	int32_t overlayTextureCoordinateID, const Cesium3DTilesSelection::VectorOverlayTile& VectorTile,
 	void* pMainThreadRendererResources) noexcept
-{
-}
-
-void VectorResourceWorker::free(Cesium3DTilesSelection::Tile& tile, void* pLoadThreadResult,
-	void* pMainThreadResult) noexcept
 {
 }
 

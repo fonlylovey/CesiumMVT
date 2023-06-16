@@ -19,22 +19,6 @@ namespace Cesium3DTilesSelection {
 Tile::Tile(TilesetContentLoader* pLoader) noexcept
     : Tile(TileConstructorImpl{}, TileLoadState::Unloaded, pLoader) {}
 
-Tile::Tile(TilesetVectorContentLoader* pLoader) noexcept
-    : Tile(TileConstructorImpl{}, TileLoadState::Unloaded, nullptr) {
-  _pParent = nullptr;
-  _id = ""s;
-  _boundingVolume = OrientedBoundingBox(glm::dvec3(), glm::dmat3());
-  _geometricError = 0.0;
-  _refine = TileRefine::Replace;
-  _transform = glm::dmat4x4(1.0);
-  _lastSelectionState = {};
-  _loadedTilesLinks = {};
-  _pLoader = nullptr;
-  _pVectorLoader = pLoader;
-  _loadState = TileLoadState::Unloaded;
-  _shouldContentContinueUpdating = true;
-} 
-
 Tile::Tile(
     TilesetContentLoader* pLoader,
     TileExternalContent externalContent) noexcept

@@ -6,7 +6,6 @@
 #include "VectorMappedTo3DTile.h"
 
 #include "TileContent.h"
-#include "VectorTileContent.h"
 #include "TileID.h"
 #include "TileRefine.h"
 #include "TileSelectionState.h"
@@ -26,7 +25,6 @@
 
 namespace Cesium3DTilesSelection {
 class TilesetContentLoader;
-class TilesetVectorContentLoader;
 
 /**
  * The current state of this tile in the loading process.
@@ -109,8 +107,6 @@ public:
    * @param pLoader The {@link TilesetContentLoader} that is used to load the tile.
    */
   explicit Tile(TilesetContentLoader* pLoader) noexcept;
-
-  explicit Tile(TilesetVectorContentLoader* pLoader) noexcept;
 
   /**
    * @brief Construct a tile with an external content and a loader that is
@@ -473,16 +469,6 @@ public:
   /** @copydoc Tile::getContent() */
   TileContent& getContent() noexcept { return _content; }
 
-    /**
-   * @brief get the content of the vector tile.
-   */
-  const VectorTileContent& getVectorContent() const noexcept {
-    return _vectorContent;
-  }
-
-  /** @copydoc Tile::getContent() */
-  VectorTileContent& getVectorContent() noexcept { return _vectorContent; }
-
   /**
    * @brief Determines if this tile is currently renderable.
    */
@@ -555,9 +541,7 @@ private:
   // tile content
   CesiumUtility::DoublyLinkedListPointers<Tile> _loadedTilesLinks;
   TileContent _content;
-  VectorTileContent _vectorContent;
   TilesetContentLoader* _pLoader;
-  TilesetVectorContentLoader* _pVectorLoader;
   TileLoadState _loadState;
   bool _shouldContentContinueUpdating;
 
