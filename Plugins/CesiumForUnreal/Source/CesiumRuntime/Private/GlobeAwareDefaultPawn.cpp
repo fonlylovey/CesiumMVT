@@ -20,6 +20,7 @@
 #include <glm/gtc/matrix_inverse.hpp>
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtx/rotate_vector.hpp>
+#include "Curves/CurveFloat.h"
 
 AGlobeAwareDefaultPawn::AGlobeAwareDefaultPawn() : ADefaultPawn() {
   PrimaryActorTick.bCanEverTick = true;

@@ -4,6 +4,8 @@
 #include "Cesium3DTilesSelection/IRendererResourcesWorker.h"
 #include "Cesium3DTileset.h"
 
+class GeoTransforms;
+
 namespace Cesium3DTilesSelection {
 class VectorOverlayTile;
 } // namespace Cesium3DTilesSelection
@@ -31,9 +33,14 @@ public:
 		const Cesium3DTilesSelection::VectorOverlayTile& VectorTile,
 		void* pMainThreadRendererResources) noexcept override;
 
+	virtual void free(Cesium3DTilesSelection::Tile& tile,
+      void* pLoadThreadResult,
+      void* pMainThreadResult) noexcept override;
+
 	virtual void freeVector(const Cesium3DTilesSelection::VectorOverlayTile& vectorTile, void* pLoadThreadResult,
 		void* pMainThreadResult) noexcept override;
 
 private:
 	ACesium3DTileset* _pActor;
+	GeoTransforms _geoTransforms;
 };

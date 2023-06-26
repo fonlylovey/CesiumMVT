@@ -27,35 +27,6 @@ UCesiumVectorComponent* UCesiumVectorComponent::CreateOnGameThread(
 	return mvtComponent;
 }
 
-ULineBatchComponent* UCesiumVectorComponent::CreateTest(const CesiumGltf::VectorModel& model,
-														AActor* pParentActor,
-														const glm::dmat4x4& CesiumToUnrealTransform)
-{
-	ULineBatchComponent* lineBatchComponent = NewObject<ULineBatchComponent>(pParentActor, TEXT("Line"));
-	lineBatchComponent->RegisterComponent();
-	TArray<FBatchedLine> batchLineArray;
-	batchLineArray.Empty();
-	for (const CesiumGltf::VectorLayer& layer : model.layers)
-	{
-		for (const CesiumGltf::VectorFeature& feature : layer.features)
-		{
-			for (int i = 0; i < feature.points.size() - 1; i++ )
-			{
-				FVector start = FVector(feature.points[i].x,   feature.points[i].y,   feature.points[i].y);
-				FVector end = FVector(feature.points[i-1].x, feature.points[i-1].y, feature.points[i-1].y);
-				FBatchedLine line = FBatchedLine(start, end,FLinearColor::Red, 5, 10, 0);
-				batchLineArray.Add(line);
-			}
-		}
-	}
-	
-	lineBatchComponent->BatchedLines.Empty();
-	lineBatchComponent->DrawLines(batchLineArray);
-
-	return lineBatchComponent;
-
-}
-
 // 设置默认值
 UCesiumVectorComponent::UCesiumVectorComponent()
 {
@@ -69,7 +40,6 @@ UCesiumVectorComponent::~UCesiumVectorComponent()
 
 void UCesiumVectorComponent::BuildMesh(const CesiumGltf::VectorModel& model)
 {
-
 	for (const CesiumGltf::VectorLayer& layer : model.layers)
 	{
 

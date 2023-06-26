@@ -35,9 +35,6 @@ public:
 		UMaterialInterface* BaseMaterial,
 		const Cesium3DTilesSelection::BoundingVolume& boundingVolume,
 		bool createNavCollision);
-	static ULineBatchComponent* CreateTest(const CesiumGltf::VectorModel& model,
-										   AActor* pParentActor, 
-										   const glm::dmat4x4& CesiumToUnrealTransform);
 
 	UCesiumVectorComponent();
 	virtual ~UCesiumVectorComponent();
@@ -66,4 +63,5 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Cesium")
 	UMaterialInterface* BaseMaterial = nullptr;
+
 };
