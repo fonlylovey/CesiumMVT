@@ -16,11 +16,32 @@
 #include <cassert>
 #include <optional>
 
-namespace Cesium3DTilesSelection {
+namespace Cesium3DTilesSelection 
+{
 
 class VectorOverlay;
 class VectorOverlayTile;
 class IRendererResourcesWorker;
+
+struct BoxExtent
+{
+	double LowerCornerLon = 0.0;
+	double LowerCornerLat = 0.0;
+	double UpperCornerLon = 0.0;
+	double UpperCornerLat = 0.0;
+};
+
+struct TileMatrix 
+{
+    std::string Identifier = "";
+	double ScaleDenominator = 0.0;
+    double TopLeftCornerLon = 0.0;
+    double TopLeftCornerLat = 0.0;
+    int TileWidth = 0.0;
+    int TileHeight = 0.0;
+    int MatrixWidth = 0.0;
+    int MatrixHeight = 0.0;
+};
 
 /**
  * @brief Summarizes the result of loading an image of a {@link VectorOverlay}.
@@ -68,20 +89,17 @@ struct LoadVectorTileDataFromUrlOptions {
    * @brief Whether empty (zero length) images are accepted as a valid
    * response.
    *
-   * If true, an otherwise valid response with zero length will be accepted as
-   * a valid 0x0 image. If false, such a response will be reported as an
-   * error.
-   *
-   * {@link VectorOverlayTileProvider::loadTile} and
-   * {@link VectorOverlayTileProvider::loadTileThrottled} will treat such an
-   * image as "failed" and use the quadtree parent (or ancestor) image
-   * instead, but will not report any error.
-   *
-   * This flag should only be set to `true` when the tile source uses a
-   * zero-length response as an indication that this tile is - as expected -
-   * not available.
    */
   bool allowEmptyVector = false;
+
+  // 当前瓦片的层级
+  int level = 0;
+
+  //瓦片的行号
+  int Row = 0;
+
+  //瓦片的列号
+  int Col = 0;
 };
 
 /**
@@ -308,6 +326,12 @@ public:
    */
   bool loadTileThrottled(VectorOverlayTile& tile);
 
+  BoxExtent _boxExtent;
+
+  //<level,TileMatrix>
+  std::map<int, TileMatrix> _TileMatrixMap;
+
+
 protected:
   /**
    * @brief Loads the image for a tile.
@@ -368,6 +392,7 @@ private:
   int64_t _tileDataBytes;
   int32_t _totalTilesCurrentlyLoading;
   int32_t _throttledTilesCurrentlyLoading;
+ 
   CESIUM_TRACE_DECLARE_TRACK_SET(
       _loadingSlots,
       "Vector Overlay Tile Loading Slot");

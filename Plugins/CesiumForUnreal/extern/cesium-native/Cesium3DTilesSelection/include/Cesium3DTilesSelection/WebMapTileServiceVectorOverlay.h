@@ -69,6 +69,10 @@ struct WebMapTileServiceVectorOverlayOptions {
   std::string style = "";
 
   std::string tileMatrixSet = "EPSG:4326";
+
+  float OriginX = 0;
+
+  float OriginY = 0;
 };
 
 /**

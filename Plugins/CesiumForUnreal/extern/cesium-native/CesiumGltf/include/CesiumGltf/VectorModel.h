@@ -52,5 +52,15 @@ struct CESIUMGLTF_API VectorModel
   std::vector<VectorLayer> layers {};
 
   std::vector<std::string> styles = {};
+
+  // ²ã¼¶
+  int level = 0;
+
+  // ÐÐºÅ
+  int Row = 0;
+
+  // ÁÐºÅ
+  int Col = 0;
+
 };
 } // namespace CesiumGltf

@@ -40,7 +40,8 @@ class VectorOverlayTile;
  * {@link TilesetExternals} structure that can be obtained
  * via {@link Tileset::getExternals}.
  */
-class CESIUM3DTILESSELECTION_API IRendererResourcesWorker {
+class CESIUM3DTILESSELECTION_API IRendererResourcesWorker 
+{
 public:
   virtual ~IRendererResourcesWorker() = default;
 
@@ -93,11 +94,16 @@ public:
    * {@link prepareVectorInMainThread}. If {@link prepareVectorInMainThread}
    * has not yet been called, this parameter will be `nullptr`.
    */
-  virtual void freeVector(
-      const VectorOverlayTile& vectorTile,
+  virtual void free(
+      Tile& tile,
       void* pLoadThreadResult,
       void* pMainThreadResult) noexcept = 0;
 
+	//
+	virtual void freeVector(
+		const Cesium3DTilesSelection::VectorOverlayTile& vectorTile,
+		void* pLoadThreadResult,
+		void* pMainThreadResult) noexcept = 0;
   /**
    * @brief Attaches a Vector overlay tile to a geometry tile.
    *

@@ -1495,6 +1495,11 @@ void TilesetContentManager::unloadContentLoadedState(Tile& tile) {
       tile,
       pWorkerRenderResources,
       nullptr);
+  //mapmost add by fengya
+  this->_externals.pRendererResourcesWorker->free(
+      tile,
+      pWorkerRenderResources,
+      nullptr);
   pRenderContent->setRenderResources(nullptr);
 }
 
@@ -1508,6 +1513,13 @@ void TilesetContentManager::unloadDoneState(Tile& tile) {
       tile,
       nullptr,
       pMainThreadRenderResources);
+
+  // mapmost add by fengya
+  this->_externals.pRendererResourcesWorker->free(
+      tile,
+      pMainThreadRenderResources,
+      nullptr);
+
   pRenderContent->setRenderResources(nullptr);
 }
 

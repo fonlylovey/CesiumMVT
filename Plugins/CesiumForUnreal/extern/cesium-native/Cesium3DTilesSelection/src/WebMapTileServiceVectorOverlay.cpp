@@ -18,6 +18,7 @@
 
 #include <cstddef>
 #include <sstream>
+#include <iostream>
 
 using namespace CesiumAsync;
 using namespace CesiumGeometry;
@@ -82,7 +83,7 @@ protected:
 
     LoadVectorTileDataFromUrlOptions options;
     options.rectangle = this->getTilingScheme().tileToRectangle(tileID);
-
+	
     const CesiumGeospatial::GlobeRectangle tileRectangle =
         CesiumGeospatial::unprojectRectangleSimple(
             this->getProjection(),
@@ -93,7 +94,7 @@ protected:
         "?Request=GetTile&Service=WMTS&Version={version}"
         "&Layer={layer}&Style={style}&TileMatrix={tileMatrix}&TileMatrixSet={tileMatrixSet}"
         "&Format=application/vnd.mapbox-vector-tile"
-        "&TileCol={tileRow}&TileRow={tileCol}";
+        "&TileCol={tileCol}&TileRow={tileRow}";
 
     const auto radiansToDegrees = [](double rad) {
       return std::to_string(CesiumUtility::Math::radiansToDegrees(rad));
@@ -101,6 +102,7 @@ protected:
     
     double wmtsY = glm::pow(2, tileID.level) - 1.f - (double)tileID.y;
 
+	//瓦片坐标的X值是Col，Y值是Row
     const std::map<std::string, std::string> urlTemplateMap = {
         {"baseUrl", this->_url},
         {"version", this->_version},
@@ -108,8 +110,17 @@ protected:
         {"style", this->_style},
         {"tileMatrix", this->_tileMatrixSet + ":" + std::to_string(tileID.level)},
         {"tileMatrixSet", this->_tileMatrixSet},
-        {"tileRow", std::to_string(tileID.x)},
-        {"tileCol", std::to_string((int)wmtsY)}};
+        {"tileRow", std::to_string((int)wmtsY)},
+        {"tileCol", std::to_string(tileID.x)}};
+
+    options.level = tileID.level;
+    options.Row = (int)wmtsY;
+    options.Col = tileID.x;
+
+	std::string strInfo =	"  Col: " + std::to_string(options.Col) +
+							"  Row: " +std::to_string(options.Row) + 
+							"Level: " + std::to_string(options.level);
+    std::cout << strInfo << std::endl;
 
     std::string url = CesiumUtility::Uri::substituteTemplateParameters(
         urlTemplate,
@@ -118,7 +129,7 @@ protected:
           return it == map.end() ? "{" + placeholder + "}"
                                  : Uri::escape(it->second);
         });
-
+  
     return this->loadTileDataFromUrl(url, this->_headers, std::move(options));
   }
 
@@ -243,18 +254,91 @@ WebMapTileServiceVectorOverlay::createTileProvider(
             std::string strLayerName = "";
             if (pTitle != nullptr)
             {
-              strLayerName = pTitle->GetText();
+                strLayerName = pTitle->GetText();
             }
 
-            const auto projection = CesiumGeospatial::GeographicProjection();
+			tinyxml2::XMLElement* pBox = pLayer->FirstChildElement("ows:WGS84BoundingBox");
+            BoxExtent extent;
+            if (pBox != nullptr) 
+			{
+                tinyxml2::XMLElement* pNode =
+                    pBox->FirstChildElement("ows:LowerCorner");
+                std::istringstream isCorners(pNode->GetText());
+                isCorners >> extent.LowerCornerLon;
+                isCorners >> extent.LowerCornerLat;
+				pNode = pNode->NextSiblingElement();
+                isCorners = std::istringstream(pNode->GetText());
+                isCorners >> extent.UpperCornerLon;
+                isCorners >> extent.UpperCornerLat;
+            }
 
-            CesiumGeospatial::GlobeRectangle tilingSchemeRectangle =
-                CesiumGeospatial::GeographicProjection::MAXIMUM_GLOBE_RECTANGLE;
+			std::map<int , TileMatrix> matrixMap;
+			tinyxml2::XMLElement* pTileMatrixSet = pContents->FirstChildElement("TileMatrixSet");
+            if (pTileMatrixSet != nullptr) 
+			{
+                std::string srs = "";
+                tinyxml2::XMLElement* pIdentNode =
+                    pTileMatrixSet->FirstChildElement("ows:Identifier");
+				if (pIdentNode != nullptr)
+				{
+					srs = pIdentNode->GetText();
+				}
+				tinyxml2::XMLElement* pTileMatrix =
+                                    pTileMatrixSet->FirstChildElement("TileMatrix");
+				while (pTileMatrix != nullptr)
+				{
+					tinyxml2::XMLElement* pNode = pTileMatrix->FirstChildElement("ows:Identifier");
+					assert(pNode != nullptr);
+					TileMatrix matrix;
+					matrix.Identifier = pNode->GetText();
+					pNode = pNode->NextSiblingElement();
+					matrix.ScaleDenominator = pNode->FloatText();
+					pNode = pNode->NextSiblingElement();
+					std::string strCorner = pNode->GetText();
+					std::istringstream isCorners(strCorner);
+					isCorners >> matrix.TopLeftCornerLat;
+					isCorners >> matrix.TopLeftCornerLon;
+					pNode = pNode->NextSiblingElement();
+					matrix.TileWidth = pNode->IntText();
+					pNode = pNode->NextSiblingElement();
+					matrix.TileHeight = pNode->IntText();
+					pNode = pNode->NextSiblingElement();
+					matrix.MatrixWidth = pNode->IntText();
+					pNode = pNode->NextSiblingElement();
+					matrix.MatrixHeight = pNode->IntText();
+					std::string strLevel = matrix.Identifier.replace(0, srs.size() + 1, "");
+					int level = atoi(strLevel.c_str());
+					matrixMap.insert(std::make_pair(level, matrix));
+					pTileMatrix = pTileMatrix->NextSiblingElement("TileMatrix");
+				}
+            }
 
-            CesiumGeometry::Rectangle coverageRectangle =
-                projectRectangleSimple(projection, tilingSchemeRectangle);
+			//0级的时候初始的列有几个瓦片
+			int StartColCount = 2;
+			CesiumGeospatial::Projection projection;
+            CesiumGeospatial::GlobeRectangle tilingSchemeRectangle(0.0, 0.0, 0.0, 0.0);
+			if (options.tileMatrixSet == "EPSG:4326") 
+			{
+				projection = CesiumGeospatial::GeographicProjection();
+				tilingSchemeRectangle = CesiumGeospatial::GeographicProjection::MAXIMUM_GLOBE_RECTANGLE;
+				StartColCount = 2;
+            } 
+			else if (options.tileMatrixSet == "EPSG:3857"  || options.tileMatrixSet == "EPSG:900913") 
+			{
+                projection = CesiumGeospatial::WebMercatorProjection();
+                tilingSchemeRectangle = CesiumGeospatial::WebMercatorProjection::MAXIMUM_GLOBE_RECTANGLE;
+                StartColCount = 1;
+            } 
+			else 
+			{
+                return nonstd::make_unexpected(VectorOverlayLoadFailureDetails{
+                    RasterOverlayLoadType::TileProvider, std::move(pRequest),
+                    "Tileset contained an unknown projection "});        
+            }
 
-            const int rootTilesX = 2;
+            CesiumGeometry::Rectangle coverageRectangle = projectRectangleSimple(projection, tilingSchemeRectangle);
+
+            const int rootTilesX = StartColCount;
             const int rootTilesY = 1;
             CesiumGeometry::QuadtreeTilingScheme tilingScheme(
                 coverageRectangle,
@@ -282,7 +366,8 @@ WebMapTileServiceVectorOverlay::createTileProvider(
                 options.tileHeight < 1 ? 1 : uint32_t(options.tileHeight),
                 options.minimumLevel < 0 ? 0 : uint32_t(options.minimumLevel),
                 options.maximumLevel < 0 ? 0 : uint32_t(options.maximumLevel));
-            
+            provider->_TileMatrixMap = std::move(matrixMap);
+			provider->_boxExtent = std::move(extent);
             return provider;
           });
 }

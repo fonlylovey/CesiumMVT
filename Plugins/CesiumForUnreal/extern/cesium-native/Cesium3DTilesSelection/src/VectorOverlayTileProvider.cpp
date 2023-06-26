@@ -12,6 +12,7 @@
 #include <CesiumUtility/joinToString.h>
 
 #include <rapidjson/document.h>
+#include <iostream>
 
 using namespace CesiumAsync;
 using namespace CesiumGeometry;
@@ -147,7 +148,7 @@ VectorOverlayTileProvider::loadTileDataFromUrl(
               {"Vector request for " + tileUrl + " failed."},
               {}};
         }
-
+		
         if (pResponse->statusCode() != 0 &&
             (pResponse->statusCode() < 200 || pResponse->statusCode() >= 300))
         {
@@ -172,13 +173,15 @@ VectorOverlayTileProvider::loadTileDataFromUrl(
               {"vector request for " + tileUrl + " failed."},
               {}};
         }
-
         const gsl::span<const std::byte> data = pResponse->data();
         std::string strDataLength = pResponse->headers().at("Content-Length");
         size_t dataSize = std::stoll(strDataLength);
         const char* charData = reinterpret_cast<const char*>(data.data());
         const std::string stringData(charData, dataSize);
         CesiumGltfReader::VectorReaderResult loadedData = _vectorReader.readVector(stringData);
+		loadedData.model.level = options.level;
+		loadedData.model.Row = options.Row;
+		loadedData.model.Col = options.Col;
 
         if (!loadedData.errors.empty()) {
           loadedData.errors.push_back("tile url: " + tileUrl);
