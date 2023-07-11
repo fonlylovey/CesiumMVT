@@ -5,6 +5,7 @@
 #include "Components/LineBatchComponent.h"
 #include <glm/mat4x4.hpp>
 #include "Cesium3DTilesSelection/BoundingVolume.h"
+#include "LineMeshComponent.h"
 #include "CesiumVectorComponent.generated.h"
 
 class UMaterialInterface;
@@ -21,47 +22,35 @@ class VectorOverlayTile;
 class FPrimitiveSceneProxy;
 class FLineMeshSceneProxy;
 struct FCesiumMeshSection;
+struct FTileModel;
 
 UCLASS()
-class UCesiumVectorComponent : public UMeshComponent
+class UCesiumVectorComponent : public USceneComponent
 {
 	GENERATED_BODY()
 
 public:
 	static UCesiumVectorComponent* CreateOnGameThread(
-		const CesiumGltf::VectorModel& model, 
-		AActor* pParentActor,
-		const glm::dmat4x4& CesiumToUnrealTransform, 
-		UMaterialInterface* BaseMaterial,
-		const Cesium3DTilesSelection::BoundingVolume& boundingVolume,
-		bool createNavCollision);
+	const FTileModel* tileModel,
+	USceneComponent* pParentComponent);
 
 	UCesiumVectorComponent();
 	virtual ~UCesiumVectorComponent();
 
-	void BuildMesh(const CesiumGltf::VectorModel& model);
+	void BuildMesh(const FTileModel* tileModel, FString strName);
 
-	void UpdateTransformFromCesium(const glm::dmat4& CesiumToUnrealTransform);
-
-public:
 	virtual void BeginDestroy() override;
 
-	//UPrimitiveComponent Interface.
-	virtual FPrimitiveSceneProxy* CreateSceneProxy() override;
-	virtual void GetUsedMaterials(TArray<UMaterialInterface*>& OutMaterials,
-								  bool bGetDebugMaterials = false) const override;
+	void OnVisibilityChanged() override;
 
-	//UMeshComponent Interface.
-	virtual UMaterialInterface* GetMaterial(int32 ElementIndex) const override;
-
-	//USceneComponent Interface.
-	virtual FBoxSphereBounds CalcBounds(const FTransform& LocalToWorld) const override;
-
-	void UpdateLocalBounds();
-
-	virtual void SetCollisionEnabled(ECollisionEnabled::Type NewType);
+	UMaterialInterface* createMaterial();
 
 	UPROPERTY(EditAnywhere, Category = "Cesium")
 	UMaterialInterface* BaseMaterial = nullptr;
 
+	UPROPERTY(EditAnywhere, Category = "Cesium")
+	UMaterialInterface* VectorMaterial = nullptr;
+
+	UPROPERTY(EditAnywhere, Category = "Cesium")
+	ULineMeshComponent* lineComponent;
 };

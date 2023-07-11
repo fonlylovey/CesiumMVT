@@ -4,8 +4,7 @@
 #include "Cesium3DTilesSelection/VectorOverlayTile.h"
 #include "Engine/StaticMesh.h"
 #include "Materials/MaterialInterface.h"
-#include "ProceduralMeshComponent.h"
-#include "CustomMeshComponent.h"
+#include "CesiumMeshSection.h"
 
 UCesiumVectorComponent* UCesiumVectorComponent::CreateOnGameThread(
 	const FTileModel* tileModel,
@@ -24,23 +23,8 @@ UCesiumVectorComponent* UCesiumVectorComponent::CreateOnGameThread(
 // 设置默认值
 UCesiumVectorComponent::UCesiumVectorComponent()
 {
-	// Structure to hold one-time initialization
-  struct FConstructorStatics 
-  {
-    ConstructorHelpers::FObjectFinder<UMaterialInterface> BaseMaterial;
-    ConstructorHelpers::FObjectFinder<UMaterialInterface> BaseTranslucency;
-
-    FConstructorStatics() : 
-		BaseMaterial(TEXT("/CesiumForUnreal/Materials/MVT/M_VectorBase.M_VectorBase")),
-		BaseTranslucency(TEXT("/CesiumForUnreal/Materials/MVT/M_VectorBase.M_VectorBase"))
-	{
-    }
-  };
-  static FConstructorStatics ConstructorStatics;
   FString str = TEXT("/CesiumForUnreal/Materials/MVT/M_VectorBase.M_VectorBase");
-  UMaterialInterface* aaa = Cast<UMaterialInterface>(StaticLoadObject(UMaterialInterface::StaticClass(), nullptr, *str));
-  this->BaseMaterial = aaa;
-  this->BaseTranslucencyMaterial = aaa;
+  BaseMaterial = Cast<UMaterialInterface>(StaticLoadObject(UMaterialInterface::StaticClass(), nullptr, *str));
 }
 
 UCesiumVectorComponent::~UCesiumVectorComponent()

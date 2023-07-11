@@ -12,6 +12,8 @@
 #include "Components/SplineComponent.h"
 #include "CesiumLifetime.h"
 #include "MMCorner.h"
+#include "CesiumVectorComponent.h"
+#include "CesiumMeshSection.h"
 
 namespace
 {
