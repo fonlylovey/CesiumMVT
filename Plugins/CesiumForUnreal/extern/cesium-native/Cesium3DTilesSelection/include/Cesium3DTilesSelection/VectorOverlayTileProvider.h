@@ -43,6 +43,14 @@ struct TileMatrix
     int MatrixHeight = 0.0;
 };
 
+struct TileMatrixSet 
+{
+    int MinTileRow = 0;
+    int MaxTileRow = 0;
+    int MinTileCol = 0;
+    int MaxTileCol = 0;
+};
+
 /**
  * @brief Summarizes the result of loading an image of a {@link VectorOverlay}.
  */
@@ -331,7 +339,7 @@ public:
   //<level,TileMatrix>
   std::map<int, TileMatrix> _TileMatrixMap;
 
-
+  std::map<int, TileMatrixSet> _TileMatrixSetMap;
 protected:
   /**
    * @brief Loads the image for a tile.

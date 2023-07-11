@@ -39,6 +39,7 @@ void UMMCorner::corner(FVector2d& retangleAB_0, FVector2d& retangleAB_1, FVector
 	CalculateIntersectionCoordinate(retangleAB_0, retangleAB_3, retangleCD_0, retangleCD_3);
 	CalculateIntersectionCoordinate(retangleAB_1, retangleAB_2, retangleCD_1, retangleCD_2);
 }
+
 void UMMCorner::CalculatePolylineBorderPoint(TArray<FVector2d> PolyLineArray, double thickness,
 								  TArray<FVector2d>& borderVertexsList, TArray<uint32>& borderVertexsIndex)
 {

@@ -117,11 +117,6 @@ protected:
     options.Row = (int)wmtsY;
     options.Col = tileID.x;
 
-	std::string strInfo =	"  Col: " + std::to_string(options.Col) +
-							"  Row: " +std::to_string(options.Row) + 
-							"Level: " + std::to_string(options.level);
-    std::cout << strInfo << std::endl;
-
     std::string url = CesiumUtility::Uri::substituteTemplateParameters(
         urlTemplate,
         [&map = urlTemplateMap](const std::string& placeholder) {
@@ -272,6 +267,38 @@ WebMapTileServiceVectorOverlay::createTileProvider(
                 isCorners >> extent.UpperCornerLat;
             }
 
+			std::map<int, TileMatrixSet> matrixSetMap;
+            tinyxml2::XMLElement* pSetLink = pLayer->FirstChildElement("TileMatrixSetLink");
+            if (pSetLink != nullptr) 
+			{
+				std::string strSrs = pSetLink->FirstChildElement("TileMatrixSet")->GetText();
+                tinyxml2::XMLElement* pSetLimits = pSetLink->FirstChildElement("TileMatrixSetLimits");
+                if(pSetLimits != nullptr)
+				{
+                  tinyxml2::XMLElement* pTileMatrix = pSetLimits->FirstChildElement("TileMatrixLimits");
+                  while (pTileMatrix != nullptr) 
+				  {
+                    tinyxml2::XMLElement* pNode = pTileMatrix->FirstChildElement("TileMatrix");
+                    assert(pNode != nullptr);
+					std::string strMatrix = pNode->GetText();
+                    std::string strLevel = strMatrix.replace(0, strSrs.size() + 1, "");
+                    int level = atoi(strLevel.c_str());
+                    TileMatrixSet matrixSet;
+                    pNode = pNode->NextSiblingElement();
+                    matrixSet.MinTileRow = pNode->IntText();
+                    pNode = pNode->NextSiblingElement();
+                    matrixSet.MaxTileRow = pNode->IntText();
+                    pNode = pNode->NextSiblingElement();
+                    matrixSet.MinTileCol = pNode->IntText();
+                    pNode = pNode->NextSiblingElement();
+                    matrixSet.MaxTileCol = pNode->IntText();
+                   
+                    matrixSetMap.insert(std::make_pair(level, matrixSet));
+					pTileMatrix = pTileMatrix->NextSiblingElement("TileMatrixLimits");
+                  }
+				}
+            }
+
 			std::map<int , TileMatrix> matrixMap;
 			tinyxml2::XMLElement* pTileMatrixSet = pContents->FirstChildElement("TileMatrixSet");
             if (pTileMatrixSet != nullptr) 
@@ -366,8 +393,9 @@ WebMapTileServiceVectorOverlay::createTileProvider(
                 options.tileHeight < 1 ? 1 : uint32_t(options.tileHeight),
                 options.minimumLevel < 0 ? 0 : uint32_t(options.minimumLevel),
                 options.maximumLevel < 0 ? 0 : uint32_t(options.maximumLevel));
-            provider->_TileMatrixMap = std::move(matrixMap);
 			provider->_boxExtent = std::move(extent);
+            provider->_TileMatrixMap = std::move(matrixMap);
+			provider->_TileMatrixSetMap = std::move(matrixSetMap);
             return provider;
           });
 }

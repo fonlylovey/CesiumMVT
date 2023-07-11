@@ -15,6 +15,7 @@ std::unique_ptr<Cesium3DTilesSelection::VectorOverlay> UCesiumTileMapServiceVect
         tmsOptions.minimumLevel = MinimumLevel;
         tmsOptions.maximumLevel = MaximumLevel;
     }
+
     return std::make_unique<Cesium3DTilesSelection::TileMapServiceVectorOverlay>(
         TCHAR_TO_UTF8(*this->MaterialLayerKey),
         TCHAR_TO_UTF8(*this->Url),

@@ -69,7 +69,7 @@ FCesium3DTilesetLoadFailure OnCesium3DTilesetLoadFailure{};
 #include "EditorViewportClient.h"
 #include "LevelEditorViewport.h"
 #endif
-
+#include "CesiumVectorComponent.h"
 // Sets default values
 ACesium3DTileset::ACesium3DTileset()
     : Georeference(nullptr),
@@ -550,7 +550,7 @@ void ACesium3DTileset::UpdateTransformFromCesium() {
 // Called when the game starts or when spawned
 void ACesium3DTileset::BeginPlay() {
   Super::BeginPlay();
-
+  
   this->LoadTileset();
 
   // Search for level sequence.
@@ -807,7 +807,7 @@ public:
         content.getRenderContent();
     if (pRenderContent) {
       UCesiumGltfComponent* pGltfContent =
-          reinterpret_cast<UCesiumGltfComponent*>(
+          reinterpret_cast<UCesiumGltfComponent*>(                             
               pRenderContent->getRenderResources());
       if (pGltfContent) {
         pGltfContent->DetachRasterTile(

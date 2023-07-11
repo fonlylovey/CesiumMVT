@@ -15,6 +15,9 @@ std::unique_ptr<Cesium3DTilesSelection::VectorOverlay> UCesiumWebMapTileServiceV
         wmtsOptions.minimumLevel = MinimumLevel;
         wmtsOptions.maximumLevel = MaximumLevel;
     }
+
+
+
     return std::make_unique<Cesium3DTilesSelection::WebMapTileServiceVectorOverlay>(
         TCHAR_TO_UTF8(*this->MaterialLayerKey),
         TCHAR_TO_UTF8(*this->Url),
