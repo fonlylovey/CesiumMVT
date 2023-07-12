@@ -70,6 +70,7 @@ FCesium3DTilesetLoadFailure OnCesium3DTilesetLoadFailure{};
 #include "LevelEditorViewport.h"
 #endif
 #include "CesiumVectorComponent.h"
+#include "CesiumVectorComponent.h"
 // Sets default values
 ACesium3DTileset::ACesium3DTileset()
     : Georeference(nullptr),

@@ -150,9 +150,9 @@ int32 ULineMeshComponent::GetNumLines() const
 
 void ULineMeshComponent::UpdateLocalBounds()
 {
-    FLineMeshSceneProxy* LineMeshSceneProxy = (FLineMeshSceneProxy*)SceneProxy;
-    LineMeshSceneProxy->UpdateLocalBounds();
-    
+	FLineMeshSceneProxy* LineMeshSceneProxy = (FLineMeshSceneProxy*)SceneProxy;
+	LineMeshSceneProxy->UpdateLocalBounds();
+
     // Update global bounds
 	UpdateBounds();
 	// Need to send to render thread

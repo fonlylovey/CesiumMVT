@@ -24,8 +24,8 @@ class FLineMeshSceneProxy;
 struct FCesiumMeshSection;
 struct FTileModel;
 
-UCLASS()
-class UCesiumVectorComponent : public USceneComponent
+UCLASS(BlueprintType, Blueprintable)
+class CESIUMRUNTIME_API UCesiumVectorComponent : public USceneComponent
 {
 	GENERATED_BODY()
 

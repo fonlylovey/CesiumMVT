@@ -11,7 +11,6 @@ UCesiumVectorComponent* UCesiumVectorComponent::CreateOnGameThread(
 	USceneComponent* pParentComponent)
 {
 	UCesiumVectorComponent* mvtComponent = NewObject<UCesiumVectorComponent>(pParentComponent, *tileModel->TileName);
-	mvtComponent->RegisterComponent();
 	mvtComponent->SetUsingAbsoluteLocation(true);
 	mvtComponent->SetMobility(pParentComponent->Mobility);
 	mvtComponent->SetFlags(RF_Transient | RF_DuplicateTransient | RF_TextExportTransient);
@@ -46,7 +45,6 @@ void UCesiumVectorComponent::BuildMesh(const FTileModel* tileModel, FString strN
 	lineComponent->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
 	lineComponent->RegisterComponent();
 	lineComponent->Material = BaseMaterial;
-	//lineComponent->SetVisibility(false);
 
 	int index = 0;
 	int sectionIndex = 0;
@@ -147,8 +145,12 @@ void UCesiumVectorComponent::BeginDestroy()
 	 Super::BeginDestroy();
 	 if(lineComponent != nullptr)
 	 {
+		 FString strMsg = TEXT("Destroy: ") + lineComponent->GetName();
+		 UE_LOG(LogTemp, Error, TEXT("%s"), *strMsg);
 		 lineComponent->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+		 lineComponent->UnregisterComponent();
 		 lineComponent->DestroyComponent();
+		 lineComponent = nullptr;
 	 }
 }
 
@@ -157,14 +159,15 @@ void UCesiumVectorComponent::OnVisibilityChanged()
 {
 	if (lineComponent != nullptr)
 	{
+		lineComponent->MarkRenderStateDirty();
 		//bool isBisble = lineComponent->IsVisible();
 		//lineComponent->SetVisibility(isBisble);
 	}
 
-	UE_LOG(LogTemp, Error, TEXT("%s"), *GetName());
 	FString strMsg = IsVisible() ? TEXT("显示 : ") : TEXT("隐藏：");
 	strMsg += TEXT("Name : ") + GetName();
-	GEngine->AddOnScreenDebugMessage(-1, 3, FColor::Red, strMsg);
+	//GEngine->AddOnScreenDebugMessage(-1, 3, FColor::Red, strMsg);
+	UE_LOG(LogTemp, Error, TEXT("%s"), *strMsg);
 }
 
 UMaterialInterface* UCesiumVectorComponent::createMaterial()

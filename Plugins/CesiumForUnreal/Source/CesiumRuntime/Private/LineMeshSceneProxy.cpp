@@ -197,14 +197,6 @@ void FLineMeshSceneProxy::AddNewSection_GameThread(TSharedPtr<FLineMeshSection> 
 			FScopeLock ScopeLock(Mutex);
             Sections.Add(SrcSectionIndex, NewSection);
 
-			 AsyncTask(
-				 ENamedThreads::GameThread,
-				 [this]()
-				 {
-					 Component->UpdateLocalBounds();
-				 }
-			 );
-
             NewSection->bInitialized = true;
         }
     );
@@ -258,13 +250,6 @@ void FLineMeshSceneProxy::UpdateSection_RenderThread(TSharedPtr<FLineMeshSection
         Section->SectionLocalBox = SectionData->SectionLocalBox;
     }
 
-    AsyncTask(
-        ENamedThreads::GameThread,
-        [this]()
-        {
-            Component->UpdateLocalBounds();
-        }
-    );
 }
 
 bool FLineMeshSceneProxy::CanBeOccluded() const

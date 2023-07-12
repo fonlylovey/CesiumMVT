@@ -106,14 +106,14 @@ void* VectorResourceWorker::prepareVectorInMainThread(Cesium3DTilesSelection::Ve
 	FTileModel* pTileModelData = new FTileModel;
 	if(pModelData->layers.size() > 0)
 	{
-		if (Level == 13)
+		if (Level > 0)
 		{
 			FString strMessagr = "Level: " + FString::FormatAsNumber(Level) +
 			"  Row: " + FString::FormatAsNumber(Row) +
 			"  Col: " + FString::FormatAsNumber(Col);
 			GEngine->AddOnScreenDebugMessage(-1, 3, FColor::Red, strMessagr);
 
-			UE_LOG(LogTemp, Error, TEXT("%s"), *strMessagr);
+			//UE_LOG(LogTemp, Error, TEXT("%s"), *strMessagr);
 			//高程先随意指定
 			float height = 2000;
 			for (const CesiumGltf::VectorLayer& layer : pModelData->layers)
@@ -157,7 +157,6 @@ void* VectorResourceWorker::prepareVectorInMainThread(Cesium3DTilesSelection::Ve
 			pTileModelData->TileName = strName;
 
 			UCesiumVectorComponent* pVectorContent = UCesiumVectorComponent::CreateOnGameThread(pTileModelData, _pActor->GetRootComponent());
-			pVectorContent->AttachToComponent(_pActor->GetRootComponent(), FAttachmentTransformRules::KeepWorldTransform);
 			return pVectorContent;
 		}
 	}
@@ -179,7 +178,7 @@ void VectorResourceWorker::attachVectorInMainThread(const Cesium3DTilesSelection
 		UCesiumVectorComponent* pVectorContent = reinterpret_cast<UCesiumVectorComponent*>(pMainThreadRendererResources);
 		if(pVectorContent != nullptr)
 		{
-		//pVectorContent->AttachToComponent(pGltfContent, FAttachmentTransformRules::KeepWorldTransform);
+			//pVectorContent->AttachToComponent(pGltfContent, FAttachmentTransformRules::KeepWorldTransform);
 			//UE_LOG(LogTemp, Error, TEXT("Attach %s"), *pVectorContent->GetName());
 
 		}
@@ -207,7 +206,7 @@ void VectorResourceWorker::detachVectorInMainThread(const Cesium3DTilesSelection
 			UCesiumVectorComponent* pVectorContent = Cast<UCesiumVectorComponent>(vectorCom);
 			if(pVectorContent)
 			{
-				UE_LOG(LogTemp, Error, TEXT("Detach %s"), *pVectorContent->GetName());
+				//UE_LOG(LogTemp, Error, TEXT("Detach %s"), *pVectorContent->GetName());
 				//vectorCom->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
 				//CesiumLifetime::destroyComponentRecursively(vectorCom);
 			}
