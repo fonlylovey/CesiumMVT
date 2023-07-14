@@ -24,6 +24,7 @@ namespace
 	{
 		geoCount = count;
 		VectorFeature feature;
+		feature.mvtType = FeatureType::Point;
 		layer.features.emplace_back(feature);
 	}
 
@@ -41,6 +42,7 @@ namespace
 	{
 		geoCount = count;
 		VectorFeature feature;
+		feature.mvtType = FeatureType::LineString;
 		layer.features.emplace_back(feature);
 	}
 
@@ -58,6 +60,7 @@ namespace
 	{
 		geoCount = count;
 		VectorFeature feature;
+		feature.mvtType = FeatureType::Point;
 		layer.features.emplace_back(feature);
 	}
 
@@ -71,10 +74,12 @@ namespace
 			layer.features.rbegin()->ringType = static_cast<int>(type);
 	}
 
+	//splie类型才会用到的控制点啥的
 	void controlpoints_begin(const uint32_t count) 
 	{
 			geoCount = count;
 			VectorFeature feature;
+			feature.mvtType = FeatureType::Spline;
 			layer.features.emplace_back(feature);
 	}
 

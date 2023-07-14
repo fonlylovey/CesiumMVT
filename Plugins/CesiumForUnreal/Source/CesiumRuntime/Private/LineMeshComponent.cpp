@@ -1,4 +1,4 @@
-// Copyright Peter Leontev
+﻿// Copyright Peter Leontev
 
 #include "LineMeshComponent.h"
 #include "LineMeshSceneProxy.h"
@@ -58,64 +58,18 @@ void ULineMeshComponent::CreateLine(int32 SectionIndex, const TArray<FVector>& I
 
 	NewSection->SectionIndex = SectionIndex;
     NewSection->SectionLocalBox = FBox3f(Vertices);
+	BoundingBox.Origin = FVector(NewSection->SectionLocalBox.GetCenter());
+	BoundingBox.BoxExtent = FVector(NewSection->SectionLocalBox.GetExtent());
+	BoundingBox.SphereRadius = BoundingBox.BoxExtent.Size();
     NewSection->Material = CreateOrUpdateMaterial(SectionIndex, Color);
+	Sections.Add(NewSection);
 
-    // Enqueue command to send to render thread
-    FLineMeshSceneProxy* ProcMeshSceneProxy = (FLineMeshSceneProxy*)SceneProxy;
-    ProcMeshSceneProxy->AddNewSection_GameThread(NewSection);
-}
-
-void ULineMeshComponent::UpdateLine(int32 SectionIndex, const TArray<FVector>& InVertices, const FLinearColor& Color)
-{
-    TArray<FVector3f> Vertices(InVertices);
-
-    // SCOPE_CYCLE_COUNTER(STAT_ProcMesh_UpdateSectionGT);
-    FLineMeshSceneProxy* LineMeshSceneProxy = (FLineMeshSceneProxy*)SceneProxy;
-
-    if (SectionIndex >= LineMeshSceneProxy->GetNumSections())
-    {
-        return;
-    }
-
-    // Recreate line if mismatch in number of vertices
-    if (Vertices.Num() != LineMeshSceneProxy->GetNumPointsInSection(SectionIndex))
-    {
-        CreateLine(SectionIndex, InVertices, Color);
-        return;
-    }
-
-    TSharedPtr<FLineMeshSectionUpdateData> SectionData(MakeShareable(new FLineMeshSectionUpdateData));
-    SectionData->SectionIndex = SectionIndex;
-    SectionData->SectionLocalBox = FBox3f(Vertices);
-    SectionData->VertexBuffer = Vertices;
-
-    if (Vertices.Num() - 1 > 0)
-    {
-        SectionData->IndexBuffer.Reset();
-        SectionData->IndexBuffer.SetNumZeroed(2 * (Vertices.Num() - 1) + 1);
-    }
-
-    const int32 NumTris = Vertices.Num() - 1;
-    for (int32 TriInd = 0; TriInd < NumTris; ++TriInd)
-    {
-        SectionData->IndexBuffer[2 * TriInd] = TriInd;
-        SectionData->IndexBuffer[2 * TriInd + 1] = TriInd + 1;
-    }
-
-    SectionData->Material = CreateOrUpdateMaterial(SectionIndex, Color);
-
-    // Enqueue command to send to render thread
-    FLineMeshSceneProxy* ProcMeshSceneProxy = (FLineMeshSceneProxy*)SceneProxy;
-    ENQUEUE_RENDER_COMMAND(FLineMeshSectionUpdate)(
-        [ProcMeshSceneProxy, SectionData](FRHICommandListImmediate& RHICmdList)
-        {
-            ProcMeshSceneProxy->UpdateSection_RenderThread(SectionData);
-        }
-    );
+	UpdateLocalBounds();
 }
 
 void ULineMeshComponent::RemoveLine(int32 SectionIndex)
 {
+	Sections.RemoveAt(SectionIndex);
 	FLineMeshSceneProxy* LineMeshSceneProxy = (FLineMeshSceneProxy*)SceneProxy;
 	LineMeshSceneProxy->ClearMeshSection(SectionIndex);
 
@@ -150,29 +104,10 @@ int32 ULineMeshComponent::GetNumLines() const
 
 void ULineMeshComponent::UpdateLocalBounds()
 {
-	FLineMeshSceneProxy* LineMeshSceneProxy = (FLineMeshSceneProxy*)SceneProxy;
-	LineMeshSceneProxy->UpdateLocalBounds();
-
     // Update global bounds
 	UpdateBounds();
 	// Need to send to render thread
 	MarkRenderTransformDirty();
-}
-
-void ULineMeshComponent::OnVisibilityChanged()
-{
-	bool isVisible = IsVisible();
-	
-	FLineMeshSceneProxy* LineMeshSceneProxy = (FLineMeshSceneProxy*)SceneProxy;
-	if(isVisible == true && LineMeshSceneProxy != nullptr)
-	{
-		//LineMeshSceneProxy->SetAllSectionVisible(true);
-	}
-	if(LineMeshSceneProxy != nullptr)
-	{
-		//LineMeshSceneProxy->SetAllSectionVisible(isVisible);
-
-	}
 }
 
 FPrimitiveSceneProxy* ULineMeshComponent::CreateSceneProxy()
@@ -191,7 +126,6 @@ UMaterialInterface* ULineMeshComponent::GetMaterial(int32 ElementIndex) const
     
     return nullptr;
 }
-
 UMaterialInterface* ULineMeshComponent::CreateOrUpdateMaterial(int32 SectionIndex, const FLinearColor& Color)
 {
     if (!SectionMaterials.Contains(SectionIndex))
@@ -210,19 +144,7 @@ UMaterialInterface* ULineMeshComponent::CreateOrUpdateMaterial(int32 SectionInde
 
 FBoxSphereBounds ULineMeshComponent::CalcBounds(const FTransform& LocalToWorld) const
 {
-    FLineMeshSceneProxy* LineMeshSceneProxy = (FLineMeshSceneProxy*)SceneProxy;
-
-    FBoxSphereBounds LocalBounds(FBoxSphereBounds3f(FVector3f(0, 0, 0), FVector3f(0, 0, 0), 0));
-    if (LineMeshSceneProxy != nullptr)
-    {
-        LocalBounds = LineMeshSceneProxy->GetLocalBounds();
-    }
-
-    FBoxSphereBounds Ret(FBoxSphereBounds(LocalBounds).TransformBy(LocalToWorld));
-
-    Ret.BoxExtent *= BoundsScale;
-    Ret.SphereRadius *= BoundsScale;
-    return Ret;
+	return BoundingBox;
 }
 
 void ULineMeshComponent::GetUsedMaterials(TArray<UMaterialInterface*>& OutMaterials, bool bGetDebugMaterials /*= false*/) const

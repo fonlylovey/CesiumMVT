@@ -49,4 +49,20 @@ public:
 		Category = "Cesium",
 		meta = (EditCondition = "bSpecifyZoomLevels", ClampMin = 0))
 	int32 MaximumLevel = 10;
+
+	/**
+	 * 瓦片样式
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Vector Styles")
+	bool Fill = true;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Vector Styles")
+	FLinearColor FillColor = FLinearColor::Yellow;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Vector Styles")
+	bool DrawOutline = true;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Vector Styles")
+	FLinearColor OutlineColor = FLinearColor::Yellow;
+
 };

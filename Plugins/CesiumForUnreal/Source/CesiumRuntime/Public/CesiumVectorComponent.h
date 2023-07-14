@@ -24,7 +24,7 @@ class FLineMeshSceneProxy;
 struct FCesiumMeshSection;
 struct FTileModel;
 
-UCLASS(BlueprintType, Blueprintable)
+UCLASS(BlueprintType, Blueprintable, meta = (BlueprintSpawnableComponent))
 class CESIUMRUNTIME_API UCesiumVectorComponent : public USceneComponent
 {
 	GENERATED_BODY()
@@ -34,7 +34,7 @@ public:
 	const FTileModel* tileModel,
 	USceneComponent* pParentComponent);
 
-	UCesiumVectorComponent();
+	UCesiumVectorComponent(const FObjectInitializer& ObjectInitializer);
 	virtual ~UCesiumVectorComponent();
 
 	void BuildMesh(const FTileModel* tileModel, FString strName);
@@ -53,4 +53,8 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Cesium")
 	ULineMeshComponent* lineComponent;
+
+	UPROPERTY(EditAnywhere, Category = "Cesium")
+	UStaticMeshComponent* VectorMesh;
+	bool isAttach = false;
 };

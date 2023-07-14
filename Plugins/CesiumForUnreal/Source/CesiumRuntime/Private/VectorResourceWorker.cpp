@@ -25,11 +25,6 @@ namespace
 							const Cesium3DTilesSelection::TileMatrixSet& tileMatrixSet,
 							Cesium3DTilesSelection::BoxExtent extent)
 	{
-		pbfPos.x < 0 ? pbfPos.x = 0 : pbfPos.x;
-		pbfPos.x > 4096 ? pbfPos.x = 4096 : pbfPos.x;
-		pbfPos.y < 0 ? pbfPos.y = 0 : pbfPos.y;
-		pbfPos.y > 4096 ? pbfPos.y = 4096 : pbfPos.y;
-
 		//计算地图的变化范围
 		double LonDelta = extent.UpperCornerLon - extent.LowerCornerLon;
 		double latDelta = extent.UpperCornerLat - extent.LowerCornerLat;
@@ -58,6 +53,17 @@ namespace
 		extent.LowerCornerLon + tileXPercent * LonDelta,
 		extent.LowerCornerLat + tileYPercent * latDelta, 0};
 		return pbfWorld;
+	}
+	//判断像素坐标是否在瓦片内部
+	bool isInTile(glm::ivec3& pbfPos)
+	{
+		bool isInside = true;
+		if (pbfPos.x < 0, pbfPos.y > 4096 &&
+			pbfPos.y > 0, pbfPos.x > 4096)
+		{
+			isInside = false;
+		}
+		return isInside;
 	}
 }
 
@@ -106,7 +112,7 @@ void* VectorResourceWorker::prepareVectorInMainThread(Cesium3DTilesSelection::Ve
 	FTileModel* pTileModelData = new FTileModel;
 	if(pModelData->layers.size() > 0)
 	{
-		if (Level > 0)
+		if (Level >  0)
 		{
 			FString strMessagr = "Level: " + FString::FormatAsNumber(Level) +
 			"  Row: " + FString::FormatAsNumber(Row) +
@@ -115,7 +121,7 @@ void* VectorResourceWorker::prepareVectorInMainThread(Cesium3DTilesSelection::Ve
 
 			//UE_LOG(LogTemp, Error, TEXT("%s"), *strMessagr);
 			//高程先随意指定
-			float height = 2000;
+			float height = 0;
 			for (const CesiumGltf::VectorLayer& layer : pModelData->layers)
 			{
 				int index = 0;
@@ -123,28 +129,36 @@ void* VectorResourceWorker::prepareVectorInMainThread(Cesium3DTilesSelection::Ve
 				{
 					TArray<FVector2D> UE2Array;
 					TArray<FVector> UEArray;
-					for (int i = 0; i < feature.points.size() - 1; i++ )
+					if(feature.points.size() == 4)
+					{
+						int a = 0;
+					}
+					for (int i = 0; i < feature.points.size(); i++ )
 					{
 						glm::ivec3 pixelPosS = feature.points.at(i);
+						if(!isInTile(pixelPosS))
+						{
+							//continue;
+						}
 						pixelPosS.z = Level;
 						glm::dvec3 llPosS = PixelToWGS84(pixelPosS, Row, Col, tileMatrix, tileMatrixSet, extent);
 						FVector llhPos = {llPosS.x, llPosS.y, height};
-						UE2Array.Add(FVector2D(llhPos.X, llhPos.Y));
 
 						FVector uePos = geoReference->TransformLongitudeLatitudeHeightToUnreal(llhPos);
+						UE2Array.Add(FVector2D(uePos.X, uePos.Y));
 						UEArray.Add(uePos);
 					}
 
 					//折线段扩展成面
 					TArray<FVector2d> polyVertex;
 					TArray<uint32> polyIndex;
-					//UMMCorner::PolylineCorner(UE2Array, 5.0, polyVertex, polyIndex);
+					MMCorner::PointsToPolylineCorner(UE2Array, 5.0, polyVertex, polyIndex);
 					//面顶点坐标转换成UE坐标
 					FCesiumMeshSection section;
-					for (const FVector& uePos : UEArray)
+					for (const FVector2d& uePos : polyVertex)
 					{
 						int inx = section.VertexBuffer.Add(FVector3f(uePos.X, uePos.Y, 0));
-						polyIndex.Add(inx);
+						//polyIndex.Add(inx);
 					}
 					section.IndexBuffer = polyIndex;
 					section.SectionIndex = index;
@@ -173,13 +187,15 @@ void VectorResourceWorker::attachVectorInMainThread(const Cesium3DTilesSelection
 	if(pRenderContent != nullptr)
 	{
 
-		 UCesiumGltfComponent* pGltfContent = reinterpret_cast<UCesiumGltfComponent*>(
+		UCesiumGltfComponent* pGltfContent = reinterpret_cast<UCesiumGltfComponent*>(
               pRenderContent->getRenderResources());
 		UCesiumVectorComponent* pVectorContent = reinterpret_cast<UCesiumVectorComponent*>(pMainThreadRendererResources);
-		if(pVectorContent != nullptr)
+		if(pVectorContent != nullptr && !pVectorContent->isAttach)
 		{
-			//pVectorContent->AttachToComponent(pGltfContent, FAttachmentTransformRules::KeepWorldTransform);
-			//UE_LOG(LogTemp, Error, TEXT("Attach %s"), *pVectorContent->GetName());
+			pVectorContent->isAttach = true;
+			//pVectorContent->SetVisibility(true, true);
+			pVectorContent->AttachToComponent(pGltfContent, FAttachmentTransformRules::KeepWorldTransform);
+			UE_LOG(LogTemp, Error, TEXT("Attach %s"), *pVectorContent->GetName());
 
 		}
 		
@@ -198,15 +214,17 @@ void VectorResourceWorker::detachVectorInMainThread(const Cesium3DTilesSelection
 		UCesiumGltfComponent* pGltfContent = reinterpret_cast<UCesiumGltfComponent*>(
 			pRenderContent->getRenderResources());
 
-		FTileModel* pTileModelData = reinterpret_cast<FTileModel*>(pMainThreadRendererResources);
+		UCesiumVectorComponent* pTileModelData = reinterpret_cast<UCesiumVectorComponent*>(pMainThreadRendererResources);
 
 		auto children = pGltfContent->GetAttachChildren();
 		for (auto vectorCom : children)
 		{
 			UCesiumVectorComponent* pVectorContent = Cast<UCesiumVectorComponent>(vectorCom);
-			if(pVectorContent)
+			if(pVectorContent != nullptr && pVectorContent->isAttach)
 			{
-				//UE_LOG(LogTemp, Error, TEXT("Detach %s"), *pVectorContent->GetName());
+				pVectorContent->isAttach = false;
+				//pVectorContent->SetVisibility(false, true);
+				UE_LOG(LogTemp, Error, TEXT("Detach %s"), *pVectorContent->GetName());
 				//vectorCom->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
 				//CesiumLifetime::destroyComponentRecursively(vectorCom);
 			}

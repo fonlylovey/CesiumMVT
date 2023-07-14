@@ -23,21 +23,6 @@ struct FLineMeshSection;
 class UMaterialInterface;
 
 
-/**
- *	Struct used to send update to mesh data
- *	Arrays may be empty, in which case no update is performed.
- */
-class FLineMeshSectionUpdateData
-{
-public:
-	int32 SectionIndex;
-	TArray<FVector3f> VertexBuffer;
-	TArray<uint32> IndexBuffer;
-	FBox3f SectionLocalBox;
-	UMaterialInterface* Material;
-};
-
-
 /** Procedural mesh scene proxy */
 class FLineMeshSceneProxy final : public FPrimitiveSceneProxy
 {
@@ -48,7 +33,6 @@ public:
 	SIZE_T GetTypeHash() const override;
 
 	void AddNewSection_GameThread(TSharedPtr<FLineMeshSection> NewSection);
-	void UpdateSection_RenderThread(TSharedPtr<FLineMeshSectionUpdateData> SectionData);
 
 	virtual void GetDynamicMeshElements(const TArray<const FSceneView*>& Views, const FSceneViewFamily& ViewFamily, uint32 VisibilityMap, FMeshElementCollector& Collector) const override;
 	virtual FPrimitiveViewRelevance GetViewRelevance(const FSceneView* View) const;
@@ -66,8 +50,6 @@ public:
     void SetMeshSectionVisible(int32 SectionIndex, bool bNewVisibility);
 	void SetAllSectionVisible( bool bNewVisibility);
     bool IsMeshSectionVisible(int32 SectionIndex) const;
-	void UpdateLocalBounds();
-	FBoxSphereBounds GetLocalBounds() const;
 
 private:
 	ULineMeshComponent* Component;

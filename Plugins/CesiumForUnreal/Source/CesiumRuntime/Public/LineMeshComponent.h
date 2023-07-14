@@ -24,9 +24,6 @@ public:
 	void CreateLine(int32 SectionIndex, const TArray<FVector>& InVertices, const FLinearColor& Color);
 
 	UFUNCTION(BlueprintCallable, Category = "Components|LineRenderer")
-	void UpdateLine(int32 SectionIndex, const TArray<FVector>& InVertices, const FLinearColor& Color);
-
-	UFUNCTION(BlueprintCallable, Category = "Components|LineRenderer")
 	void RemoveLine(int32 SectionIndex);
 
 	UFUNCTION(BlueprintCallable, Category = "Components|LineRenderer")
@@ -65,13 +62,13 @@ private:
 	/** Update LocalBounds member from the local box of each section */
 	void UpdateLocalBounds();
 
-	virtual void OnVisibilityChanged() override;
-
 private:
     UPROPERTY()
     TMap<int32, UMaterialInstanceDynamic*> SectionMaterials;
-
+	FBoxSphereBounds BoundingBox;
 	FCriticalSection* Mutex;
+	//每次创建渲染委托的时候会用到
+	TArray<TSharedPtr<FLineMeshSection>> Sections;
     friend class FLineMeshSceneProxy;
 };
 

@@ -29,7 +29,8 @@ struct VectorFeature
   //要素个数
   size_t featureCount = 0;
 
-  int ringType = -1;
+  // 多边形环的类型 outer = 0,inner = 1, invalid = 2
+  int ringType = 2;
 };
 
 // 一个矢量图层

@@ -116,6 +116,11 @@ public:
 
   void UpdateFade(float fadePercentage, bool fadingIn);
 
+  int level = 0;
+
+  int row = 0;
+
+  int col = 0;
 private:
   UPROPERTY()
   UTexture2D* Transparent1x1 = nullptr;

@@ -5,22 +5,26 @@
 #include "Engine/StaticMesh.h"
 #include "Materials/MaterialInterface.h"
 #include "CesiumMeshSection.h"
+#include "CustomMeshComponent.h"
 
 UCesiumVectorComponent* UCesiumVectorComponent::CreateOnGameThread(
 	const FTileModel* tileModel,
 	USceneComponent* pParentComponent)
 {
 	UCesiumVectorComponent* mvtComponent = NewObject<UCesiumVectorComponent>(pParentComponent, *tileModel->TileName);
+	//mvtComponent->AttachToComponent(pParentComponent, FAttachmentTransformRules::KeepRelativeTransform);
+	mvtComponent->ReregisterComponent();
 	mvtComponent->SetUsingAbsoluteLocation(true);
 	mvtComponent->SetMobility(pParentComponent->Mobility);
 	mvtComponent->SetFlags(RF_Transient | RF_DuplicateTransient | RF_TextExportTransient);
-	mvtComponent->SetVisibility(false, true);
 	mvtComponent->BuildMesh(tileModel, TEXT("Mesh_") + tileModel->TileName);
+	mvtComponent->SetVisibility(false, true);
 	return mvtComponent;
 }
 
 // 设置默认值
-UCesiumVectorComponent::UCesiumVectorComponent()
+UCesiumVectorComponent::UCesiumVectorComponent(const FObjectInitializer& ObjectInitializer)
+: Super(ObjectInitializer)
 {
   FString str = TEXT("/CesiumForUnreal/Materials/MVT/M_VectorBase.M_VectorBase");
   BaseMaterial = Cast<UMaterialInterface>(StaticLoadObject(UMaterialInterface::StaticClass(), nullptr, *str));
@@ -40,10 +44,10 @@ void UCesiumVectorComponent::BuildMesh(const FTileModel* tileModel, FString strN
 
 	/*
 	* 测试代码->GetOwner()->GetRootComponent()
-	*/
+	
 	lineComponent = NewObject<ULineMeshComponent>(this, *strName);
-	lineComponent->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
 	lineComponent->RegisterComponent();
+	lineComponent->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
 	lineComponent->Material = BaseMaterial;
 
 	int index = 0;
@@ -62,14 +66,15 @@ void UCesiumVectorComponent::BuildMesh(const FTileModel* tileModel, FString strN
 		sectionIndex++;
 		++index;
 	}
+	*/
 	/*************************/
 
-	/*
-	VectorComponent = NewObject<UStaticMeshComponent>(this, *strName);
-	VectorComponent->AttachToComponent(this->GetOwner()->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
-	VectorComponent->RegisterComponent();
+	
+	VectorMesh = NewObject<UStaticMeshComponent>(this, *strName);
+	VectorMesh->AttachToComponent(this->GetOwner()->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
+	VectorMesh->RegisterComponent();
 
-	UStaticMesh* pStaticMesh = NewObject<UStaticMesh>(VectorComponent);
+	UStaticMesh* pStaticMesh = NewObject<UStaticMesh>(VectorMesh);
 	pStaticMesh->NeverStream = true;
 	pStaticMesh->SetIsBuiltAtRuntime(true);
 	
@@ -136,8 +141,8 @@ void UCesiumVectorComponent::BuildMesh(const FTileModel* tileModel, FString strN
 	UMaterialInterface* pMaterial = createMaterial();
 	pStaticMesh->AddMaterial(pMaterial);
 	pStaticMesh->InitResources();
-	VectorComponent->SetStaticMesh(pStaticMesh);
-	*/
+	VectorMesh->SetStaticMesh(pStaticMesh);
+	
 }
 
 void UCesiumVectorComponent::BeginDestroy()
@@ -159,15 +164,9 @@ void UCesiumVectorComponent::OnVisibilityChanged()
 {
 	if (lineComponent != nullptr)
 	{
-		lineComponent->MarkRenderStateDirty();
-		//bool isBisble = lineComponent->IsVisible();
-		//lineComponent->SetVisibility(isBisble);
+		bool isBisble = lineComponent->IsVisible();
+		lineComponent->SetVisibility(isBisble);
 	}
-
-	FString strMsg = IsVisible() ? TEXT("显示 : ") : TEXT("隐藏：");
-	strMsg += TEXT("Name : ") + GetName();
-	//GEngine->AddOnScreenDebugMessage(-1, 3, FColor::Red, strMsg);
-	UE_LOG(LogTemp, Error, TEXT("%s"), *strMsg);
 }
 
 UMaterialInterface* UCesiumVectorComponent::createMaterial()
