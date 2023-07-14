@@ -13,12 +13,12 @@ UCesiumVectorComponent* UCesiumVectorComponent::CreateOnGameThread(
 {
 	UCesiumVectorComponent* mvtComponent = NewObject<UCesiumVectorComponent>(pParentComponent, *tileModel->TileName);
 	//mvtComponent->AttachToComponent(pParentComponent, FAttachmentTransformRules::KeepRelativeTransform);
-	mvtComponent->ReregisterComponent();
+	//mvtComponent->ReregisterComponent();
 	mvtComponent->SetUsingAbsoluteLocation(true);
 	mvtComponent->SetMobility(pParentComponent->Mobility);
 	mvtComponent->SetFlags(RF_Transient | RF_DuplicateTransient | RF_TextExportTransient);
 	mvtComponent->BuildMesh(tileModel, TEXT("Mesh_") + tileModel->TileName);
-	mvtComponent->SetVisibility(false, true);
+	mvtComponent->SetVisibility(true, true);
 	return mvtComponent;
 }
 
@@ -42,12 +42,12 @@ void UCesiumVectorComponent::BuildMesh(const FTileModel* tileModel, FString strN
 	FLinearColor::White, FLinearColor::Black, FLinearColor::Red, FLinearColor::Green, FLinearColor::Blue,
 	FLinearColor::Yellow, FLinearColor(0,255,255), FLinearColor(255,0,255), FLinearColor(43, 156, 18), FLinearColor(169, 7, 228)};
 
-	/*
-	* 测试代码->GetOwner()->GetRootComponent()
+	
+	//* 测试代码->GetOwner()->GetRootComponent()
 	
 	lineComponent = NewObject<ULineMeshComponent>(this, *strName);
-	lineComponent->RegisterComponent();
 	lineComponent->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
+	lineComponent->RegisterComponent();
 	lineComponent->Material = BaseMaterial;
 
 	int index = 0;
@@ -62,14 +62,15 @@ void UCesiumVectorComponent::BuildMesh(const FTileModel* tileModel, FString strN
 			FVector3f pos = section.VertexBuffer[i];
 			worldPosArray.Add(FVector(pos));
 		}
+		index = index > 9 ? 1 : index;
 		lineComponent->CreateLine(sectionIndex, worldPosArray, colors[index]);
 		sectionIndex++;
 		++index;
 	}
-	*/
+	
 	/*************************/
 
-	
+	/*
 	VectorMesh = NewObject<UStaticMeshComponent>(this, *strName);
 	VectorMesh->AttachToComponent(this->GetOwner()->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
 	VectorMesh->RegisterComponent();
@@ -142,7 +143,7 @@ void UCesiumVectorComponent::BuildMesh(const FTileModel* tileModel, FString strN
 	pStaticMesh->AddMaterial(pMaterial);
 	pStaticMesh->InitResources();
 	VectorMesh->SetStaticMesh(pStaticMesh);
-	
+	*/
 }
 
 void UCesiumVectorComponent::BeginDestroy()

@@ -68,7 +68,7 @@ private:
 	FBoxSphereBounds BoundingBox;
 	FCriticalSection* Mutex;
 	//每次创建渲染委托的时候会用到
-	TArray<TSharedPtr<FLineMeshSection>> Sections;
+	TArray<FLineMeshSection*> Sections;
     friend class FLineMeshSceneProxy;
 };
 

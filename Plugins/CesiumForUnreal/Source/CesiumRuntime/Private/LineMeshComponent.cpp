@@ -7,13 +7,6 @@
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Runtime/Core/Public/HAL/ThreadingBase.h"
 
-/*DECLARE_CYCLE_STAT(TEXT("Create ProcMesh Proxy"), STAT_ProcMesh_CreateSceneProxy, STATGROUP_ProceduralMesh);
-DECLARE_CYCLE_STAT(TEXT("Create Mesh Section"), STAT_ProcMesh_CreateMeshSection, STATGROUP_ProceduralMesh);
-DECLARE_CYCLE_STAT(TEXT("UpdateSection GT"), STAT_ProcMesh_UpdateSectionGT, STATGROUP_ProceduralMesh);
-DECLARE_CYCLE_STAT(TEXT("UpdateSection RT"), STAT_ProcMesh_UpdateSectionRT, STATGROUP_ProceduralMesh);
-DECLARE_CYCLE_STAT(TEXT("Get ProcMesh Elements"), STAT_ProcMesh_GetMeshElements, STATGROUP_ProceduralMesh);
-DECLARE_CYCLE_STAT(TEXT("Update Collision"), STAT_ProcMesh_UpdateCollision, STATGROUP_ProceduralMesh);*/
-
 
 DEFINE_LOG_CATEGORY_STATIC(LogLineRendererComponent, Log, All);
 
@@ -29,7 +22,7 @@ void ULineMeshComponent::CreateLine(int32 SectionIndex, const TArray<FVector>& I
 
     TArray<FVector3f> Vertices(InVertices);
 
-    TSharedPtr<FLineMeshSection> NewSection(MakeShareable(new FLineMeshSection));
+    FLineMeshSection* NewSection = new FLineMeshSection;
 
     // Copy data to vertex buffer 10;//
     const int32 NumVerts = Vertices.Num();
@@ -65,6 +58,7 @@ void ULineMeshComponent::CreateLine(int32 SectionIndex, const TArray<FVector>& I
 	Sections.Add(NewSection);
 
 	UpdateLocalBounds();
+	MarkRenderStateDirty();
 }
 
 void ULineMeshComponent::RemoveLine(int32 SectionIndex)
@@ -104,7 +98,7 @@ int32 ULineMeshComponent::GetNumLines() const
 
 void ULineMeshComponent::UpdateLocalBounds()
 {
-    // Update global bounds
+	// Update global bounds
 	UpdateBounds();
 	// Need to send to render thread
 	MarkRenderTransformDirty();

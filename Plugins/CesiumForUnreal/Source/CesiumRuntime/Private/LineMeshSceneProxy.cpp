@@ -8,10 +8,10 @@
 #include "Runtime/Core/Public/HAL/ThreadingBase.h"
 
 /** Class representing a single section of the proc mesh */
-class FLineMeshProxySection
+class FLineMeshSectionProxy
 {
 public:
-    virtual ~FLineMeshProxySection()
+    virtual ~FLineMeshSectionProxy()
     {
         check (IsInRenderingThread());
 
@@ -38,7 +38,7 @@ public:
     /** Whether this section is initialized i.e. render resources created */
     bool bInitialized;
 
-    FLineMeshProxySection(ERHIFeatureLevel::Type InFeatureLevel)
+    FLineMeshSectionProxy(ERHIFeatureLevel::Type InFeatureLevel)
         : Material(NULL)
         , VertexFactory(InFeatureLevel, "FLineMeshProxySection")
         , bSectionVisible(true)
@@ -63,9 +63,9 @@ FLineMeshSceneProxy::FLineMeshSceneProxy(ULineMeshComponent* InComponent)
 : FPrimitiveSceneProxy(InComponent), Component(InComponent), MaterialRelevance(Component->GetMaterialRelevance(GetScene().GetFeatureLevel()))
 {
     Mutex = new FCriticalSection;
-	for (auto aaa :InComponent->Sections)
+	for (FLineMeshSection* section : InComponent->Sections)
 	{
-		AddNewSection_GameThread(aaa);
+		AddNewSection_GameThread(section);
 	}
 	
 }
@@ -74,9 +74,9 @@ FLineMeshSceneProxy::~FLineMeshSceneProxy()
 {
     check (IsInRenderingThread());
     
-    for (TTuple<int32, TSharedPtr<FLineMeshProxySection>> KeyValueIter : Sections)
+    for (TTuple<int32, TSharedPtr<FLineMeshSectionProxy>> KeyValueIter : Sections)
     {
-        TSharedPtr<FLineMeshProxySection> Section = KeyValueIter.Value;
+        TSharedPtr<FLineMeshSectionProxy> Section = KeyValueIter.Value;
         if (Section.IsValid())
         {
             Section->VertexBuffers.PositionVertexBuffer.ReleaseResource();
@@ -97,9 +97,9 @@ SIZE_T FLineMeshSceneProxy::GetTypeHash() const
 void FLineMeshSceneProxy::GetDynamicMeshElements(const TArray<const FSceneView*>& Views, const FSceneViewFamily& ViewFamily, uint32 VisibilityMap, FMeshElementCollector& Collector) const
 {
     // Iterate over sections
-    for (const TTuple<int32, TSharedPtr<FLineMeshProxySection>>& KeyValueIter : Sections)
+    for (const TTuple<int32, TSharedPtr<FLineMeshSectionProxy>>& KeyValueIter : Sections)
     {
-        TSharedPtr<FLineMeshProxySection> Section = KeyValueIter.Value;
+        TSharedPtr<FLineMeshSectionProxy> Section = KeyValueIter.Value;
 
         if (Section.IsValid() && Section->bInitialized && Section->bSectionVisible)
         {
@@ -160,20 +160,35 @@ FPrimitiveViewRelevance FLineMeshSceneProxy::GetViewRelevance(const FSceneView* 
     return Result;
 }
 
-void FLineMeshSceneProxy::AddNewSection_GameThread(TSharedPtr<FLineMeshSection> SrcSection)
+bool FLineMeshSceneProxy::CanBeOccluded() const
 {
-    check(IsInGameThread());
+    return !MaterialRelevance.bDisableDepthTest;
+}
+
+uint32 FLineMeshSceneProxy::GetMemoryFootprint() const
+{
+    return sizeof(*this) + GetAllocatedSize();
+}
+
+uint32 FLineMeshSceneProxy::GetAllocatedSize() const
+{
+    return FPrimitiveSceneProxy::GetAllocatedSize();
+}
+
+void FLineMeshSceneProxy::AddNewSection_GameThread(FLineMeshSection* SrcSection)
+{
+	check(IsInGameThread());
 
     const int32 SrcSectionIndex = SrcSection->SectionIndex;
 
     // Copy data from vertex buffer
     const int32 NumVerts = SrcSection->ProcVertexBuffer.Num();
 
-    TSharedPtr<FLineMeshProxySection> NewSection(MakeShareable(new FLineMeshProxySection(GetScene().GetFeatureLevel())));
+    TSharedPtr<FLineMeshSectionProxy> NewSection(MakeShareable(new FLineMeshSectionProxy(GetScene().GetFeatureLevel())));
     {
         NewSection->VertexBuffers.StaticMeshVertexBuffer.Init(NumVerts, 2, true);
 
-        TArray<FVector3f> InVertexBuffer(MoveTemp(SrcSection->ProcVertexBuffer));
+        TArray<FVector3f> InVertexBuffer(SrcSection->ProcVertexBuffer);
         NewSection->VertexBuffers.PositionVertexBuffer.Init(InVertexBuffer, true);
         NewSection->IndexBuffer.SetIndices(SrcSection->ProcIndexBuffer, EIndexBufferStride::Force16Bit);
 
@@ -184,12 +199,12 @@ void FLineMeshSceneProxy::AddNewSection_GameThread(TSharedPtr<FLineMeshSection> 
         NewSection->bSectionVisible = SrcSection->bSectionVisible;
         NewSection->SectionLocalBox = SrcSection->SectionLocalBox;
     }
-	auto aaa = &NewSection->VertexFactory;
+	
     ENQUEUE_RENDER_COMMAND(LineMeshVertexBuffersInit)(
         [this, SrcSectionIndex, NewSection](FRHICommandListImmediate& RHICmdList)
         {
 			InitOrUpdateResource(&NewSection->VertexBuffers.PositionVertexBuffer);
-			//InitOrUpdateResource(&NewSection->VertexBuffers.StaticMeshVertexBuffer);
+			InitOrUpdateResource(&NewSection->VertexBuffers.StaticMeshVertexBuffer);
 
             FLocalVertexFactory::FDataType Data;
             NewSection->VertexBuffers.PositionVertexBuffer.BindPositionVertexBuffer(&NewSection->VertexFactory, Data);
@@ -225,21 +240,6 @@ void FLineMeshSceneProxy::AddNewSection_GameThread(TSharedPtr<FLineMeshSection> 
 */
 }
 
-bool FLineMeshSceneProxy::CanBeOccluded() const
-{
-    return !MaterialRelevance.bDisableDepthTest;
-}
-
-uint32 FLineMeshSceneProxy::GetMemoryFootprint() const
-{
-    return sizeof(*this) + GetAllocatedSize();
-}
-
-uint32 FLineMeshSceneProxy::GetAllocatedSize() const
-{
-    return FPrimitiveSceneProxy::GetAllocatedSize();
-}
-
 int32 FLineMeshSceneProxy::GetNumSections() const
 {
     return Sections.Num();
@@ -260,7 +260,7 @@ void FLineMeshSceneProxy::ClearMeshSection(int32 SectionIndex)
     ENQUEUE_RENDER_COMMAND(ReleaseSectionResources)(
         [this, SectionIndex](FRHICommandListImmediate&)
         {
-            TSharedPtr<FLineMeshProxySection> Section = Sections[SectionIndex];
+            TSharedPtr<FLineMeshSectionProxy> Section = Sections[SectionIndex];
 
             Section->VertexBuffers.StaticMeshVertexBuffer.ReleaseResource();
             Section->VertexBuffers.PositionVertexBuffer.ReleaseResource();

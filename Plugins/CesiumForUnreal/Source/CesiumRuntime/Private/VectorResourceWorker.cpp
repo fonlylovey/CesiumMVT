@@ -112,7 +112,7 @@ void* VectorResourceWorker::prepareVectorInMainThread(Cesium3DTilesSelection::Ve
 	FTileModel* pTileModelData = new FTileModel;
 	if(pModelData->layers.size() > 0)
 	{
-		if (Level >  0)
+		if (Level == 13 && Row == 2667 && Col == 13685)
 		{
 			FString strMessagr = "Level: " + FString::FormatAsNumber(Level) +
 			"  Row: " + FString::FormatAsNumber(Row) +
@@ -161,6 +161,7 @@ void* VectorResourceWorker::prepareVectorInMainThread(Cesium3DTilesSelection::Ve
 						//polyIndex.Add(inx);
 					}
 					section.IndexBuffer = polyIndex;
+					//section.VertexBuffer.Append(polyVertex);
 					section.SectionIndex = index;
 					pTileModelData->Sections.Add(section);
 					index++;
@@ -194,7 +195,7 @@ void VectorResourceWorker::attachVectorInMainThread(const Cesium3DTilesSelection
 		{
 			pVectorContent->isAttach = true;
 			//pVectorContent->SetVisibility(true, true);
-			pVectorContent->AttachToComponent(pGltfContent, FAttachmentTransformRules::KeepWorldTransform);
+			//pVectorContent->AttachToComponent(pGltfContent, FAttachmentTransformRules::KeepWorldTransform);
 			UE_LOG(LogTemp, Error, TEXT("Attach %s"), *pVectorContent->GetName());
 
 		}
