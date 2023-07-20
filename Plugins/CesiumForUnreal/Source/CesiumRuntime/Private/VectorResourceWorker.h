@@ -20,7 +20,7 @@ public:
 	VectorResourceWorker(ACesium3DTileset* pActor) : _pActor(pActor) {}
 	~VectorResourceWorker() = default;
 
-	virtual void* prepareVectorInLoadThread(CesiumGltf::VectorModel& model, const std::any& rendererOptions) override;
+	virtual void* prepareVectorInLoadThread(CesiumGltf::VectorModel* pModel, const std::any& rendererOptions) override;
 
 	virtual void* prepareVectorInMainThread(Cesium3DTilesSelection::VectorOverlayTile& vectorTile,
 		void* pLoadThreadResult) override;

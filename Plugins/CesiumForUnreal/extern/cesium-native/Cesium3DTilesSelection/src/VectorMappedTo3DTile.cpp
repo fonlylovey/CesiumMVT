@@ -104,6 +104,7 @@ bool VectorMappedTo3DTile::update(
       this->_state = AttachmentState::Unattached;
     }
 
+
     // Mark the loading tile ready.
     this->_pReadyTile = this->_pLoadingTile;
     this->_pLoadingTile = nullptr;

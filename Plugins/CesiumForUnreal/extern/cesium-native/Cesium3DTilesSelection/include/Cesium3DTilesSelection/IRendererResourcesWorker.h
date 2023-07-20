@@ -57,7 +57,7 @@ public:
    * `pLoadThreadResult` parameter.
    */
   virtual void* prepareVectorInLoadThread(
-      CesiumGltf::VectorModel& model,
+      CesiumGltf::VectorModel* model,
       const std::any& rendererOptions) = 0;
 
   /**

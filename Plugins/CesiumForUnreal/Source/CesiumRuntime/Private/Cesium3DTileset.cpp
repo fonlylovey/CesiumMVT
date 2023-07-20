@@ -71,6 +71,8 @@ FCesium3DTilesetLoadFailure OnCesium3DTilesetLoadFailure{};
 #endif
 #include "CesiumVectorComponent.h"
 #include "CesiumVectorComponent.h"
+#include <Cesium3DTilesSelection/Tile.h>
+#include <Cesium3DTilesSelection/TileID.h>
 // Sets default values
 ACesium3DTileset::ACesium3DTileset()
     : Georeference(nullptr),
@@ -666,6 +668,7 @@ public:
               pLoadThreadResult));
       const Cesium3DTilesSelection::TileRenderContent& renderContent =
           *content.getRenderContent();
+		  
       return UCesiumGltfComponent::CreateOnGameThread(
           renderContent.getModel(),
           this->_pActor,

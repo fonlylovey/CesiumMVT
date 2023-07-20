@@ -12,13 +12,13 @@ UCesiumVectorComponent* UCesiumVectorComponent::CreateOnGameThread(
 	USceneComponent* pParentComponent)
 {
 	UCesiumVectorComponent* mvtComponent = NewObject<UCesiumVectorComponent>(pParentComponent, *tileModel->TileName);
-	//mvtComponent->AttachToComponent(pParentComponent, FAttachmentTransformRules::KeepRelativeTransform);
-	//mvtComponent->ReregisterComponent();
 	mvtComponent->SetUsingAbsoluteLocation(true);
 	mvtComponent->SetMobility(pParentComponent->Mobility);
 	mvtComponent->SetFlags(RF_Transient | RF_DuplicateTransient | RF_TextExportTransient);
 	mvtComponent->BuildMesh(tileModel, TEXT("Mesh_") + tileModel->TileName);
-	mvtComponent->SetVisibility(true, true);
+	mvtComponent->RegisterComponent();
+	mvtComponent->AttachToComponent(pParentComponent, FAttachmentTransformRules::KeepWorldTransform);
+	//mvtComponent->SetVisibility(false, true);
 	return mvtComponent;
 }
 
@@ -44,10 +44,8 @@ void UCesiumVectorComponent::BuildMesh(const FTileModel* tileModel, FString strN
 
 	
 	//* 测试代码->GetOwner()->GetRootComponent()
-	
+	/*
 	lineComponent = NewObject<ULineMeshComponent>(this, *strName);
-	lineComponent->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
-	lineComponent->RegisterComponent();
 	lineComponent->Material = BaseMaterial;
 
 	int index = 0;
@@ -67,13 +65,14 @@ void UCesiumVectorComponent::BuildMesh(const FTileModel* tileModel, FString strN
 		sectionIndex++;
 		++index;
 	}
-	
+	lineComponent->RegisterComponent();
+	lineComponent->AttachToComponent(this, FAttachmentTransformRules::KeepWorldTransform);*/
 	/*************************/
 
-	/*
+	
 	VectorMesh = NewObject<UStaticMeshComponent>(this, *strName);
-	VectorMesh->AttachToComponent(this->GetOwner()->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
 	VectorMesh->RegisterComponent();
+	VectorMesh->AttachToComponent(this, FAttachmentTransformRules::KeepWorldTransform);
 
 	UStaticMesh* pStaticMesh = NewObject<UStaticMesh>(VectorMesh);
 	pStaticMesh->NeverStream = true;
@@ -82,17 +81,21 @@ void UCesiumVectorComponent::BuildMesh(const FTileModel* tileModel, FString strN
 	pStaticMesh->SetFlags(RF_Transient | RF_DuplicateTransient | RF_TextExportTransient);
 	TUniquePtr<FStaticMeshRenderData> RenderData = MakeUnique<FStaticMeshRenderData>();
 	RenderData->AllocateLODResources(1);
+	
 	FStaticMeshLODResources& LODResources = RenderData->LODResources[0];
 	LODResources.bHasColorVertexData = false;
 	LODResources.bHasDepthOnlyIndices = false;
 	LODResources.bHasReversedIndices = false;
 	LODResources.bHasReversedDepthOnlyIndices = false;
-
+	
 	FStaticMeshSectionArray& Sections = LODResources.Sections;
 	TArray<FStaticMeshBuildVertex> vertexData;
 	TArray<uint32> indexs;
-	int index = 0;
-	FVector3f minPos = FVector3f::Zero(), maxPos = FVector3f::Zero();
+	
+	int sectionCount = 0;
+	FBox3d box;
+	box.Init();
+	
 	for (const FCesiumMeshSection& section : tileModel->Sections)
 	{
 		int32 count = section.IndexBuffer.Num();
@@ -100,38 +103,36 @@ void UCesiumVectorComponent::BuildMesh(const FTileModel* tileModel, FString strN
 		staticSection.bEnableCollision = false;
 		staticSection.MaterialIndex = 0;
 		staticSection.NumTriangles =  count / 3;
-		staticSection.FirstIndex = index;
-		staticSection.MinVertexIndex = index;
-		staticSection.MaxVertexIndex = index + count - 1;
-		minPos = minPos.IsZero() ? section.VertexBuffer[0] : minPos;
-		maxPos = maxPos.IsZero() ? section.VertexBuffer[0] : maxPos;
-		
-		for (int32 i = 0; i < section.IndexBuffer.Num(); i++)
+		staticSection.FirstIndex = sectionCount;
+		staticSection.MinVertexIndex = 0;
+		staticSection.MaxVertexIndex = sectionCount + count - 1;
+
+		for (int32 i = 0; i < section.VertexBuffer.Num(); i++)
 		{
-			int32 theIndex = section.IndexBuffer[i];
+			
 			FStaticMeshBuildVertex vertex;
-			vertex.Position = section.VertexBuffer[theIndex];
-			vertex.Position.X < minPos.X ? minPos.X = vertex.Position.X: minPos.X;
-			vertex.Position.X > maxPos.X ? maxPos.X = vertex.Position.X: maxPos.X;
-
-			vertex.Position.Y < minPos.Y ? minPos.Y = vertex.Position.Y : minPos.Y;
-			vertex.Position.Y > maxPos.Y ? maxPos.Y = vertex.Position.Y : maxPos.Y;
-
+			vertex.Position = section.VertexBuffer[i];
+			box += FVector(vertex.Position);
 			vertex.Color = FColor::Red;
 			vertex.UVs[0] = FVector2f(0, 0);
-			vertex.TangentZ = FVector3f(0, 0, 1);
+			vertex.TangentZ = vertex.Position.GetSafeNormal();
 			vertexData.Add(vertex);
-			indexs.Add(index + theIndex);
-			index++;
 		}
-		
+
+		for (int i = 0; i < count; i++)
+		{
+			int32 theIndex = section.IndexBuffer[i];
+			indexs.Add(sectionCount + theIndex);
+		}
+		sectionCount = sectionCount + count;
 	}
 
 	//设置包围盒
+	
 	FBoxSphereBounds BoundingBoxAndSphere;
-	BoundingBoxAndSphere.Origin = FVector(0, 0, 0);
-	BoundingBoxAndSphere.BoxExtent = FVector(maxPos.X - minPos.X, maxPos.Y - minPos.Y, 1000);
-	BoundingBoxAndSphere.SphereRadius = FVector3f::Distance(maxPos, minPos);
+	BoundingBoxAndSphere.Origin = FVector(box.GetCenter());
+	BoundingBoxAndSphere.BoxExtent = FVector(box.GetExtent());
+	BoundingBoxAndSphere.SphereRadius = BoundingBoxAndSphere.BoxExtent.Size();
 	RenderData->Bounds = BoundingBoxAndSphere;
 	LODResources.IndexBuffer.SetIndices(indexs, EIndexBufferStride::AutoDetect);
 	LODResources.VertexBuffers.PositionVertexBuffer.Init(vertexData);
@@ -143,7 +144,6 @@ void UCesiumVectorComponent::BuildMesh(const FTileModel* tileModel, FString strN
 	pStaticMesh->AddMaterial(pMaterial);
 	pStaticMesh->InitResources();
 	VectorMesh->SetStaticMesh(pStaticMesh);
-	*/
 }
 
 void UCesiumVectorComponent::BeginDestroy()
@@ -155,8 +155,8 @@ void UCesiumVectorComponent::BeginDestroy()
 		 UE_LOG(LogTemp, Error, TEXT("%s"), *strMsg);
 		 lineComponent->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
 		 lineComponent->UnregisterComponent();
-		 lineComponent->DestroyComponent();
-		 lineComponent = nullptr;
+		 //lineComponent->BeginDestroy();
+		 //lineComponent = nullptr;
 	 }
 }
 
@@ -180,4 +180,26 @@ UMaterialInterface* UCesiumVectorComponent::createMaterial()
 	mat->TwoSided = true;
 	VectorMaterial = mat;
 	return mat;
+}
+
+
+namespace
+{
+	
+	FBoxSphereBounds calcBox(const TArray<FVector3f>& vertex)
+	{
+		float xMin, yMin, xMax, yMax;
+		for (int32 i = 0; i < vertex.Num(); i++)
+		{
+			FVector3f pos = vertex[i];
+			xMin = pos.X > xMin ? xMin : pos.X;
+			yMin = pos.Y > yMin ? yMin : pos.Y;
+
+			xMax = pos.X <  xMax ? xMax : pos.X;
+			yMax = pos.Y < yMax ? yMax : pos.Y;
+		}
+		FBoxSphereBounds box;
+		return box;
+	}
+
 }

@@ -19,73 +19,71 @@ namespace
 	class VectorGeomHandler : public VTR::GeometryHandler
 	{
 	public:
-	CesiumGltf::VectorLayer layer;
+	VectorFeature feature;
+
 	virtual void points_begin(uint32_t count)
 	{
-		geoCount = count;
-		VectorFeature feature;
-		feature.mvtType = FeatureType::Point;
-		layer.features.emplace_back(feature);
+        count;
+        VectorGeometry geom;
+		feature.featureType = FeatureType::Point;
+		feature.geometry.emplace_back(geom);
 	}
 
 	virtual void points_point(const vtzero::point_3d &pt)
 	{
-		layer.features.rbegin()->points.emplace_back(pt.x, pt.y, pt.z);
+		feature.geometry.rbegin()->points.emplace_back(pt.x, pt.y, pt.z);
 	}
 
 	virtual void points_end(vtzero::ring_type type = vtzero::ring_type::invalid)
 	{
-		layer.features.rbegin()->ringType = static_cast<int>(type);
+		feature.geometry.rbegin()->ringType = static_cast<RingType>(type);
 	}
 
 	virtual void linestring_begin(uint32_t count)
 	{
-		geoCount = count;
-		VectorFeature feature;
-		feature.mvtType = FeatureType::LineString;
-		layer.features.emplace_back(feature);
+		count;
+		VectorGeometry geom;
+		feature.geometry.emplace_back(geom);
 	}
 
 	virtual void linestring_point(const vtzero::point_3d&pt)
 	{
-		layer.features.rbegin()->points.emplace_back(pt.x, pt.y, pt.z);
+		feature.geometry.rbegin()->points.emplace_back(pt.x, pt.y, pt.z);
 	}
 
 	virtual void linestring_end(vtzero::ring_type type = vtzero::ring_type::invalid)
 	{
-		layer.features.rbegin()->ringType = static_cast<int>(type);
+		feature.geometry.rbegin()->ringType = static_cast<RingType>(type);
 	}
 
 	virtual void ring_begin(uint32_t count)
 	{
-		geoCount = count;
-		VectorFeature feature;
-		feature.mvtType = FeatureType::Point;
-		layer.features.emplace_back(feature);
+		count;
+		VectorGeometry geom;
+		feature.geometry.emplace_back(geom);
 	}
 
 	virtual void ring_point(const vtzero::point_3d &pt)
 	{
-			layer.features.rbegin()->points.emplace_back(pt.x, pt.y, pt.z);
+		feature.geometry.rbegin()->points.emplace_back(pt.x, pt.y, pt.z);
 	}
 
 	virtual void ring_end(vtzero::ring_type type = vtzero::ring_type::invalid)
 	{
-			layer.features.rbegin()->ringType = static_cast<int>(type);
+		feature.geometry.rbegin()->ringType = static_cast<RingType>(type);
 	}
 
-	//splie类型才会用到的控制点啥的
+	//
 	void controlpoints_begin(const uint32_t count) 
 	{
-			geoCount = count;
-			VectorFeature feature;
-			feature.mvtType = FeatureType::Spline;
-			layer.features.emplace_back(feature);
+		count;
+        VectorGeometry geom;
+        feature.geometry.emplace_back(geom);
 	}
 
 	void controlpoints_point(const vtzero::point_3d pt) 
 	{
-		layer.features.rbegin()->points.emplace_back(pt.x, pt.y, pt.z);
+		feature.geometry.rbegin()->points.emplace_back(pt.x, pt.y, pt.z);
 	}
 
 	void controlpoints_end() 
@@ -95,9 +93,9 @@ namespace
 
 	void knots_begin(const uint32_t count, vtzero::index_value /*scaling*/) 
 	{
-		geoCount = count;
-		VectorFeature feature;
-		layer.features.emplace_back(feature);
+		count;
+		VectorGeometry geom;
+		feature.geometry.emplace_back(geom);
 	}
 
 	void knots_value(const int64_t /*value*/) 
@@ -110,25 +108,27 @@ namespace
 	};
 
 	//解析二进制的矢量数据
-	std::vector<VectorGeomHandler*> resolvingGeoData(const std::string& strData) 
+	CesiumGltf::VectorModel* resolvingGeoData(const std::string& strData) 
 	{
-		std::vector<VectorGeomHandler*> geoms;
+        CesiumGltf::VectorModel* tileModel = new CesiumGltf::VectorModel;
+
 		vtzero::vector_tile tile(strData);
 		for (const auto layer : tile)
 		{
+			CesiumGltf::VectorLayer vlayer;
+            vlayer.name = layer.name().to_string();
 			for (const auto feature : layer)
 			{
 				VectorGeomHandler* handler = new VectorGeomHandler;
-				handler->layerID = (int)layer.layer_num();
-				handler->featureID = feature.has_integer_id()
-					? std::to_string(feature.integer_id())
-					: feature.string_id().to_string();
-				handler->featureType = feature.geometry_type();
 				feature.decode_geometry(*handler);
-				geoms.push_back(handler);
+                handler->feature.featureID = feature.integer_id();
+                handler->feature.featureType = static_cast<FeatureType>(feature.geometry_type());
+                vlayer.features.emplace_back(handler->feature);
+                delete handler;
 			}
+            tileModel->layers.emplace_back(vlayer);
 		}
-		return geoms;
+		return tileModel;
 	}
 
 
@@ -142,13 +142,8 @@ namespace
 	VectorReaderResult result;
 	try
 	{
-		std::vector<VectorGeomHandler*> geoms = resolvingGeoData(data);
-      
-		CesiumGltf::VectorModel model;
-		for (auto geom : geoms)
-		{
-            result.model.layers.emplace_back(geom->layer);
-		}
+		CesiumGltf::VectorModel* tileModel = resolvingGeoData(data);
+        result.model = tileModel;
 	}
 	catch (std::runtime_error ex)
 	{

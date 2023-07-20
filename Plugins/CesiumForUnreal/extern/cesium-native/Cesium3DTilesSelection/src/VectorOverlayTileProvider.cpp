@@ -142,7 +142,7 @@ VectorOverlayTileProvider::loadTileDataFromUrl(
         if (pResponse == nullptr)
         {
           return LoadedVectorOverlayData{
-              {},
+              nullptr,
               options.rectangle,
               std::move(options.credits),
               {"Vector request for " + tileUrl + " failed."},
@@ -156,7 +156,7 @@ VectorOverlayTileProvider::loadTileDataFromUrl(
                                 std::to_string(pResponse->statusCode()) +
                                 " for " + tileUrl;
           return LoadedVectorOverlayData{
-              {},
+              nullptr,
               options.rectangle,
               std::move(options.credits),
               {message},
@@ -167,7 +167,7 @@ VectorOverlayTileProvider::loadTileDataFromUrl(
         {
 
           return LoadedVectorOverlayData{
-              {},
+              nullptr,
               options.rectangle,
               std::move(options.credits),
               {"vector request for " + tileUrl + " failed."},
@@ -179,9 +179,9 @@ VectorOverlayTileProvider::loadTileDataFromUrl(
         const char* charData = reinterpret_cast<const char*>(data.data());
         const std::string stringData(charData, dataSize);
         CesiumGltfReader::VectorReaderResult loadedData = _vectorReader.readVector(stringData);
-		loadedData.model.level = options.level;
-		loadedData.model.Row = options.Row;
-		loadedData.model.Col = options.Col;
+		loadedData.model->level = options.level;
+		loadedData.model->Row = options.Row;
+		loadedData.model->Col = options.Col;
 
         if (!loadedData.errors.empty()) {
           loadedData.errors.push_back("tile url: " + tileUrl);
@@ -205,7 +205,7 @@ VectorOverlayTileProvider::loadTileDataFromUrl(
 namespace {
 struct LoadResult {
   VectorOverlayTile::LoadState state = VectorOverlayTile::LoadState::Unloaded;
-  CesiumGltf::VectorModel model = {};
+  CesiumGltf::VectorModel* model = {};
   CesiumGeometry::Rectangle rectangle = {};
   std::vector<Credit> credits = {};
   void* pRendererResources = nullptr;
@@ -217,7 +217,7 @@ static LoadResult createLoadResultFromLoadedData(
     LoadedVectorOverlayData&& loadedData,
     const std::any& rendererOptions)
 {
-  if (!loadedData.vectorModel.has_value()) {
+  if (loadedData.vectorModel == nullptr) {
     SPDLOG_LOGGER_ERROR(
         pLogger,
         "Failed to load vector for tile {}:\n- {}",
@@ -238,8 +238,8 @@ static LoadResult createLoadResultFromLoadedData(
         CesiumUtility::joinToString(loadedData.warnings, "\n- "));
   }
 
-  CesiumGltf::VectorModel& model = loadedData.vectorModel.value();
-  if (model.layers.size() > 0)
+  CesiumGltf::VectorModel* model = loadedData.vectorModel;
+  if (model->layers.size() > 0)
   {
     void* pRendererResources = nullptr;
     if (pRendererResourcesWorker) 
@@ -251,7 +251,7 @@ static LoadResult createLoadResultFromLoadedData(
 
     LoadResult result;
     result.state = VectorOverlayTile::LoadState::Loaded;
-    result.model = std::move(model);
+    result.model = model;
     result.rectangle = loadedData.rectangle;
     result.credits = std::move(loadedData.credits);
     result.pRendererResources = pRendererResources;
@@ -304,12 +304,16 @@ void VectorOverlayTileProvider::doLoad(VectorOverlayTile& tile, bool isThrottled
         {
             pTile->_rectangle = result.rectangle;
             pTile->_pRendererResources = result.pRendererResources;
-            pTile->_vectorModel = std::move(result.model);
+            pTile->_vectorModel = result.model;
             pTile->_tileCredits = std::move(result.credits);
             pTile->setState(result.state);
             //ÒªÖØÐ´
-            thisPtr->_tileDataBytes +=
-                int64_t(pTile->getVectorModel().layers.size());
+            if (pTile->getVectorModel() != nullptr) 
+			{
+				 thisPtr->_tileDataBytes +=
+                int64_t(pTile->getVectorModel()->layers.size());
+            }
+           
 
             thisPtr->finalizeTileLoad(isThrottledLoad);
           })

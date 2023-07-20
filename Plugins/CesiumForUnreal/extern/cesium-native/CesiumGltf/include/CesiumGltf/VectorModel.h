@@ -6,38 +6,69 @@
 #include "CesiumUtility/ExtensibleObject.h"
 #include "glm/vec3.hpp"
 #include <functional>
+/*
+矢量瓦片标准 https://github.com/jingsam/vector-tile-spec/blob/master/2.1/README_zh.md#42-%E8%A6%81%E7%B4%A0
+4.1. 图层
+none
+4.2. 要素
+每个要素必须包含一个geometry字段。
 
+每个要素必须包含一个type字段，该字段将在几何类型章节描述（4.3.4）。
+
+每个要素可以包含一个tags字段。如果存在属于要素级别的元数据，应该存储到tags字段中。
+
+每个要素可以包含一个id字段。如果一个要素包含一个id字段，那么id字段的值应该相对于图层中的其他要素是唯一的。
+
+4.3.4.4. Polygon几何类型
+POLYGON几何类型表示面或多面几何，每个面有且只有一个外环和零个或多个内环。面几何的指令序列包含一个或多个下列序列：
+一个ExteriorRing
+零个或多个InteriorRing
+
+*/
 namespace CesiumGltf
 {
-enum class FeatureType {
-  Point, LineString, Polygon, Spline
+enum class FeatureType { UNKNOWN, Point, LineString, Polygon };
+
+enum class RingType { Outer, Inner, Invalid };
+
+struct VectorGeometry 
+{
+  // 要素坐标集合
+  std::vector<glm::ivec3> points;
+
+  // 多边形环的类型 outer = 0,inner = 1, invalid = 2
+  RingType ringType = RingType::Invalid;
 };
 
 //一个矢量要素
 struct VectorFeature
 {
 
-  //要素坐标集合
-  std::vector<glm::ivec3> points;
+	std::vector<VectorGeometry> geometry;
 
-  // 矢量要素的类型
-  FeatureType mvtType = FeatureType::Point;
+	// 矢量要素的类型
+	FeatureType featureType = FeatureType::Point;
 
-  //要素ID
-  int featureID = -1;
+	//要素ID
+	size_t featureID = 0;
 
-  //要素个数
-  size_t featureCount = 0;
+	//要素个数
+	size_t featureCount = 0;
 
-  // 多边形环的类型 outer = 0,inner = 1, invalid = 2
-  int ringType = 2;
+	
 };
 
 // 一个矢量图层
 struct VectorLayer
 {
-  std::vector<VectorFeature> features;
-  int layerID = -1;
+	uint32_t version = 4096;
+
+	std::string name = "";
+
+	//瓦片的大小
+	uint32_t extent = 4096;
+
+	std::vector<VectorFeature> features;
 };
 
 /** @copydoc VectorModel */

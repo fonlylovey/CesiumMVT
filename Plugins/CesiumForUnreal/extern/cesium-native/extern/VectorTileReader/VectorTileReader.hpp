@@ -74,10 +74,6 @@ namespace VTR
     {
     public:
         virtual ~GeometryHandler() = default;
-        int layerID = 0;
-        std::string featureID;
-        vtzero::GeomType featureType = vtzero::GeomType::UNKNOWN;
-        int geoCount = 0;
         constexpr static const int dimensions = 3;
         constexpr static const unsigned int max_geometric_attributes = 0;
     };
@@ -98,7 +94,6 @@ namespace VTR
         virtual void points_point(const vtzero::point_3d &pt)
         {
             mpt = pt;
-            geoCount++;
         }
 
         virtual void points_end(vtzero::ring_type type = vtzero::ring_type::invalid)
@@ -135,7 +130,6 @@ namespace VTR
         virtual void linestring_point(const vtzero::point_3d&pt)
         {
             lineString.line.push_back(pt);
-            geoCount++;
         }
 
         virtual void linestring_end(vtzero::ring_type type = vtzero::ring_type::invalid)
@@ -168,7 +162,6 @@ namespace VTR
         virtual void ring_point(const vtzero::point_3d &pt)
         {
             polygon.rbegin()->line.push_back(pt);
-            geoCount++;
         }
 
         virtual void ring_end(vtzero::ring_type type = vtzero::ring_type::invalid)

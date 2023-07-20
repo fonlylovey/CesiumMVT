@@ -56,7 +56,7 @@ struct TileMatrixSet
  */
 struct CESIUM3DTILESSELECTION_API LoadedVectorOverlayData {
 
-  std::optional<CesiumGltf::VectorModel> vectorModel = {};
+  CesiumGltf::VectorModel* vectorModel = nullptr;
 
   CesiumGeometry::Rectangle rectangle = {};
 

@@ -57,8 +57,8 @@ void ULineMeshComponent::CreateLine(int32 SectionIndex, const TArray<FVector>& I
     NewSection->Material = CreateOrUpdateMaterial(SectionIndex, Color);
 	Sections.Add(NewSection);
 
-	UpdateLocalBounds();
 	MarkRenderStateDirty();
+	UpdateLocalBounds();
 }
 
 void ULineMeshComponent::RemoveLine(int32 SectionIndex)
@@ -98,10 +98,11 @@ int32 ULineMeshComponent::GetNumLines() const
 
 void ULineMeshComponent::UpdateLocalBounds()
 {
+// Need to send to render thread
+	MarkRenderTransformDirty();
 	// Update global bounds
 	UpdateBounds();
-	// Need to send to render thread
-	MarkRenderTransformDirty();
+	
 }
 
 FPrimitiveSceneProxy* ULineMeshComponent::CreateSceneProxy()
@@ -132,6 +133,7 @@ UMaterialInterface* ULineMeshComponent::CreateOrUpdateMaterial(int32 SectionInde
 
     UMaterialInstanceDynamic* MI = SectionMaterials[SectionIndex];
     MI->SetVectorParameterValue(TEXT("FillColor"), Color);
+	MI->TwoSided = true;
 
     return MI;
 }

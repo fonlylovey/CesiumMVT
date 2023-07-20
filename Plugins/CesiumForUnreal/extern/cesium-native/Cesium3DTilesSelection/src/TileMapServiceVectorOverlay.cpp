@@ -95,7 +95,7 @@ protected:
     } else {
       return this->getAsyncSystem()
           .createResolvedFuture<LoadedVectorOverlayData>(
-              {std::nullopt,
+              {nullptr,
                options.rectangle,
                {},
                {"Failed to load image from TMS."},

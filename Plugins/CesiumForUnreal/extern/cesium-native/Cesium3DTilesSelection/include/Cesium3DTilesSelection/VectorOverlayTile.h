@@ -167,7 +167,7 @@ public:
    *
    * @return The image data.
    */
-  const CesiumGltf::VectorModel& getVectorModel() const noexcept {
+  const CesiumGltf::VectorModel* getVectorModel() const noexcept {
     return this->_vectorModel;
   }
 
@@ -179,7 +179,7 @@ public:
    *
    * @return The image data.
    */
-  CesiumGltf::VectorModel& getVectorModel() noexcept {
+  CesiumGltf::VectorModel* getVectorModel() noexcept {
     return this->_vectorModel;
   }
 
@@ -225,7 +225,7 @@ private:
   CesiumGeometry::Rectangle _rectangle;
   std::vector<Credit> _tileCredits;
   LoadState _state;
-  CesiumGltf::VectorModel _vectorModel;
+  CesiumGltf::VectorModel* _vectorModel;
   void* _pRendererResources;
 };
 } // namespace Cesium3DTilesSelection

@@ -349,7 +349,7 @@ QuadtreeVectorOverlayTileProvider::getQuadtreeTile(
                             loadParentTile = std::move(loadParentTile)](
                                LoadedVectorOverlayData&& loaded) {
             if (loaded.vectorModel && loaded.errors.empty() &&
-                loaded.vectorModel.has_value())
+                loaded.vectorModel != nullptr)
             {
               // Successfully loaded, continue.
               cachedBytes += int64_t(loaded.vectorModel->layers.size());
@@ -459,7 +459,7 @@ QuadtreeVectorOverlayTileProvider::loadTileData(
             models.end(),
             [](const LoadedQuadtreeData& model)
           {
-              return model.pLoaded->vectorModel.has_value() &&
+              return model.pLoaded->vectorModel != nullptr &&
                      !model.subset.has_value();
             });
 
@@ -470,14 +470,14 @@ QuadtreeVectorOverlayTileProvider::loadTileData(
           // See https://github.com/CesiumGS/cesium-native/issues/316 for an
           // edge case that is not yet handled.
           return LoadedVectorOverlayData{
-              VectorModel(),
+              nullptr,
               Rectangle(),
               {},
               {},
               {}};
         }
 
-        VectorModel model = models.at(0).pLoaded->vectorModel.value();
+        VectorModel* model = models.at(0).pLoaded->vectorModel;
         return LoadedVectorOverlayData{std::move(model), rectangle, {}, {}, {}};
       });
 }

@@ -14,9 +14,23 @@
 #include "MMCorner.h"
 #include "CesiumVectorComponent.h"
 #include "CesiumMeshSection.h"
+#include "Cesium3DTilesSelection/MVTUtilities.h"
 
 namespace
 {
+
+	//判断像素坐标是否在瓦片内部
+	bool isInTile(glm::ivec3& pbfPos)
+	{
+		bool isInside = true;
+		if (pbfPos.x < 0, pbfPos.y > 4096 &&
+			pbfPos.y > 0, pbfPos.x > 4096)
+		{
+			isInside = false;
+		}
+		return isInside;
+	}
+
 	//根据pbf协议，将像素坐标转换成WGS84经纬度坐标
 	glm::dvec3 PixelToWGS84(glm::ivec3& pbfPos,
 							int Row,
@@ -54,20 +68,11 @@ namespace
 		extent.LowerCornerLat + tileYPercent * latDelta, 0};
 		return pbfWorld;
 	}
-	//判断像素坐标是否在瓦片内部
-	bool isInTile(glm::ivec3& pbfPos)
-	{
-		bool isInside = true;
-		if (pbfPos.x < 0, pbfPos.y > 4096 &&
-			pbfPos.y > 0, pbfPos.x > 4096)
-		{
-			isInside = false;
-		}
-		return isInside;
-	}
+
+	
 }
 
-void* VectorResourceWorker::prepareVectorInLoadThread(CesiumGltf::VectorModel& model, const std::any& rendererOptions)
+void* VectorResourceWorker::prepareVectorInLoadThread(CesiumGltf::VectorModel* pModel, const std::any& rendererOptions)
 {
     auto ppOptions = std::any_cast<FVectorOverlayRendererOptions*>(&rendererOptions);
     check(ppOptions != nullptr && *ppOptions != nullptr);
@@ -76,21 +81,22 @@ void* VectorResourceWorker::prepareVectorInLoadThread(CesiumGltf::VectorModel& m
         return nullptr;
     }
     auto pOptions = *ppOptions;
+	/*
 	//在这个函数出栈之后 参数model会被析构，变成野指针，所以需要new一个新的指针接收数据后续使用
 	CesiumGltf::VectorModel* theModel = new CesiumGltf::VectorModel;
 	
 	
 	//这个函数是异步线程，可以在这里面把所有坐标都转换好，然后到InMainThread主线程函数直接创建组件 
-	if(model.layers.size() > 0)
+	if(pModel->layers.size() > 0)
 	{
-		theModel->layers = model.layers;
+		theModel->layers = pModel->layers;
 		theModel->level = model.level;
 		theModel->Row = model.Row;
 		theModel->Col = model.Col;
-	}
+	}*/
 	
 	//return 的这个参数会在后续逻辑中传入prepareVectorInMainThread使用
-    return theModel;
+    return pModel;
 }
 
 void* VectorResourceWorker::prepareVectorInMainThread(Cesium3DTilesSelection::VectorOverlayTile& vectorTile,
@@ -110,58 +116,84 @@ void* VectorResourceWorker::prepareVectorInMainThread(Cesium3DTilesSelection::Ve
 
 	//在这个函数里面主要是做坐标转换
 	FTileModel* pTileModelData = new FTileModel;
+	bool isFill = true;
 	if(pModelData->layers.size() > 0)
 	{
-		if (Level == 13 && Row == 2667 && Col == 13685)
+		if (Level == 12)
 		{
 			FString strMessagr = "Level: " + FString::FormatAsNumber(Level) +
 			"  Row: " + FString::FormatAsNumber(Row) +
 			"  Col: " + FString::FormatAsNumber(Col);
-			GEngine->AddOnScreenDebugMessage(-1, 3, FColor::Red, strMessagr);
+			//GEngine->AddOnScreenDebugMessage(-1, 3, FColor::Red, strMessagr);
 
 			//UE_LOG(LogTemp, Error, TEXT("%s"), *strMessagr);
 			//高程先随意指定
-			float height = 0;
+			float height = 20;
 			for (const CesiumGltf::VectorLayer& layer : pModelData->layers)
 			{
 				int index = 0;
 				for (const CesiumGltf::VectorFeature& feature : layer.features)
 				{
-					TArray<FVector2D> UE2Array;
+					
 					TArray<FVector> UEArray;
-					if(feature.points.size() == 4)
+					std::vector<glm::dvec2> linestrings;
+					std::vector<std::vector<glm::dvec2>> holes;
+					for (const CesiumGltf::VectorGeometry& geom : feature.geometry)
 					{
-						int a = 0;
-					}
-					for (int i = 0; i < feature.points.size(); i++ )
-					{
-						glm::ivec3 pixelPosS = feature.points.at(i);
-						if(!isInTile(pixelPosS))
+						std::vector<glm::dvec2> hole;
+						for (int i = 0; i < geom.points.size(); i++ )
 						{
-							//continue;
+							glm::ivec3 pixelPosS = geom.points.at(i);
+							if(!isInTile(pixelPosS))
+							{
+								//continue;
+							}
+							pixelPosS.z = Level;
+							glm::dvec3 llPosS = PixelToWGS84(pixelPosS, Row, Col, tileMatrix, tileMatrixSet, extent);
+							FVector llhPos = {llPosS.x, llPosS.y, height};
+
+							FVector uePos = geoReference->TransformLongitudeLatitudeHeightToUnreal(llhPos);
+							UEArray.Add(uePos);
+							
+							if (geom.ringType == CesiumGltf::RingType::Outer)
+							{
+								linestrings.emplace_back(glm::dvec2(uePos.X, uePos.Y));
+							}
+							else if(geom.ringType == CesiumGltf::RingType::Inner)
+							{
+
+								hole.emplace_back(glm::dvec2(uePos.X, uePos.Y));
+							}
+							else
+							{
+								UE_LOG(LogTemp, Error, TEXT("%s"), TEXT("polygon type error!"));
+							}
+						
 						}
-						pixelPosS.z = Level;
-						glm::dvec3 llPosS = PixelToWGS84(pixelPosS, Row, Col, tileMatrix, tileMatrixSet, extent);
-						FVector llhPos = {llPosS.x, llPosS.y, height};
-
-						FVector uePos = geoReference->TransformLongitudeLatitudeHeightToUnreal(llhPos);
-						UE2Array.Add(FVector2D(uePos.X, uePos.Y));
-						UEArray.Add(uePos);
+						if(geom.ringType == CesiumGltf::RingType::Inner)
+						{
+							holes.emplace_back(hole);
+						}
 					}
-
+					
 					//折线段扩展成面
 					TArray<FVector2d> polyVertex;
 					TArray<uint32> polyIndex;
-					MMCorner::PointsToPolylineCorner(UE2Array, 5.0, polyVertex, polyIndex);
+					//MMCorner::PointsToPolylineCorner(UE2Array, 1000, polyVertex, polyIndex);
 					//面顶点坐标转换成UE坐标
 					FCesiumMeshSection section;
 					for (const FVector2d& uePos : polyVertex)
 					{
+						FString strMsg = "(" + FString::FormatAsNumber(uePos.X) + "," + FString::FormatAsNumber(uePos.Y) + ")";
+						//UE_LOG(LogTemp, Error, TEXT("%s"), *strMsg);
 						int inx = section.VertexBuffer.Add(FVector3f(uePos.X, uePos.Y, 0));
 						//polyIndex.Add(inx);
 					}
-					section.IndexBuffer = polyIndex;
-					//section.VertexBuffer.Append(polyVertex);
+					std::vector<uint32> indexs = Cesium3DTilesSelection::MVTUtilities::TriangulateLineString(linestrings, holes);
+					size_t indexSize = indexs.size()*sizeof(uint32);
+					section.IndexBuffer.SetNumUninitialized(indexs.size());
+					FMemory::Memcpy(section.IndexBuffer.GetData(), indexs.data(), indexSize);
+					section.VertexBuffer.Append(UEArray);
 					section.SectionIndex = index;
 					pTileModelData->Sections.Add(section);
 					index++;
@@ -170,7 +202,6 @@ void* VectorResourceWorker::prepareVectorInMainThread(Cesium3DTilesSelection::Ve
 		
 			FString strName = FString::FormatAsNumber(Level) + "_" + FString::FormatAsNumber(Row) + "_" + FString::FormatAsNumber(Col);
 			pTileModelData->TileName = strName;
-
 			UCesiumVectorComponent* pVectorContent = UCesiumVectorComponent::CreateOnGameThread(pTileModelData, _pActor->GetRootComponent());
 			return pVectorContent;
 		}
@@ -197,9 +228,7 @@ void VectorResourceWorker::attachVectorInMainThread(const Cesium3DTilesSelection
 			//pVectorContent->SetVisibility(true, true);
 			//pVectorContent->AttachToComponent(pGltfContent, FAttachmentTransformRules::KeepWorldTransform);
 			UE_LOG(LogTemp, Error, TEXT("Attach %s"), *pVectorContent->GetName());
-
 		}
-		
 	}
 
 }
@@ -215,23 +244,18 @@ void VectorResourceWorker::detachVectorInMainThread(const Cesium3DTilesSelection
 		UCesiumGltfComponent* pGltfContent = reinterpret_cast<UCesiumGltfComponent*>(
 			pRenderContent->getRenderResources());
 
-		UCesiumVectorComponent* pTileModelData = reinterpret_cast<UCesiumVectorComponent*>(pMainThreadRendererResources);
-
-		auto children = pGltfContent->GetAttachChildren();
-		for (auto vectorCom : children)
+		UCesiumVectorComponent* pVectorContent = reinterpret_cast<UCesiumVectorComponent*>(pMainThreadRendererResources);
+		if(pVectorContent != nullptr)
 		{
-			UCesiumVectorComponent* pVectorContent = Cast<UCesiumVectorComponent>(vectorCom);
-			if(pVectorContent != nullptr && pVectorContent->isAttach)
+			pVectorContent->isAttach = false;
+			//pVectorContent->SetVisibility(false, true);
+			FString strName = pVectorContent->GetName();
+			if(strName.Equals("1_0_3"))
 			{
-				pVectorContent->isAttach = false;
-				//pVectorContent->SetVisibility(false, true);
-				UE_LOG(LogTemp, Error, TEXT("Detach %s"), *pVectorContent->GetName());
-				//vectorCom->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
-				//CesiumLifetime::destroyComponentRecursively(vectorCom);
+				int a = 0;
 			}
-			
+			UE_LOG(LogTemp, Error, TEXT("Detach %s"), *pVectorContent->GetName());
 		}
-		
 	}
 
 }

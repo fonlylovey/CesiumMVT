@@ -246,10 +246,10 @@ WebMapTileServiceVectorOverlay::createTileProvider(
                   "element."});
             }
             tinyxml2::XMLElement* pTitle = pLayer->FirstChildElement("ows:Title");
-            std::string strLayerName = "sip:sip_road";
+            std::string strLayerName = "";//sip:sip_road
             if (pTitle != nullptr)
             {
-                //strLayerName = pTitle->GetText();
+                strLayerName = pTitle->GetText();
             }
 
 			tinyxml2::XMLElement* pBox = pLayer->FirstChildElement("ows:WGS84BoundingBox");
