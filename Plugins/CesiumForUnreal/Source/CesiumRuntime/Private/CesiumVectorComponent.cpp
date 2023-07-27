@@ -12,12 +12,12 @@ UCesiumVectorComponent* UCesiumVectorComponent::CreateOnGameThread(
 	USceneComponent* pParentComponent)
 {
 	UCesiumVectorComponent* mvtComponent = NewObject<UCesiumVectorComponent>(pParentComponent, *tileModel->TileName);
+	mvtComponent->RegisterComponent();
+	mvtComponent->AttachToComponent(pParentComponent, FAttachmentTransformRules::KeepWorldTransform);
 	mvtComponent->SetUsingAbsoluteLocation(true);
 	mvtComponent->SetMobility(pParentComponent->Mobility);
 	mvtComponent->SetFlags(RF_Transient | RF_DuplicateTransient | RF_TextExportTransient);
 	mvtComponent->BuildMesh(tileModel, TEXT("Mesh_") + tileModel->TileName);
-	mvtComponent->RegisterComponent();
-	mvtComponent->AttachToComponent(pParentComponent, FAttachmentTransformRules::KeepWorldTransform);
 	//mvtComponent->SetVisibility(false, true);
 	return mvtComponent;
 }
@@ -66,17 +66,15 @@ void UCesiumVectorComponent::BuildMesh(const FTileModel* tileModel, FString strN
 		++index;
 	}
 	lineComponent->RegisterComponent();
-	lineComponent->AttachToComponent(this, FAttachmentTransformRules::KeepWorldTransform);*/
+	lineComponent->AttachToComponent(this, FAttachmentTransformRules::KeepWorldTransform);
+	*/
 	/*************************/
 
 	
 	VectorMesh = NewObject<UStaticMeshComponent>(this, *strName);
-	VectorMesh->RegisterComponent();
-	VectorMesh->AttachToComponent(this, FAttachmentTransformRules::KeepWorldTransform);
-
 	UStaticMesh* pStaticMesh = NewObject<UStaticMesh>(VectorMesh);
+    VectorMesh->SetStaticMesh(pStaticMesh);
 	pStaticMesh->NeverStream = true;
-	pStaticMesh->SetIsBuiltAtRuntime(true);
 	
 	pStaticMesh->SetFlags(RF_Transient | RF_DuplicateTransient | RF_TextExportTransient);
 	TUniquePtr<FStaticMeshRenderData> RenderData = MakeUnique<FStaticMeshRenderData>();
@@ -115,7 +113,7 @@ void UCesiumVectorComponent::BuildMesh(const FTileModel* tileModel, FString strN
 			box += FVector(vertex.Position);
 			vertex.Color = FColor::Red;
 			vertex.UVs[0] = FVector2f(0, 0);
-			vertex.TangentZ = vertex.Position.GetSafeNormal();
+			vertex.TangentZ = FVector3f(0, 0, -1);;
 			vertexData.Add(vertex);
 		}
 
@@ -140,10 +138,13 @@ void UCesiumVectorComponent::BuildMesh(const FTileModel* tileModel, FString strN
 	
 	
 	pStaticMesh->SetRenderData(MoveTemp(RenderData));
+		
 	UMaterialInterface* pMaterial = createMaterial();
 	pStaticMesh->AddMaterial(pMaterial);
 	pStaticMesh->InitResources();
-	VectorMesh->SetStaticMesh(pStaticMesh);
+    pStaticMesh->CalculateExtendedBounds();
+	VectorMesh->SetupAttachment(this);
+    VectorMesh->RegisterComponent();
 }
 
 void UCesiumVectorComponent::BeginDestroy()

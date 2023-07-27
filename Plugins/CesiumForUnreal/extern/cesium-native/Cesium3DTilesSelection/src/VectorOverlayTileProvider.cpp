@@ -217,25 +217,17 @@ static LoadResult createLoadResultFromLoadedData(
     LoadedVectorOverlayData&& loadedData,
     const std::any& rendererOptions)
 {
+  pLogger;
   if (loadedData.vectorModel == nullptr) {
-    SPDLOG_LOGGER_ERROR(
-        pLogger,
-        "Failed to load vector for tile {}:\n- {}",
-        "TODO",
-        // Cesium3DTilesSelection::TileIdUtilities::createTileIdString(tileId),
-        CesiumUtility::joinToString(loadedData.errors, "\n- "));
     LoadResult result;
     result.state = VectorOverlayTile::LoadState::Failed;
     return result;
   }
 
   if (!loadedData.warnings.empty()) {
-    SPDLOG_LOGGER_WARN(
-        pLogger,
-        "Warnings while loading vector for tile {}:\n- {}",
-        "TODO",
-        // Cesium3DTilesSelection::TileIdUtilities::createTileIdString(tileId),
-        CesiumUtility::joinToString(loadedData.warnings, "\n- "));
+    LoadResult result;
+    result.state = VectorOverlayTile::LoadState::Failed;
+    return result;
   }
 
   CesiumGltf::VectorModel* model = loadedData.vectorModel;

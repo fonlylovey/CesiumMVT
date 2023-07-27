@@ -162,6 +162,21 @@ public:
    */
   void setRenderResources(void* pRenderResources) noexcept;
 
+   /**
+   * @brief Get the render resources created for the glTF model of the content
+   *
+   * @return The render resources that is created for the glTF model
+   */
+  void* getVectorResources() const noexcept;
+
+  /**
+   * @brief Set the render resources created for the glTF model of the content
+   *
+   * @param pRenderResources The render resources that is created for the glTF
+   * model
+   */
+  void setVectorResources(void* pVectorResources) noexcept;
+
   /**
    * @brief Get the fade percentage that this tile during an LOD transition.
    *
@@ -185,6 +200,7 @@ public:
 private:
   CesiumGltf::Model _model;
   void* _pRenderResources;
+  void* _pVectorResource;
   RasterOverlayDetails _rasterOverlayDetails;
   std::vector<Credit> _credits;
   float _lodTransitionFadePercentage;

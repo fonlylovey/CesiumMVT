@@ -86,7 +86,6 @@ void VectorOverlayTile::loadInMainThread()
       tileProvider.getRendererResourcesWorker()->prepareVectorInMainThread(
           *this,
           this->_pRendererResources);
-
   this->setState(LoadState::Done);
 }
 

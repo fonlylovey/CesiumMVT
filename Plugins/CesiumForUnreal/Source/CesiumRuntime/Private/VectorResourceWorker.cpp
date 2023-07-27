@@ -15,6 +15,7 @@
 #include "CesiumVectorComponent.h"
 #include "CesiumMeshSection.h"
 #include "Cesium3DTilesSelection/MVTUtilities.h"
+#include <Cesium3DTilesSelection/TileID.h>
 
 namespace
 {
@@ -56,13 +57,10 @@ namespace
 		double mapPixelY = pbfPos.y + tileRowIndex * 4096.0;
 
 		//计算瓦片坐标在地图中的比例
-		float tileXPercent = mapPixelX / (ColTileCount * 4096.0);
-		float tileYPercent = 1 - mapPixelY / (RowTileCount * 4096.0);
+		double tileXPercent = mapPixelX / (ColTileCount * 4096.0);
+		double tileYPercent = 1 - mapPixelY / (RowTileCount * 4096.0);
 		//计算像素坐标在地图中的比例 row = y, col = x ,level z
 		
-		//double mapPixelX = tilePixelX * (Col) / tileMatrix.MatrixWidth;
-		//double mapPixelY = tilePixelY * (Row) / tileMatrix.MatrixHeight;
-
 		glm::dvec3 pbfWorld = {
 		extent.LowerCornerLon + tileXPercent * LonDelta,
 		extent.LowerCornerLat + tileYPercent * latDelta, 0};
@@ -119,7 +117,7 @@ void* VectorResourceWorker::prepareVectorInMainThread(Cesium3DTilesSelection::Ve
 	bool isFill = true;
 	if(pModelData->layers.size() > 0)
 	{
-		if (Level == 12)
+		if (Level == 18)
 		{
 			FString strMessagr = "Level: " + FString::FormatAsNumber(Level) +
 			"  Row: " + FString::FormatAsNumber(Row) +
@@ -128,7 +126,7 @@ void* VectorResourceWorker::prepareVectorInMainThread(Cesium3DTilesSelection::Ve
 
 			//UE_LOG(LogTemp, Error, TEXT("%s"), *strMessagr);
 			//高程先随意指定
-			float height = 20;
+			float height = 50;
 			for (const CesiumGltf::VectorLayer& layer : pModelData->layers)
 			{
 				int index = 0;
@@ -144,7 +142,7 @@ void* VectorResourceWorker::prepareVectorInMainThread(Cesium3DTilesSelection::Ve
 						for (int i = 0; i < geom.points.size(); i++ )
 						{
 							glm::ivec3 pixelPosS = geom.points.at(i);
-							if(!isInTile(pixelPosS))
+							//if(!isInTile(pixelPosS))
 							{
 								//continue;
 							}
@@ -164,9 +162,9 @@ void* VectorResourceWorker::prepareVectorInMainThread(Cesium3DTilesSelection::Ve
 
 								hole.emplace_back(glm::dvec2(uePos.X, uePos.Y));
 							}
-							else
+							//else
 							{
-								UE_LOG(LogTemp, Error, TEXT("%s"), TEXT("polygon type error!"));
+								//UE_LOG(LogTemp, Error, TEXT("%s"), TEXT("polygon type error!"));
 							}
 						
 						}
@@ -225,12 +223,11 @@ void VectorResourceWorker::attachVectorInMainThread(const Cesium3DTilesSelection
 		if(pVectorContent != nullptr && !pVectorContent->isAttach)
 		{
 			pVectorContent->isAttach = true;
+            //pVectorContent->AttachToComponent(pGltfContent, FAttachmentTransformRules::KeepWorldTransform);
 			//pVectorContent->SetVisibility(true, true);
-			//pVectorContent->AttachToComponent(pGltfContent, FAttachmentTransformRules::KeepWorldTransform);
-			UE_LOG(LogTemp, Error, TEXT("Attach %s"), *pVectorContent->GetName());
+			//UE_LOG(LogTemp, Error, TEXT("Attach %s"), *pVectorContent->GetName());
 		}
 	}
-
 }
 
 void VectorResourceWorker::detachVectorInMainThread(const Cesium3DTilesSelection::Tile& tile,
@@ -243,20 +240,25 @@ void VectorResourceWorker::detachVectorInMainThread(const Cesium3DTilesSelection
 	{
 		UCesiumGltfComponent* pGltfContent = reinterpret_cast<UCesiumGltfComponent*>(
 			pRenderContent->getRenderResources());
-
 		UCesiumVectorComponent* pVectorContent = reinterpret_cast<UCesiumVectorComponent*>(pMainThreadRendererResources);
-		if(pVectorContent != nullptr)
+
+		if(IsValid(pVectorContent) /*&& tile.getChildren().empty()*/)
 		{
 			pVectorContent->isAttach = false;
-			//pVectorContent->SetVisibility(false, true);
-			FString strName = pVectorContent->GetName();
-			if(strName.Equals("1_0_3"))
-			{
-				int a = 0;
-			}
-			UE_LOG(LogTemp, Error, TEXT("Detach %s"), *pVectorContent->GetName());
+			pVectorContent->SetVisibility(false, true);
+			//UE_LOG(LogTemp, Error, TEXT("Detach %s"), *pVectorContent->GetName());
 		}
 	}
+
+}
+
+void VectorResourceWorker::showVectorMainThread(const std::vector<Cesium3DTilesSelection::Tile*>& tiles)
+{
+
+}
+
+void VectorResourceWorker::hideVectorMainThread(const std::vector<Cesium3DTilesSelection::Tile*>& tiles)
+{
 
 }
 

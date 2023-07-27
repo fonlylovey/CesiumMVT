@@ -1,4 +1,4 @@
-// Copyright 2020-2021 CesiumGS, Inc. and Contributors
+ï»¿// Copyright 2020-2021 CesiumGS, Inc. and Contributors
 
 #include "Cesium3DTileset.h"
 #include "Async/Async.h"
@@ -60,7 +60,7 @@
 #include <spdlog/spdlog.h>
 #include "VectorResourceWorker.h"
 #include "CesiumVectorOverlay.h"
-
+#include "Cesium3DTilesSelection/MVTUtilities.h"
 
 FCesium3DTilesetLoadFailure OnCesium3DTilesetLoadFailure{};
 
@@ -73,6 +73,9 @@ FCesium3DTilesetLoadFailure OnCesium3DTilesetLoadFailure{};
 #include "CesiumVectorComponent.h"
 #include <Cesium3DTilesSelection/Tile.h>
 #include <Cesium3DTilesSelection/TileID.h>
+
+uint32_t _lastMaxLevel = 0;
+
 // Sets default values
 ACesium3DTileset::ACesium3DTileset()
     : Georeference(nullptr),
@@ -790,6 +793,10 @@ public:
           reinterpret_cast<UCesiumGltfComponent*>(
               pRenderContent->getRenderResources());
       if (pGltfContent) {
+		FString tileIdString(
+            Cesium3DTilesSelection::TileIdUtilities::createTileIdString(
+                tile.getTileID())
+                .c_str());
         pGltfContent->AttachRasterTile(
             tile,
             rasterTile,
@@ -814,6 +821,10 @@ public:
           reinterpret_cast<UCesiumGltfComponent*>(                             
               pRenderContent->getRenderResources());
       if (pGltfContent) {
+		  FString tileIdString(
+            Cesium3DTilesSelection::TileIdUtilities::createTileIdString(
+                tile.getTileID())
+                .c_str());
         pGltfContent->DetachRasterTile(
             tile,
             rasterTile,
@@ -1075,7 +1086,7 @@ void ACesium3DTileset::LoadTileset() {
     }
   }
 
-  //Ôö¼ÓVectorOverlayµÄ´¦Àí´úÂë
+  //å¢åŠ VectorOverlayçš„å¤„ç†ä»£ç 
   TArray<UCesiumVectorOverlay*> vectorOverlays;
   this->GetComponents<UCesiumVectorOverlay>(vectorOverlays);
   for (UCesiumVectorOverlay* pOverlay : vectorOverlays)
@@ -1153,7 +1164,7 @@ void ACesium3DTileset::DestroyTileset() {
     }
   }
 
-  //Ôö¼ÓVectorOverlayµÄÎö¹¹´úÂë
+  //å¢åŠ VectorOverlayçš„ææ„ä»£ç 
   TArray<UCesiumVectorOverlay*> vectorOverlays;
   this->GetComponents<UCesiumVectorOverlay>(vectorOverlays);
   for (UCesiumVectorOverlay* pOverlay : vectorOverlays)
@@ -1647,7 +1658,6 @@ void hideTiles(const std::vector<Cesium3DTilesSelection::Tile*>& tiles) {
     if (pTile->getState() != Cesium3DTilesSelection::TileLoadState::Done) {
       continue;
     }
-
     const Cesium3DTilesSelection::TileContent& content = pTile->getContent();
     const Cesium3DTilesSelection::TileRenderContent* pRenderContent =
         content.getRenderContent();
@@ -1819,7 +1829,7 @@ void ACesium3DTileset::updateLastViewUpdateResultState(
 
 void ACesium3DTileset::showTilesToRender(
     const std::vector<Cesium3DTilesSelection::Tile*>& tiles) {
-  TRACE_CPUPROFILER_EVENT_SCOPE(Cesium::ShowTilesToRender)
+	TRACE_CPUPROFILER_EVENT_SCOPE(Cesium::ShowTilesToRender)
 
   for (Cesium3DTilesSelection::Tile* pTile : tiles) {
     if (pTile->getState() != Cesium3DTilesSelection::TileLoadState::Done) {
@@ -1888,6 +1898,7 @@ void ACesium3DTileset::showTilesToRender(
       TRACE_CPUPROFILER_EVENT_SCOPE(Cesium::SetCollisionEnabled)
       Gltf->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
     }
+
   }
 }
 

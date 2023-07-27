@@ -1501,6 +1501,7 @@ void TilesetContentManager::unloadContentLoadedState(Tile& tile) {
    //   pWorkerRenderResources,
    //   nullptr);
   pRenderContent->setRenderResources(nullptr);
+
 }
 
 void TilesetContentManager::unloadDoneState(Tile& tile) {

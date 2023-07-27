@@ -152,7 +152,7 @@ bool VectorMappedTo3DTile::update(
   if (this->_pReadyTile &&
       this->getState() == VectorMappedTo3DTile::AttachmentState::Unattached) {
     this->_pReadyTile->loadInMainThread();
-
+    tile.getContent().getRenderContent()->setVectorResources(_pReadyTile->getRendererResources());
     prepareRendererResources.attachVectorInMainThread(
         tile,
         this->getTextureCoordinateID(),

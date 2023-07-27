@@ -33,6 +33,10 @@ public:
 		const Cesium3DTilesSelection::VectorOverlayTile& VectorTile,
 		void* pMainThreadRendererResources) noexcept override;
 
+	void showVectorMainThread(const std::vector<Cesium3DTilesSelection::Tile*>& tiles);
+
+	void hideVectorMainThread(const std::vector<Cesium3DTilesSelection::Tile*>& tiles);
+
 	virtual void free(Cesium3DTilesSelection::Tile& tile,
       void* pLoadThreadResult,
       void* pMainThreadResult) noexcept override;

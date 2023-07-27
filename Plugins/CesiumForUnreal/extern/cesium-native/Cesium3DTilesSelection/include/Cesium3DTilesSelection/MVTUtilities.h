@@ -5,6 +5,7 @@
 #include <glm/glm.hpp>
 #include <array>
 #include <vector>
+#include "TileID.h"
 
 namespace Cesium3DTilesSelection 
 {
@@ -14,6 +15,7 @@ namespace Cesium3DTilesSelection
 	 */
 	struct CESIUM3DTILESSELECTION_API MVTUtilities 
 	{
+        static CesiumGeometry::QuadtreeTileID GetTileID(const TileID& tileId);
 		/*
 		* https://github.com/mapbox/earcut.hpp
 		* 根据LineString顶点数组，三角化的为mesh三角形
