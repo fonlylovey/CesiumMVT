@@ -4,3 +4,7 @@
 [submodule "Plugins/CesiumForUnreal/extern/cesium-native/extern/protozero"]
 	path = Plugins/CesiumForUnreal/extern/cesium-native/extern/protozero
 	url = https://github.com/mapbox/protozero.git
+[submodule "Plugins/CesiumForUnreal/extern/cesium-native/extern/geos"]
+	path = Plugins/CesiumForUnreal/extern/cesium-native/extern/geos
+	url = git@github.com:libgeos/geos.git
+	branch = 3.12

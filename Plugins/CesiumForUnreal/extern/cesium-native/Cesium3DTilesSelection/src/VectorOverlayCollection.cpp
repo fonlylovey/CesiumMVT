@@ -71,7 +71,7 @@ void VectorOverlayCollection::add(
           this->_externals.asyncSystem,
           this->_externals.pAssetAccessor,
           this->_externals.pCreditSystem,
-          this->_externals.pRendererResourcesWorker,
+          this->_externals.pPrepareRendererResources,
           this->_externals.pLogger,
           nullptr);
 
@@ -151,7 +151,7 @@ void VectorOverlayCollection::remove(
   };
 
   auto pRenderWorker =
-      this->_externals.pRendererResourcesWorker.get();
+      this->_externals.pPrepareRendererResources.get();
   forEachTile(
       *this->_pLoadedTiles,
       [&removeCondition, pRenderWorker](Tile& tile) {

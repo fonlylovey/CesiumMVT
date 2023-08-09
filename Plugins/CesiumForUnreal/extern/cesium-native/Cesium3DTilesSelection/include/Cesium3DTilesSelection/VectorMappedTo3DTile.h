@@ -1,6 +1,6 @@
 #pragma once
 
-#include "IRendererResourcesWorker.h"
+#include "IPrepareRendererResources.h"
 #include "VectorOverlayTile.h"
 
 #include <CesiumGeometry/Rectangle.h>
@@ -140,9 +140,9 @@ public:
    * owning geometry tile.
    *
    * When a Vector overlay tile is attached to a geometry tile,
-   * {@link IRendererResourcesWorker::attachVectorInMainThread} is invoked.
+   * {@link IPrepareRendererResources::attachVectorInMainThread} is invoked.
    * When it is detached,
-   * {@link IRendererResourcesWorker::detachVectorInMainThread} is invoked.
+   * {@link IPrepareRendererResources::detachVectorInMainThread} is invoked.
    */
   AttachmentState getState() const noexcept { return this->_state; }
 
@@ -153,21 +153,21 @@ public:
    * will return whether there is a more detailed version of the
    * Vector data available.
    *
-   * @param prepareRendererResources The IRendererResourcesWorker used to
+   * @param prepareRendererResources The IPrepareRendererResources used to
    * create render resources for Vector overlay
    * @param tile The owner tile.
    * @return The {@link MoreDetailAvailable} state.
    */
-  bool update(IRendererResourcesWorker& prepareRendererResources, Tile& tile);
+  bool update(IPrepareRendererResources& pPrepareRendererResources, Tile& tile);
 
   /**
    * @brief Detach the Vector from the given tile.
-   * @param prepareRendererResources The IRendererResourcesWorker used to
+   * @param prepareRendererResources The IPrepareRendererResources used to
    * detach Vector overlay from the tile geometry
    * @param tile The owner tile.
    */
   void detachFromTile(
-      IRendererResourcesWorker& prepareRendererResources,
+      IPrepareRendererResources& pPrepareRendererResources,
       Tile& tile) noexcept;
 
   /**

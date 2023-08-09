@@ -1,6 +1,6 @@
 #include "Cesium3DTilesSelection/VectorOverlayTileProvider.h"
 
-#include "Cesium3DTilesSelection/IRendererResourcesWorker.h"
+#include "Cesium3DTilesSelection/IPrepareRendererResources.h"
 #include "Cesium3DTilesSelection/VectorOverlay.h"
 #include "Cesium3DTilesSelection/VectorOverlayTile.h"
 #include "Cesium3DTilesSelection/TileID.h"
@@ -33,7 +33,7 @@ VectorOverlayTileProvider::VectorOverlayTileProvider(
       _asyncSystem(asyncSystem),
       _pAssetAccessor(pAssetAccessor),
       _credit(std::nullopt),
-      _pRendererResourcesWorker(nullptr),
+      _pPrepareRendererResources(nullptr),
       _pLogger(nullptr),
       _projection(CesiumGeospatial::GeographicProjection()),
       _coverageRectangle(CesiumGeospatial::GeographicProjection::
@@ -50,7 +50,7 @@ VectorOverlayTileProvider::VectorOverlayTileProvider(
     const CesiumAsync::AsyncSystem& asyncSystem,
     const std::shared_ptr<IAssetAccessor>& pAssetAccessor,
     std::optional<Credit> credit,
-    const std::shared_ptr<IRendererResourcesWorker>& pRendererResourcesWorker,
+    const std::shared_ptr<IPrepareRendererResources>& pPrepareRendererResources,
     const std::shared_ptr<spdlog::logger>& pLogger,
     const CesiumGeospatial::Projection& projection,
     const Rectangle& coverageRectangle) noexcept
@@ -58,7 +58,7 @@ VectorOverlayTileProvider::VectorOverlayTileProvider(
       _asyncSystem(asyncSystem),
       _pAssetAccessor(pAssetAccessor),
       _credit(credit),
-      _pRendererResourcesWorker(pRendererResourcesWorker),
+      _pPrepareRendererResources(pPrepareRendererResources),
       _pLogger(pLogger),
       _projection(projection),
       _coverageRectangle(coverageRectangle),
@@ -133,7 +133,7 @@ VectorOverlayTileProvider::loadTileDataFromUrl(
   return this->getAssetAccessor()
       ->get(this->getAsyncSystem(), url, headers)
       .thenInWorkerThread(
-      [options = std::move(options)](
+      [options = std::move(options), vecStyle = this->_vecStyle](
           std::shared_ptr<IAssetRequest>&& pRequest) mutable
       {
         std::string tileUrl = pRequest->url();
@@ -182,6 +182,7 @@ VectorOverlayTileProvider::loadTileDataFromUrl(
 		loadedData.model->level = options.level;
 		loadedData.model->Row = options.Row;
 		loadedData.model->Col = options.Col;
+        loadedData.model->style = vecStyle;
 
         if (!loadedData.errors.empty()) {
           loadedData.errors.push_back("tile url: " + tileUrl);
@@ -212,7 +213,7 @@ struct LoadResult {
 };
 
 static LoadResult createLoadResultFromLoadedData(
-    const std::shared_ptr<IRendererResourcesWorker>& pRendererResourcesWorker,
+    const std::shared_ptr<IPrepareRendererResources>& pPrepareRendererResources,
     const std::shared_ptr<spdlog::logger>& pLogger,
     LoadedVectorOverlayData&& loadedData,
     const std::any& rendererOptions)
@@ -234,9 +235,9 @@ static LoadResult createLoadResultFromLoadedData(
   if (model->layers.size() > 0)
   {
     void* pRendererResources = nullptr;
-    if (pRendererResourcesWorker) 
+    if (pPrepareRendererResources) 
 	{
-      pRendererResources = pRendererResourcesWorker->prepareVectorInLoadThread(
+      pRendererResources = pPrepareRendererResources->prepareVectorInLoadThread(
           model,
           rendererOptions);
     }
@@ -280,13 +281,13 @@ void VectorOverlayTileProvider::doLoad(VectorOverlayTile& tile, bool isThrottled
 
   this->loadTileData(tile)
       .thenInWorkerThread(
-          [pRendererResourcesWorker = this->getRendererResourcesWorker(),
+          [pPrepareRendererResources = this->getPrepareRendererResources(),
            pLogger = this->getLogger(),
            rendererOptions = this->_pOwner->getOptions().rendererOptions](
               LoadedVectorOverlayData&& loadedData)
         {
             return createLoadResultFromLoadedData(
-                pRendererResourcesWorker,
+                pPrepareRendererResources,
                 pLogger,
                 std::move(loadedData),
                 rendererOptions);

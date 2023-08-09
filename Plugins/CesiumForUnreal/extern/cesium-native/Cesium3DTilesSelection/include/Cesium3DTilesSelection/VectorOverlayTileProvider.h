@@ -21,7 +21,7 @@ namespace Cesium3DTilesSelection
 
 class VectorOverlay;
 class VectorOverlayTile;
-class IRendererResourcesWorker;
+class IPrepareRendererResources;
 
 struct BoxExtent
 {
@@ -144,7 +144,7 @@ public:
    * @param pAssetAccessor The interface used to obtain assets (tiles, etc.) for
    * this Vector overlay.
    * @param credit The {@link Credit} for this tile provider, if it exists.
-   * @param pRendererResourcesWorker The interface used to prepare Vector
+   * @param pPrepareRendererResources The interface used to prepare Vector
    * images for rendering.
    * @param pLogger The logger to which to send messages about the tile provider
    * and tiles.
@@ -157,8 +157,8 @@ public:
       const CesiumAsync::AsyncSystem& asyncSystem,
       const std::shared_ptr<CesiumAsync::IAssetAccessor>& pAssetAccessor,
       std::optional<Credit> credit,
-      const std::shared_ptr<IRendererResourcesWorker>&
-          pRendererResourcesWorker,
+      const std::shared_ptr<IPrepareRendererResources>&
+          pPrepareRendererResources,
       const std::shared_ptr<spdlog::logger>& pLogger,
       const CesiumGeospatial::Projection& projection,
       const CesiumGeometry::Rectangle& coverageRectangle) noexcept;
@@ -214,9 +214,9 @@ public:
    * @brief Gets the interface used to prepare Vector overlay images for
    * rendering.
    */
-  const std::shared_ptr<IRendererResourcesWorker>&
-  getRendererResourcesWorker() const noexcept {
-    return this->_pRendererResourcesWorker;
+  const std::shared_ptr<IPrepareRendererResources>&
+  getPrepareRendererResources() const noexcept {
+    return this->_pPrepareRendererResources;
   }
 
   /**
@@ -340,6 +340,9 @@ public:
   std::map<int, TileMatrix> _TileMatrixMap;
 
   std::map<int, TileMatrixSet> _TileMatrixSetMap;
+
+  CesiumGltf::VectorStyle _vecStyle;
+
 protected:
   /**
    * @brief Loads the image for a tile.
@@ -392,7 +395,7 @@ private:
   CesiumAsync::AsyncSystem _asyncSystem;
   std::shared_ptr<CesiumAsync::IAssetAccessor> _pAssetAccessor;
   std::optional<Credit> _credit;
-  std::shared_ptr<IRendererResourcesWorker> _pRendererResourcesWorker;
+  std::shared_ptr<IPrepareRendererResources> _pPrepareRendererResources;
   std::shared_ptr<spdlog::logger> _pLogger;
   CesiumGeospatial::Projection _projection;
   CesiumGeometry::Rectangle _coverageRectangle;

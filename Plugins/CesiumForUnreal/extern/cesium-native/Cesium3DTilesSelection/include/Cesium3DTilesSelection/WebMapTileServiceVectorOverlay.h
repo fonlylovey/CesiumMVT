@@ -73,6 +73,16 @@ struct WebMapTileServiceVectorOverlayOptions {
   float OriginX = 0;
 
   float OriginY = 0;
+
+  bool isFill = true;
+
+  glm::dvec4 fillColor = glm::dvec4(0, 0, 0, 0);
+
+  bool isOutline = false;
+
+  float lineWidth = 5.0;
+
+  glm::dvec4 outlineColor = glm::dvec4(0, 0, 0, 0);
 };
 
 /**
@@ -103,8 +113,8 @@ public:
       const CesiumAsync::AsyncSystem& asyncSystem,
       const std::shared_ptr<CesiumAsync::IAssetAccessor>& pAssetAccessor,
       const std::shared_ptr<CreditSystem>& pCreditSystem,
-      const std::shared_ptr<IRendererResourcesWorker>&
-          pRendererResourcesWorker,
+      const std::shared_ptr<IPrepareRendererResources>&
+          pPrepareRendererResources,
       const std::shared_ptr<spdlog::logger>& pLogger,
       CesiumUtility::IntrusivePointer<const VectorOverlay> pOwner)
       const override;

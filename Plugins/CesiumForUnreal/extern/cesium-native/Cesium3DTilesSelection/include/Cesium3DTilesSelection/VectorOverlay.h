@@ -20,7 +20,7 @@ namespace Cesium3DTilesSelection {
 
 struct Credit;
 class CreditSystem;
-class IRendererResourcesWorker;
+class IPrepareRendererResources;
 class VectorOverlayTileProvider;
 class VectorOverlayCollection;
 
@@ -197,7 +197,7 @@ public:
    * metadata and tiles.
    * @param pCreditSystem The {@link CreditSystem} to use when creating a
    * per-TileProvider {@link Credit}.
-   * @param pRendererResourcesWorker The interface used to prepare Vector
+   * @param pPrepareRendererResources The interface used to prepare Vector
    * images for rendering.
    * @param pLogger The logger to which to send messages about the tile provider
    * and tiles.
@@ -210,8 +210,8 @@ public:
       const CesiumAsync::AsyncSystem& asyncSystem,
       const std::shared_ptr<CesiumAsync::IAssetAccessor>& pAssetAccessor,
       const std::shared_ptr<CreditSystem>& pCreditSystem,
-      const std::shared_ptr<IRendererResourcesWorker>&
-          pRendererResourcesWorker,
+      const std::shared_ptr<IPrepareRendererResources>&
+          pPrepareRendererResources,
       const std::shared_ptr<spdlog::logger>& pLogger,
       CesiumUtility::IntrusivePointer<const VectorOverlay> pOwner) const = 0;
 

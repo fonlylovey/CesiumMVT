@@ -209,6 +209,9 @@ public:
   void setRendererResources(void* pValue) noexcept {
     this->_pRendererResources = pValue;
   }
+  int level;
+  int row;
+  int col;
 
 private:
   friend class VectorOverlayTileProvider;

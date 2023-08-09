@@ -1051,7 +1051,7 @@ bool TilesetContentManager::unloadTileContent(Tile& tile) {
 
   //mapmost add fengya
   for (VectorMappedTo3DTile& mapped : tile.getMappedVectorTiles()) {
-    mapped.detachFromTile(*this->_externals.pRendererResourcesWorker, tile);
+    mapped.detachFromTile(*this->_externals.pPrepareRendererResources, tile);
   }
   tile.getMappedVectorTiles().clear();
 
@@ -1465,7 +1465,7 @@ void TilesetContentManager::updateDoneState(
         continue;
       }
 
-      mappedVectorTile.update(*this->_externals.pRendererResourcesWorker, tile);
+      mappedVectorTile.update(*this->_externals.pPrepareRendererResources, tile);
     }
 
     // If this tile still has no children after it's done loading, but it does

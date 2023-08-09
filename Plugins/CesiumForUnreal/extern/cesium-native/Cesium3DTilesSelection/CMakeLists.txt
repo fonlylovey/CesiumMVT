@@ -55,6 +55,7 @@ target_link_libraries(Cesium3DTilesSelection
         uriparser
         libmorton
         expected-lite
+        geos
 	${CESIUM_NATIVE_DRACO_LIBRARY}
 )
 

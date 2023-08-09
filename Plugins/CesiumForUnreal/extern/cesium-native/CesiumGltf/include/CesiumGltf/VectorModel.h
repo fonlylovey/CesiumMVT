@@ -6,6 +6,7 @@
 #include "CesiumUtility/ExtensibleObject.h"
 #include "glm/vec3.hpp"
 #include <functional>
+#include "glm/vec4.hpp"
 /*
 矢量瓦片标准 https://github.com/jingsam/vector-tile-spec/blob/master/2.1/README_zh.md#42-%E8%A6%81%E7%B4%A0
 4.1. 图层
@@ -71,6 +72,25 @@ struct VectorLayer
 	std::vector<VectorFeature> features;
 };
 
+
+struct VectorStyle
+{
+    //是否填充多边形
+    bool isFill = true;
+
+    //填充多边形的颜色
+    glm::dvec4 fillColor = glm::dvec4(0, 0, 0, 0);
+
+    //
+    bool isOutline = false;
+
+    float lineWidth = 5;
+
+    // 填充多边形的颜色
+    glm::dvec4 outlineColor = glm::dvec4(0, 0, 0, 0);
+};
+
+
 /** @copydoc VectorModel */
 struct CESIUMGLTF_API VectorModel
 {
@@ -78,12 +98,11 @@ struct CESIUMGLTF_API VectorModel
   ~VectorModel()
   {
 	  layers.clear();
-	  styles.clear();
   }
   //一个瓦片中的所有图层
   std::vector<VectorLayer> layers {};
 
-  std::vector<std::string> styles = {};
+  VectorStyle style;
 
   // 层级
   int level = 0;

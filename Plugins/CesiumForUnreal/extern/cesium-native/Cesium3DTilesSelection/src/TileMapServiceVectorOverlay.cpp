@@ -37,8 +37,8 @@ public:
       const CesiumAsync::AsyncSystem& asyncSystem,
       const std::shared_ptr<IAssetAccessor>& pAssetAccessor,
       std::optional<Credit> credit,
-      const std::shared_ptr<IRendererResourcesWorker>&
-          pRendererResourcesWorker,
+      const std::shared_ptr<IPrepareRendererResources>&
+          pPrepareRendererResources,
       const std::shared_ptr<spdlog::logger>& pLogger,
       const CesiumGeospatial::Projection& projection,
       const CesiumGeometry::QuadtreeTilingScheme& tilingScheme,
@@ -56,7 +56,7 @@ public:
             asyncSystem,
             pAssetAccessor,
             credit,
-            pRendererResourcesWorker,
+            pPrepareRendererResources,
             pLogger,
             projection,
             tilingScheme,
@@ -261,7 +261,7 @@ TileMapServiceVectorOverlay::createTileProvider(
     const CesiumAsync::AsyncSystem& asyncSystem,
     const std::shared_ptr<CesiumAsync::IAssetAccessor>& pAssetAccessor,
     const std::shared_ptr<CreditSystem>& pCreditSystem,
-    const std::shared_ptr<IRendererResourcesWorker>& pRendererResourcesWorker,
+    const std::shared_ptr<IPrepareRendererResources>& pPrepareRendererResources,
     const std::shared_ptr<spdlog::logger>& pLogger,
     CesiumUtility::IntrusivePointer<const VectorOverlay> pOwner) const
 {
@@ -281,7 +281,7 @@ TileMapServiceVectorOverlay::createTileProvider(
            asyncSystem,
            pAssetAccessor,
            credit,
-           pRendererResourcesWorker,
+           pPrepareRendererResources,
            pLogger,
            options = this->_options,
            url = this->_url,
@@ -451,7 +451,7 @@ TileMapServiceVectorOverlay::createTileProvider(
                 asyncSystem,
                 pAssetAccessor,
                 credit,
-                pRendererResourcesWorker,
+                pPrepareRendererResources,
                 pLogger,
                 projection,
                 tilingScheme,

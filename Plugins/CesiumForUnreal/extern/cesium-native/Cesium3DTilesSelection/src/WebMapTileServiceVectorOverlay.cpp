@@ -35,8 +35,8 @@ public:
       const CesiumAsync::AsyncSystem& asyncSystem,
       const std::shared_ptr<IAssetAccessor>& pAssetAccessor,
       std::optional<Credit> credit,
-      const std::shared_ptr<IRendererResourcesWorker>&
-          pRendererResourcesWorker,
+      const std::shared_ptr<IPrepareRendererResources>&
+          pPrepareRendererResources,
       const std::shared_ptr<spdlog::logger>& pLogger,
       const CesiumGeospatial::Projection& projection,
       const CesiumGeometry::QuadtreeTilingScheme& tilingScheme,
@@ -57,7 +57,7 @@ public:
             asyncSystem,
             pAssetAccessor,
             credit,
-            pRendererResourcesWorker,
+            pPrepareRendererResources,
             pLogger,
             projection,
             tilingScheme,
@@ -156,7 +156,7 @@ WebMapTileServiceVectorOverlay::createTileProvider(
     const CesiumAsync::AsyncSystem& asyncSystem,
     const std::shared_ptr<CesiumAsync::IAssetAccessor>& pAssetAccessor,
     const std::shared_ptr<CreditSystem>& pCreditSystem,
-    const std::shared_ptr<IRendererResourcesWorker>& pRendererResourcesWorker,
+    const std::shared_ptr<IPrepareRendererResources>& pPrepareRendererResources,
     const std::shared_ptr<spdlog::logger>& pLogger,
     CesiumUtility::IntrusivePointer<const VectorOverlay> pOwner) const {
 
@@ -186,7 +186,7 @@ WebMapTileServiceVectorOverlay::createTileProvider(
            asyncSystem,
            pAssetAccessor,
            credit,
-           pRendererResourcesWorker,
+           pPrepareRendererResources,
            pLogger,
            options = this->_options,
            url = this->_baseUrl,
@@ -372,12 +372,19 @@ WebMapTileServiceVectorOverlay::createTileProvider(
                 rootTilesX,
                 rootTilesY);
 
+            CesiumGltf::VectorStyle vecStyle;
+            vecStyle.isFill = options.isFill;
+            vecStyle.fillColor = options.fillColor;
+            vecStyle.isOutline = options.isOutline;
+            vecStyle.lineWidth = options.lineWidth;
+            vecStyle.outlineColor = options.outlineColor;
+
             WMTSVectorTileProvider* provider = new WMTSVectorTileProvider(
                 pOwner,
                 asyncSystem,
                 pAssetAccessor,
                 credit,
-                pRendererResourcesWorker,
+                pPrepareRendererResources,
                 pLogger,
                 projection,
                 tilingScheme,
@@ -396,6 +403,7 @@ WebMapTileServiceVectorOverlay::createTileProvider(
 			provider->_boxExtent = std::move(extent);
             provider->_TileMatrixMap = std::move(matrixMap);
 			provider->_TileMatrixSetMap = std::move(matrixSetMap);
+            provider->_vecStyle = std::move(vecStyle);
             return provider;
           });
 }

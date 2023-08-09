@@ -1,6 +1,6 @@
 #include "TileUtilities.h"
 
-#include <Cesium3DTilesSelection/IRendererResourcesWorker.h>
+#include <Cesium3DTilesSelection/IPrepareRendererResources.h>
 #include <Cesium3DTilesSelection/VectorMappedTo3DTile.h>
 #include <Cesium3DTilesSelection/VectorOverlayCollection.h>
 #include <Cesium3DTilesSelection/VectorOverlayTileProvider.h>
@@ -8,6 +8,7 @@
 #include <Cesium3DTilesSelection/TileContent.h>
 #include <Cesium3DTilesSelection/Tileset.h>
 #include <Cesium3DTilesSelection/TilesetExternals.h>
+#include <Cesium3DTilesSelection/MVTUtilities.h>
 
 using namespace CesiumGeometry;
 using namespace CesiumGeospatial;
@@ -61,7 +62,7 @@ VectorMappedTo3DTile::VectorMappedTo3DTile(
 }
 
 bool VectorMappedTo3DTile::update(
-    IRendererResourcesWorker& prepareRendererResources,
+    IPrepareRendererResources& pPrepareRendererResources,
     Tile& tile) {
   assert(this->_pLoadingTile != nullptr || this->_pReadyTile != nullptr);
 
@@ -87,6 +88,7 @@ bool VectorMappedTo3DTile::update(
           this->_pLoadingTile->getTileProvider().getOwner());
       if (pOverlayTile) {
         this->_pLoadingTile = pOverlayTile;
+        auto tileID = MVTUtilities::GetTileID(pTile->getTileID());
       }
     }
   }
@@ -96,7 +98,7 @@ bool VectorMappedTo3DTile::update(
       this->_pLoadingTile->getState() >= VectorOverlayTile::LoadState::Loaded) {
     // Unattach the old tile
     if (this->_pReadyTile && this->getState() != AttachmentState::Unattached) {
-      prepareRendererResources.detachVectorInMainThread(
+      pPrepareRendererResources.detachVectorInMainThread(
           tile,
           this->getTextureCoordinateID(),
           *this->_pReadyTile,
@@ -133,7 +135,7 @@ bool VectorMappedTo3DTile::update(
         pCandidate->getState() >= VectorOverlayTile::LoadState::Loaded &&
         this->_pReadyTile != pCandidate) {
       if (this->getState() != AttachmentState::Unattached) {
-        prepareRendererResources.detachVectorInMainThread(
+        pPrepareRendererResources.detachVectorInMainThread(
             tile,
             this->getTextureCoordinateID(),
             *this->_pReadyTile,
@@ -153,7 +155,7 @@ bool VectorMappedTo3DTile::update(
       this->getState() == VectorMappedTo3DTile::AttachmentState::Unattached) {
     this->_pReadyTile->loadInMainThread();
     tile.getContent().getRenderContent()->setVectorResources(_pReadyTile->getRendererResources());
-    prepareRendererResources.attachVectorInMainThread(
+    pPrepareRendererResources.attachVectorInMainThread(
         tile,
         this->getTextureCoordinateID(),
         *this->_pReadyTile,
@@ -173,7 +175,7 @@ bool VectorMappedTo3DTile::update(
 }
 
 void VectorMappedTo3DTile::detachFromTile(
-    IRendererResourcesWorker& prepareRendererResources,
+    IPrepareRendererResources& prepareRendererResources,
     Tile& tile) noexcept {
   if (this->getState() == AttachmentState::Unattached) {
     return;

@@ -1,6 +1,6 @@
 #include "Cesium3DTilesSelection/VectorOverlay.h"
 
-#include "Cesium3DTilesSelection/IRendererResourcesWorker.h"
+#include "Cesium3DTilesSelection/IPrepareRendererResources.h"
 #include "Cesium3DTilesSelection/VectorOverlay.h"
 #include "Cesium3DTilesSelection/VectorOverlayTileProvider.h"
 #include "Cesium3DTilesSelection/TilesetExternals.h"
@@ -27,7 +27,7 @@ VectorOverlayTile::VectorOverlayTile(
     VectorOverlayTileProvider& tileProvider,
     const glm::dvec2& targetScreenPixels,
     const CesiumGeometry::Rectangle& rectangle) noexcept
-    : _pTileProvider(&tileProvider),
+   :  _pTileProvider(&tileProvider),
       _targetScreenPixels(targetScreenPixels),
       _rectangle(rectangle),
       _tileCredits(),
@@ -41,10 +41,10 @@ VectorOverlayTile::~VectorOverlayTile()
 
   tileProvider.removeTile(this);
 
-  const std::shared_ptr<IRendererResourcesWorker>& pRendererResourcesWorker =
-      tileProvider.getRendererResourcesWorker();
+  const std::shared_ptr<IPrepareRendererResources>& pPrepareRendererResources =
+      tileProvider.getPrepareRendererResources();
 
-  if (pRendererResourcesWorker) {
+  if (pPrepareRendererResources) {
     void* pLoadThreadResult =
         this->getState() == VectorOverlayTile::LoadState::Done
             ? nullptr
@@ -54,7 +54,7 @@ VectorOverlayTile::~VectorOverlayTile()
             ? this->_pRendererResources
             : nullptr;
 
-    pRendererResourcesWorker->freeVector(
+    pPrepareRendererResources->freeVector(
         *this,
         pLoadThreadResult,
         pMainThreadResult);
@@ -83,7 +83,7 @@ void VectorOverlayTile::loadInMainThread()
   // Do the final main thread Vector loading
   VectorOverlayTileProvider& tileProvider = *this->_pTileProvider;
   this->_pRendererResources =
-      tileProvider.getRendererResourcesWorker()->prepareVectorInMainThread(
+      tileProvider.getPrepareRendererResources()->prepareVectorInMainThread(
           *this,
           this->_pRendererResources);
   this->setState(LoadState::Done);
