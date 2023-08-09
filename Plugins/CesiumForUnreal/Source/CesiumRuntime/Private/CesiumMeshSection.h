@@ -65,6 +65,18 @@ struct FTileModel
 
 	TArray<FCesiumMeshSection> Sections;
 
+    TArray<FCesiumMeshSection> Lines;
+
+    bool Fill = true;
+
+    bool Outline = false;
+    
+    float LineWidth = 5.0;
+
+    FLinearColor FillColor = FLinearColor::Yellow;
+
+    FLinearColor OutlineColor = FLinearColor::Red;
+
 	//当前瓦片的名称
 	FString TileName;
 };

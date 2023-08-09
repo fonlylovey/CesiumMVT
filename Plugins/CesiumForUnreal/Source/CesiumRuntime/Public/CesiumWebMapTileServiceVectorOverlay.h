@@ -60,7 +60,10 @@ public:
 	FLinearColor FillColor = FLinearColor::Yellow;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Vector Styles")
-	bool DrawOutline = true;
+	bool Outline = true;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Vector Styles")
+    float LineWidth = 500;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Vector Styles")
 	FLinearColor OutlineColor = FLinearColor::Yellow;

@@ -14,6 +14,11 @@ std::unique_ptr<Cesium3DTilesSelection::VectorOverlay> UCesiumWebMapTileServiceV
     if (MaximumLevel > MinimumLevel && bSpecifyZoomLevels) {
         wmtsOptions.minimumLevel = MinimumLevel;
         wmtsOptions.maximumLevel = MaximumLevel;
+        wmtsOptions.isFill = Fill;
+        wmtsOptions.fillColor = {FillColor.R, FillColor.G, FillColor.B, FillColor.A};
+        wmtsOptions.isOutline = Outline;
+        wmtsOptions.lineWidth = LineWidth;
+        wmtsOptions.outlineColor = {OutlineColor.R, OutlineColor.G, OutlineColor.B, OutlineColor.A};;
     }
 
 

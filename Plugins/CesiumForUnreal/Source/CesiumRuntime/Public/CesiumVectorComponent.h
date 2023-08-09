@@ -31,8 +31,9 @@ class CESIUMRUNTIME_API UCesiumVectorComponent : public USceneComponent
 
 public:
 	static UCesiumVectorComponent* CreateOnGameThread(
-	const FTileModel* tileModel,
-	USceneComponent* pParentComponent);
+        const CesiumGltf::VectorModel* pModelData,
+        Cesium3DTilesSelection::VectorOverlayTile& vectorTile,
+        AActor* pOwner);
 
 	UCesiumVectorComponent(const FObjectInitializer& ObjectInitializer);
 	virtual ~UCesiumVectorComponent();
@@ -41,9 +42,7 @@ public:
 
 	virtual void BeginDestroy() override;
 
-	void OnVisibilityChanged() override;
-
-	UMaterialInterface* createMaterial();
+	UMaterialInterface* createMaterial(const FLinearColor& color);
 
 	UPROPERTY(EditAnywhere, Category = "Cesium")
 	UMaterialInterface* BaseMaterial = nullptr;
@@ -52,9 +51,13 @@ public:
 	UMaterialInterface* VectorMaterial = nullptr;
 
 	UPROPERTY(EditAnywhere, Category = "Cesium")
-	ULineMeshComponent* lineComponent;
+	UStaticMeshComponent* lineMeshComponent;
 
 	UPROPERTY(EditAnywhere, Category = "Cesium")
-	UStaticMeshComponent* VectorMesh;
+	UStaticMeshComponent* polygonMeshComponent;
 	bool isAttach = false;
+
+    int Level = 0;
+    int Row = 0;
+    int Col = 0;
 };
