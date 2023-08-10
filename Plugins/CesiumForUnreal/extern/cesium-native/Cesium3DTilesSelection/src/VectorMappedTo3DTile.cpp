@@ -61,117 +61,132 @@ VectorMappedTo3DTile::VectorMappedTo3DTile(
   assert(this->_pLoadingTile != nullptr);
 }
 
-bool VectorMappedTo3DTile::update(
-    IPrepareRendererResources& pPrepareRendererResources,
-    Tile& tile) {
-  assert(this->_pLoadingTile != nullptr || this->_pReadyTile != nullptr);
+/*
+* 每一帧都会执行update函数
+* VectorOverlayTile在第一次创建时_pLoadingTile是一个占位符，还没有调用请求
+* 当在Provider中调用完成请求之后，再次执行update函数时，_pLoadingTile状态发生改变，
+* 将_pLoadingTile赋值给_pReadyTile，_pLoadingTile置空
+*/
+bool VectorMappedTo3DTile::update(IPrepareRendererResources& pPrepareRendererResources, Tile& tile) 
+{
+    assert(this->_pLoadingTile != nullptr || this->_pReadyTile != nullptr);
 
-  if (this->getState() == AttachmentState::Attached) {
-    return !this->_originalFailed && this->_pReadyTile;
-  }
-
-  // If the loading tile has failed, try its parent's loading tile.
-  Tile* pTile = &tile;
-  while (this->_pLoadingTile &&
-         this->_pLoadingTile->getState() ==
-             VectorOverlayTile::LoadState::Failed &&
-         pTile) {
-    // Note when our original tile fails to load so that we don't report more
-    // data available. This means - by design - we won't refine past a failed
-    // tile.
-    this->_originalFailed = true;
-
-    pTile = pTile->getParent();
-    if (pTile) {
-      VectorOverlayTile* pOverlayTile = findTileOverlay(
-          *pTile,
-          this->_pLoadingTile->getTileProvider().getOwner());
-      if (pOverlayTile) {
-        this->_pLoadingTile = pOverlayTile;
-        auto tileID = MVTUtilities::GetTileID(pTile->getTileID());
-      }
-    }
-  }
-
-  // If the loading tile is now ready, make it the ready tile.
-  if (this->_pLoadingTile &&
-      this->_pLoadingTile->getState() >= VectorOverlayTile::LoadState::Loaded) {
-    // Unattach the old tile
-    if (this->_pReadyTile && this->getState() != AttachmentState::Unattached) {
-      pPrepareRendererResources.detachVectorInMainThread(
-          tile,
-          this->getTextureCoordinateID(),
-          *this->_pReadyTile,
-          this->_pReadyTile->getRendererResources());
-      this->_state = AttachmentState::Unattached;
+    if (this->getState() == AttachmentState::Attached) 
+    {
+        return !this->_originalFailed && this->_pReadyTile;
     }
 
+    // If the loading tile has failed, try its parent's loading tile.
+    /*Tile* pTile = &tile;
+    
+    while (this->_pLoadingTile &&
+            this->_pLoadingTile->getState() ==
+                VectorOverlayTile::LoadState::Failed && pTile) 
+    {
+        // Note when our original tile fails to load so that we don't report more
+        // data available. This means - by design - we won't refine past a failed
+        // tile.
+        this->_originalFailed = true;
 
-    // Mark the loading tile ready.
-    this->_pReadyTile = this->_pLoadingTile;
-    this->_pLoadingTile = nullptr;
+        pTile = pTile->getParent();
+        if (pTile) 
+        {
+            VectorOverlayTile* pOverlayTile = findTileOverlay(*pTile, this->_pLoadingTile->getTileProvider().getOwner());
+            if (pOverlayTile) 
+            {
+                this->_pLoadingTile = pOverlayTile;
+            }
+        }
+    }*/
 
-    // Compute the translation and scale for the new tile.
-    this->computeTranslationAndScale(tile);
-  }
+    // If the loading tile is now ready, make it the ready tile.
+    if (this->_pLoadingTile &&
+        this->_pLoadingTile->getState() >= VectorOverlayTile::LoadState::Loaded) 
+    {
+        // Unattach the old tile
+        if (this->_pReadyTile && this->getState() != AttachmentState::Unattached) 
+        {
+            pPrepareRendererResources.detachVectorInMainThread(
+                tile,
+                this->getTextureCoordinateID(),
+                *this->_pReadyTile,
+                this->_pReadyTile->getRendererResources());
+            this->_state = AttachmentState::Unattached;
+        }
 
-  // Find the closest ready ancestor tile.
-  if (this->_pLoadingTile) {
-    CesiumUtility::IntrusivePointer<VectorOverlayTile> pCandidate;
 
-    pTile = tile.getParent();
-    while (pTile) {
-      pCandidate = findTileOverlay(
-          *pTile,
-          this->_pLoadingTile->getTileProvider().getOwner());
-      if (pCandidate &&
-          pCandidate->getState() >= VectorOverlayTile::LoadState::Loaded) {
-        break;
-      }
-      pTile = pTile->getParent();
+        // Mark the loading tile ready.
+        this->_pReadyTile = this->_pLoadingTile;
+        this->_pLoadingTile = nullptr;
+
+        // Compute the translation and scale for the new tile.
+        this->computeTranslationAndScale(tile);
     }
 
-    if (pCandidate &&
-        pCandidate->getState() >= VectorOverlayTile::LoadState::Loaded &&
-        this->_pReadyTile != pCandidate) {
-      if (this->getState() != AttachmentState::Unattached) {
-        pPrepareRendererResources.detachVectorInMainThread(
+    // Find the closest ready ancestor tile.
+    /*
+    if (this->_pLoadingTile) 
+    {
+        CesiumUtility::IntrusivePointer<VectorOverlayTile> pCandidate;
+
+        pTile = tile.getParent();
+        while (pTile) 
+        {
+            pCandidate = findTileOverlay(
+                *pTile,
+                this->_pLoadingTile->getTileProvider().getOwner());
+            if (pCandidate &&
+                pCandidate->getState() >= VectorOverlayTile::LoadState::Loaded) 
+            {
+                break;
+            }
+            pTile = pTile->getParent();
+        }
+
+        if (pCandidate &&
+            pCandidate->getState() >= VectorOverlayTile::LoadState::Loaded &&
+            this->_pReadyTile != pCandidate) 
+        {
+            if (this->getState() != AttachmentState::Unattached) 
+            {
+                pPrepareRendererResources.detachVectorInMainThread(
+                    tile,
+                    this->getTextureCoordinateID(),
+                    *this->_pReadyTile,
+                    this->_pReadyTile->getRendererResources());
+                this->_state = AttachmentState::Unattached;
+            }
+
+            this->_pReadyTile = pCandidate;
+
+            // Compute the translation and scale for the new tile.
+            this->computeTranslationAndScale(tile);
+        }
+    }*/
+
+    // Attach the ready tile if it's not already attached.
+    if (this->_pReadyTile &&
+        this->getState() == VectorMappedTo3DTile::AttachmentState::Unattached) 
+    {
+        this->_pReadyTile->loadInMainThread();
+        tile.getContent().getRenderContent()->setVectorResources(_pReadyTile->getRendererResources());
+        pPrepareRendererResources.attachVectorInMainThread(
             tile,
             this->getTextureCoordinateID(),
             *this->_pReadyTile,
-            this->_pReadyTile->getRendererResources());
-        this->_state = AttachmentState::Unattached;
-      }
+            this->_pReadyTile->getRendererResources(),
+            this->getTranslation(),
+            this->getScale());
 
-      this->_pReadyTile = pCandidate;
-
-      // Compute the translation and scale for the new tile.
-      this->computeTranslationAndScale(tile);
+        this->_state = this->_pLoadingTile ? AttachmentState::TemporarilyAttached
+                                            : AttachmentState::Attached;
     }
-  }
 
-  // Attach the ready tile if it's not already attached.
-  if (this->_pReadyTile &&
-      this->getState() == VectorMappedTo3DTile::AttachmentState::Unattached) {
-    this->_pReadyTile->loadInMainThread();
-    tile.getContent().getRenderContent()->setVectorResources(_pReadyTile->getRendererResources());
-    pPrepareRendererResources.attachVectorInMainThread(
-        tile,
-        this->getTextureCoordinateID(),
-        *this->_pReadyTile,
-        this->_pReadyTile->getRendererResources(),
-        this->getTranslation(),
-        this->getScale());
+    assert(this->_pLoadingTile != nullptr || this->_pReadyTile != nullptr);
 
-    this->_state = this->_pLoadingTile ? AttachmentState::TemporarilyAttached
-                                       : AttachmentState::Attached;
-  }
-
-  assert(this->_pLoadingTile != nullptr || this->_pReadyTile != nullptr);
-
-  // TODO: check more precise Vector overlay tile availability, rather than just
-  // max level?
-  return false;
+    // TODO: check more precise Vector overlay tile availability, rather than just
+    // max level?
+    return false;
 }
 
 void VectorMappedTo3DTile::detachFromTile(
@@ -281,16 +296,21 @@ VectorMappedTo3DTile* addRealTile(
     VectorOverlayTileProvider& provider,
     const Rectangle& rectangle,
     const glm::dvec2& screenPixels,
-    int32_t textureCoordinateIndex) {
-  IntrusivePointer<VectorOverlayTile> pTile =
-      provider.getTile(rectangle, screenPixels);
-  if (!pTile) {
-    return nullptr;
-  } else {
-    return &tile.getMappedVectorTiles().emplace_back(
-        VectorMappedTo3DTile(pTile, textureCoordinateIndex));
-  }
-}
+    int32_t textureCoordinateIndex) 
+    {
+        IntrusivePointer<VectorOverlayTile> pTile = provider.getTile(rectangle, screenPixels);
+        if (!pTile) 
+        {
+            return nullptr;
+        } 
+        else 
+        {
+            auto tileID = MVTUtilities::GetTileID(tile.getTileID());
+            int wmtsY = static_cast<int>(glm::pow(2, tileID.level)) - 1 - tileID.y;
+            pTile->setTileID(tileID.level, wmtsY, tileID.x);
+            return &tile.getMappedVectorTiles().emplace_back(VectorMappedTo3DTile(pTile, textureCoordinateIndex));
+        }
+    }
 
 } // namespace
 
@@ -301,11 +321,15 @@ VectorMappedTo3DTile* addRealTile(
     Tile& tile,
     std::vector<Projection>& missingProjections)
 {
+    IntrusivePointer<VectorOverlayTile> pTile = getPlaceholderTile(placeholder);
+    auto tileID = MVTUtilities::GetTileID(tile.getTileID());
+            int wmtsY = static_cast<int>(glm::pow(2, tileID.level)) - 1 - tileID.y;
+            pTile->setTileID(tileID.level, wmtsY, tileID.x);
+
   if (tileProvider.isPlaceholder())
   {
     // Provider not created yet, so add a placeholder tile.
-    return &tile.getMappedVectorTiles().emplace_back(
-        VectorMappedTo3DTile(getPlaceholderTile(placeholder), -1));
+    return &tile.getMappedVectorTiles().emplace_back(VectorMappedTo3DTile(pTile, -1));
   }
 
   // We can get a more accurate estimate of the real-world size of the projected
@@ -351,9 +375,7 @@ VectorMappedTo3DTile* addRealTile(
           int32_t(overlayDetails.rasterOverlayProjections.size());
       int32_t textureCoordinateIndex =
           existingIndex + addProjectionToList(missingProjections, projection);
-      return &tile.getMappedVectorTiles().emplace_back(VectorMappedTo3DTile(
-          getPlaceholderTile(placeholder),
-          textureCoordinateIndex));
+      return &tile.getMappedVectorTiles().emplace_back(VectorMappedTo3DTile(pTile, textureCoordinateIndex));
     }
   }
 
@@ -381,9 +403,7 @@ VectorMappedTo3DTile* addRealTile(
         textureCoordinateIndex);
   } else {
     // No precise rectangle yet, so return a placeholder for now.
-    return &tile.getMappedVectorTiles().emplace_back(VectorMappedTo3DTile(
-        getPlaceholderTile(placeholder),
-        textureCoordinateIndex));
+    return &tile.getMappedVectorTiles().emplace_back(VectorMappedTo3DTile(pTile, textureCoordinateIndex));
   }
 }
 

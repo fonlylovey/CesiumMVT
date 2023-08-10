@@ -14,26 +14,32 @@ using namespace CesiumAsync;
 namespace Cesium3DTilesSelection {
 
 VectorOverlayTile::VectorOverlayTile(
-    VectorOverlayTileProvider& tileProvider) noexcept
-    : _pTileProvider(&tileProvider),
-      _targetScreenPixels(0.0),
-      _rectangle(CesiumGeometry::Rectangle(0.0, 0.0, 0.0, 0.0)),
-      _tileCredits(),
-      _state(LoadState::Placeholder),
-      _vectorModel(),
-      _pRendererResources(nullptr) {}
+    VectorOverlayTileProvider& tileProvider) noexcept 
+    {
+        _pTileProvider = &tileProvider;
+        _targetScreenPixels = glm::dvec2(0, 0);
+        _rectangle = CesiumGeometry::Rectangle(0.0, 0.0, 0.0, 0.0);
+        _tileCredits = {};
+        _state = LoadState::Placeholder;
+        _vectorModel = nullptr;
+        _pRendererResources = nullptr;
+        
+    }
 
 VectorOverlayTile::VectorOverlayTile(
     VectorOverlayTileProvider& tileProvider,
     const glm::dvec2& targetScreenPixels,
-    const CesiumGeometry::Rectangle& rectangle) noexcept
-   :  _pTileProvider(&tileProvider),
-      _targetScreenPixels(targetScreenPixels),
-      _rectangle(rectangle),
-      _tileCredits(),
-      _state(LoadState::Unloaded),
-      _vectorModel(),
-      _pRendererResources(nullptr) {}
+    const CesiumGeometry::Rectangle& rectangle) noexcept 
+    {
+        _pTileProvider = &tileProvider;
+        _targetScreenPixels = targetScreenPixels;
+        _rectangle = rectangle;
+        _tileCredits = {};
+        _state = LoadState::Unloaded;
+        _vectorModel = nullptr;
+        _pRendererResources = nullptr;
+       
+    }
 
 VectorOverlayTile::~VectorOverlayTile()
 {

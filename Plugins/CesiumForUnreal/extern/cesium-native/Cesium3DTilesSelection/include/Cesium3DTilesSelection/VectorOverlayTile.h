@@ -209,9 +209,12 @@ public:
   void setRendererResources(void* pValue) noexcept {
     this->_pRendererResources = pValue;
   }
-  int level;
-  int row;
-  int col;
+
+ void setTileID(int level, int row, int col) {
+    _level = level;
+    _row = row;
+    _col = col;
+  }
 
 private:
   friend class VectorOverlayTileProvider;
@@ -230,5 +233,8 @@ private:
   LoadState _state;
   CesiumGltf::VectorModel* _vectorModel;
   void* _pRendererResources;
+  int _level;
+  int _row;
+  int _col;
 };
 } // namespace Cesium3DTilesSelection

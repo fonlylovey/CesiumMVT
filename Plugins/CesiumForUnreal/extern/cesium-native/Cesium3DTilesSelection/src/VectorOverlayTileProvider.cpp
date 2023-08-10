@@ -41,9 +41,10 @@ VectorOverlayTileProvider::VectorOverlayTileProvider(
       _pPlaceholder(),
       _tileDataBytes(0),
       _totalTilesCurrentlyLoading(0),
-      _throttledTilesCurrentlyLoading(0) {
-  this->_pPlaceholder = new VectorOverlayTile(*this);
-}
+      _throttledTilesCurrentlyLoading(0) 
+    {
+          this->_pPlaceholder = new VectorOverlayTile(*this);
+    }
 
 VectorOverlayTileProvider::VectorOverlayTileProvider(
     const CesiumUtility::IntrusivePointer<const VectorOverlay>& pOwner,
@@ -286,11 +287,12 @@ void VectorOverlayTileProvider::doLoad(VectorOverlayTile& tile, bool isThrottled
            rendererOptions = this->_pOwner->getOptions().rendererOptions](
               LoadedVectorOverlayData&& loadedData)
         {
-            return createLoadResultFromLoadedData(
+              LoadResult result = createLoadResultFromLoadedData(
                 pPrepareRendererResources,
                 pLogger,
                 std::move(loadedData),
                 rendererOptions);
+            return result;
           })
       .thenInMainThread(
           [thisPtr, pTile, isThrottledLoad](LoadResult&& result) noexcept
