@@ -897,12 +897,18 @@ public:
       double wmtsY = glm::pow(2, tileID.level) - 1.f - (double)tileID.y;
       FString strName = FString::FormatAsNumber(tileID.level) + "_" + FString::FormatAsNumber(wmtsY) + "_" + FString::FormatAsNumber(tileID.x);
       //UE_LOG(LogTemp, Error, TEXT("attach tiles %s"), *strName);
+
+      UCesiumGltfComponent* pGltfContent = reinterpret_cast<UCesiumGltfComponent*>(pRenderContent->getRenderResources());
       UCesiumVectorComponent* pVectorComponent = static_cast<UCesiumVectorComponent*>(pMainThreadRendererResources);
       if (IsValid(pVectorComponent))
       {
+          if (pGltfContent->level != pVectorComponent->Level)
+          {
+              int a = 5;
+          }
           //pVectorComponent->SetVisibility(true, true);
       }
-      UCesiumGltfComponent* pGltfContent =reinterpret_cast<UCesiumGltfComponent*>( pRenderContent->getRenderResources());
+     
    }
 
   virtual void detachVectorInMainThread(

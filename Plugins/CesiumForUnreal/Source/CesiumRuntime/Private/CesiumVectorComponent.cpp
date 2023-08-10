@@ -22,12 +22,12 @@ namespace
 	glm::dvec3 PixelToWGS84(glm::ivec3& pbfPos,
 							int Row,
 							int Col,
-							const Cesium3DTilesSelection::VectorOverlayTileProvider& provider)
+							Cesium3DTilesSelection::VectorOverlayTileProvider* provider)
 	{
         int level = pbfPos.z;
-        Cesium3DTilesSelection::BoxExtent extent = provider._boxExtent;
-        const Cesium3DTilesSelection::TileMatrix& tileMatrix = provider._TileMatrixMap.at(level);
-		Cesium3DTilesSelection::TileMatrixSet tileMatrixSet = provider._TileMatrixSetMap.at(level);
+        Cesium3DTilesSelection::BoxExtent extent = provider->_boxExtent;
+        const Cesium3DTilesSelection::TileMatrix& tileMatrix = provider->_TileMatrixMap.at(level);
+		Cesium3DTilesSelection::TileMatrixSet tileMatrixSet = provider->_TileMatrixSetMap.at(level);
 		//计算地图的变化范围
 		double LonDelta = extent.UpperCornerLon - extent.LowerCornerLon;
 		double latDelta = extent.UpperCornerLat - extent.LowerCornerLat;
@@ -56,7 +56,7 @@ namespace
 	}
 
     FTileModel* CreateModel(const CesiumGltf::VectorModel* pModelData, AActor* pOwner,
-                            const Cesium3DTilesSelection::VectorOverlayTileProvider& provider)
+                            Cesium3DTilesSelection::VectorOverlayTileProvider* provider)
     {
         auto geoReference = ACesiumGeoreference::GetDefaultGeoreference(pOwner);
         int Row = pModelData->Row;
@@ -176,7 +176,12 @@ UCesiumVectorComponent* UCesiumVectorComponent::CreateOnGameThread(
     Cesium3DTilesSelection::VectorOverlayTile& vectorTile,
 	AActor* pOwner)
 {
-    FTileModel* pTileModel = CreateModel(pModelData, pOwner, vectorTile.getTileProvider());
+    auto provider = &vectorTile.getTileProvider();
+    if (provider == nullptr)
+    {
+        return nullptr;
+    }
+    FTileModel* pTileModel = CreateModel(pModelData, pOwner, provider);
     if (!pTileModel->Sections.IsEmpty())
     {
         UCesiumVectorComponent* mvtComponent = NewObject<UCesiumVectorComponent>(pOwner, *pTileModel->TileName);
