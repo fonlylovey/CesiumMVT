@@ -77,8 +77,9 @@ bool VectorMappedTo3DTile::update(IPrepareRendererResources& pPrepareRendererRes
     }
 
     // If the loading tile has failed, try its parent's loading tile.
-    /*Tile* pTile = &tile;
     
+    Tile* pTile = &tile;
+/*
     while (this->_pLoadingTile &&
             this->_pLoadingTile->getState() ==
                 VectorOverlayTile::LoadState::Failed && pTile) 
@@ -124,7 +125,7 @@ bool VectorMappedTo3DTile::update(IPrepareRendererResources& pPrepareRendererRes
     }
 
     // Find the closest ready ancestor tile.
-    /*
+    
     if (this->_pLoadingTile) 
     {
         CesiumUtility::IntrusivePointer<VectorOverlayTile> pCandidate;
@@ -162,14 +163,13 @@ bool VectorMappedTo3DTile::update(IPrepareRendererResources& pPrepareRendererRes
             // Compute the translation and scale for the new tile.
             this->computeTranslationAndScale(tile);
         }
-    }*/
+    }
 
     // Attach the ready tile if it's not already attached.
     if (this->_pReadyTile &&
         this->getState() == VectorMappedTo3DTile::AttachmentState::Unattached) 
     {
         this->_pReadyTile->loadInMainThread();
-        tile.getContent().getRenderContent()->setVectorResources(_pReadyTile->getRendererResources());
         pPrepareRendererResources.attachVectorInMainThread(
             tile,
             this->getTextureCoordinateID(),

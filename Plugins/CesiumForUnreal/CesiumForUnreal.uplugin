@@ -16,20 +16,20 @@
 	"IsExperimentalVersion": false,
 	"Installed": false,
 	"SupportedTargetPlatforms": [ "Win64", "Mac", "Linux", "Android", "IOS" ],
-	"Modules": [
-		{
-			"Name": "CesiumRuntime",
-			"Type": "Runtime",
-			"LoadingPhase": "Default",
-			"WhitelistPlatforms": [ "Win64", "Mac", "Linux", "Android", "IOS" ]
-		},
-		{
-			"Name": "CesiumEditor",
-			"Type": "Editor",
-			"LoadingPhase": "PostEngineInit",
-			"WhitelistPlatforms": [ "Win64", "Mac", "Linux", "Android", "IOS" ]
-		}
-	],
+    "Modules": [
+        {
+            "Name": "CesiumRuntime",
+            "Type": "Runtime",
+            "LoadingPhase": "Default",
+            "WhitelistPlatforms": [ "Win64", "Mac", "Linux", "Android", "IOS" ]
+        },
+        {
+            "Name": "CesiumEditor",
+            "Type": "Editor",
+            "LoadingPhase": "PostEngineInit",
+            "WhitelistPlatforms": [ "Win64", "Mac", "Linux", "Android", "IOS" ]
+        }
+    ],
 	"Plugins": [
 		{
 			"Name": "SunPosition",

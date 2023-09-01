@@ -22,15 +22,14 @@ namespace
 	glm::dvec3 PixelToWGS84(glm::ivec3& pbfPos,
 							int Row,
 							int Col,
+                            Cesium3DTilesSelection::BoxExtent tileExtent,
 							Cesium3DTilesSelection::VectorOverlayTileProvider* provider)
 	{
         int level = pbfPos.z;
-        Cesium3DTilesSelection::BoxExtent extent = provider->_boxExtent;
-        const Cesium3DTilesSelection::TileMatrix& tileMatrix = provider->_TileMatrixMap.at(level);
 		Cesium3DTilesSelection::TileMatrixSet tileMatrixSet = provider->_TileMatrixSetMap.at(level);
 		//计算地图的变化范围
-		double LonDelta = extent.UpperCornerLon - extent.LowerCornerLon;
-		double latDelta = extent.UpperCornerLat - extent.LowerCornerLat;
+		double LonDelta = tileExtent.UpperCornerLon - tileExtent.LowerCornerLon;
+		double latDelta = tileExtent.UpperCornerLat - tileExtent.LowerCornerLat;
 
 		//当前等级的行/列的瓦片数
 		int ColTileCount = tileMatrixSet.MaxTileCol - tileMatrixSet.MinTileCol + 1;
@@ -45,13 +44,15 @@ namespace
 		double mapPixelY = pbfPos.y + tileRowIndex * 4096.0;
 
 		//计算瓦片坐标在地图中的比例
-		double tileXPercent = mapPixelX / (ColTileCount * 4096.0);
-		double tileYPercent = 1 - mapPixelY / (RowTileCount * 4096.0);
+		//double tileXPercent = mapPixelX / (ColTileCount * 4096.0);
+		//double tileYPercent = 1 - mapPixelY / (RowTileCount * 4096.0);
+        double tileXPercent = pbfPos.x /  4096.0;
+		double tileYPercent = 1 - pbfPos.y /  4096.0;;
 		//计算像素坐标在地图中的比例 row = y, col = x ,level z
 		
 		glm::dvec3 pbfWorld = {
-		extent.LowerCornerLon + tileXPercent * LonDelta,
-		extent.LowerCornerLat + tileYPercent * latDelta, 0};
+		tileExtent.LowerCornerLon + tileXPercent * LonDelta,
+		tileExtent.LowerCornerLat + tileYPercent * latDelta, 0};
 		return pbfWorld;
 	}
 
@@ -59,8 +60,8 @@ namespace
                             Cesium3DTilesSelection::VectorOverlayTileProvider* provider)
     {
         auto geoReference = ACesiumGeoreference::GetDefaultGeoreference(pOwner);
-        int Row = pModelData->Row;
-        int Col = pModelData->Col;
+        int Row = pModelData->row;
+        int Col = pModelData->col;
         int Level = pModelData->level;
         FString strName = FString::FormatAsNumber(Level) + "_" + FString::FormatAsNumber(Row) + "_" + FString::FormatAsNumber(Col);
         //在这个函数里面主要是做坐标转换
@@ -74,9 +75,14 @@ namespace
                                                  pModelData->style.outlineColor.z, pModelData->style.outlineColor.w);
 	    if(pModelData->layers.size() > 0)
         {
-            //if (pModelData->level == 9)
+            //if (pModelData->level == 11 && pModelData->row == 668 && pModelData->col == 3421)
 		    {
                 pTileModelData->TileName = strName;
+                Cesium3DTilesSelection::BoxExtent tileExtent;
+                tileExtent.LowerCornerLon = pModelData->extentMin.x;
+                tileExtent.LowerCornerLat = pModelData->extentMin.y;
+                tileExtent.UpperCornerLon = pModelData->extentMax.x;
+                tileExtent.UpperCornerLat = pModelData->extentMax.y;
 			    //高程先随意指定
 			    float height = 50;
 			    for (const CesiumGltf::VectorLayer& layer : pModelData->layers)
@@ -95,14 +101,14 @@ namespace
 						    std::vector<glm::dvec2> hole;
 						    for (int i = 0; i < geom.points.size(); i++ )
 						    {
-							    glm::ivec3 pixelPosS = geom.points.at(i);
-							    pixelPosS.z = Level;
-							    glm::dvec3 llPosS = PixelToWGS84(pixelPosS, Row, Col, provider);
+                                glm::ivec3 pixelPosS = geom.points.at(i);
+							    pixelPosS.z = Level;	
+                                
+							    glm::dvec3 llPosS = PixelToWGS84(pixelPosS, Row, Col, tileExtent, provider);
 							    FVector llhPos = {llPosS.x, llPosS.y, height};
 
 							    FVector uePos = geoReference->TransformLongitudeLatitudeHeightToUnreal(llhPos);
 							    UEArray.Add(uePos);
-							
 							    if (geom.ringType == CesiumGltf::RingType::Outer)
 							    {
 								    linestrings.emplace_back(glm::dvec2(uePos.X, uePos.Y));
@@ -186,8 +192,8 @@ UCesiumVectorComponent* UCesiumVectorComponent::CreateOnGameThread(
     {
         UCesiumVectorComponent* mvtComponent = NewObject<UCesiumVectorComponent>(pOwner, *pTileModel->TileName);
         mvtComponent->Level = pModelData->level;
-        mvtComponent->Row = pModelData->Row;
-        mvtComponent->Col = pModelData->Col;
+        mvtComponent->Row = pModelData->row;
+        mvtComponent->Col = pModelData->col;
 
 	    mvtComponent->SetUsingAbsoluteLocation(true);
 	    mvtComponent->SetMobility(EComponentMobility::Static);
@@ -197,6 +203,7 @@ UCesiumVectorComponent* UCesiumVectorComponent::CreateOnGameThread(
 	    mvtComponent->SetVisibility(false, true);
         mvtComponent->RegisterComponent();
 	    mvtComponent->AttachToComponent(pOwner->GetRootComponent(), FAttachmentTransformRules::KeepWorldTransform);
+
 	    return mvtComponent;
     }
 	return nullptr;

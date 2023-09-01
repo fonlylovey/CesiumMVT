@@ -29,6 +29,7 @@ class ACesiumCartographicSelection;
 class UCesiumBoundingVolumePoolComponent;
 class CesiumViewExtension;
 struct FCesiumCamera;
+class UVectorSSVComponent;
 
 
 
@@ -211,6 +212,13 @@ private:
       Category = "Cesium",
       Meta = (AllowPrivateAccess))
   UCesiumBoundingVolumePoolComponent* BoundingVolumePoolComponent = nullptr;
+
+UPROPERTY(
+      Transient,
+      BlueprintReadOnly,
+      Category = "Cesium",
+      Meta = (AllowPrivateAccess))
+  UVectorSSVComponent* VectorRenderComponent = nullptr;
 
   /**
    * The custom view extension this tileset uses to pull renderer view
@@ -1157,6 +1165,6 @@ private:
   std::vector<Cesium3DTilesSelection::Tile*> _tilesToHideNextFrame;
 
   int32 _tilesetsBeingDestroyed;
-
+  unsigned char _maxLevel = 0;
   friend class UnrealResourcePreparer;
 };

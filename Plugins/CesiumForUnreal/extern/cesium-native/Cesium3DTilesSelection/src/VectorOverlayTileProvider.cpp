@@ -12,7 +12,7 @@
 #include <CesiumUtility/joinToString.h>
 
 #include <rapidjson/document.h>
-#include <iostream>
+#include <sstream>
 
 using namespace CesiumAsync;
 using namespace CesiumGeometry;
@@ -24,6 +24,14 @@ using namespace CesiumUtility;
 namespace Cesium3DTilesSelection {
 
 /*static*/ CesiumGltfReader::VectorReader VectorOverlayTileProvider::_vectorReader {};
+
+void replace(std::string& srs, std::string target, std::string replace) {
+  size_t pos = 0;
+  while ((pos = srs.find(target)) != std::string::npos) {
+    size_t aa = target.length();
+    srs = srs.replace(pos, aa, replace);
+  }
+}
 
 VectorOverlayTileProvider::VectorOverlayTileProvider(
     const CesiumUtility::IntrusivePointer<const VectorOverlay>& pOwner,
@@ -181,9 +189,17 @@ VectorOverlayTileProvider::loadTileDataFromUrl(
         const std::string stringData(charData, dataSize);
         CesiumGltfReader::VectorReaderResult loadedData = _vectorReader.readVector(stringData);
 		loadedData.model->level = options.level;
-		loadedData.model->Row = options.Row;
-		loadedData.model->Col = options.Col;
+		loadedData.model->row = options.Row;
+		loadedData.model->col = options.Col;
         loadedData.model->style = vecStyle;
+        //½âÎöÍßÆ¬·¶Î§
+        std::string strTileBound = pResponse->headers().at("geowebcache-tile-bounds");
+        replace(strTileBound, ",", " ");
+        std::istringstream streamBound(strTileBound);
+        streamBound >> loadedData.model->extentMin.x;
+        streamBound >> loadedData.model->extentMin.y;
+        streamBound >> loadedData.model->extentMax.x;
+        streamBound >> loadedData.model->extentMax.y;
 
         if (!loadedData.errors.empty()) {
           loadedData.errors.push_back("tile url: " + tileUrl);

@@ -4,8 +4,9 @@
 #include "CesiumGltf/BufferView.h"
 #include "CesiumGltf/Library.h"
 #include "CesiumUtility/ExtensibleObject.h"
-#include "glm/vec3.hpp"
 #include <functional>
+#include "glm/vec2.hpp"
+#include "glm/vec3.hpp"
 #include "glm/vec4.hpp"
 /*
 矢量瓦片标准 https://github.com/jingsam/vector-tile-spec/blob/master/2.1/README_zh.md#42-%E8%A6%81%E7%B4%A0
@@ -62,7 +63,7 @@ struct VectorFeature
 // 一个矢量图层
 struct VectorLayer
 {
-	uint32_t version = 4096;
+	uint32_t version = 0;
 
 	std::string name = "";
 
@@ -108,10 +109,16 @@ struct CESIUMGLTF_API VectorModel
   int level = 0;
 
   // 行号
-  int Row = 0;
+  int row = 0;
 
   // 列号
-  int Col = 0;
+  int col = 0;
+
+  //瓦片范围的左下角 经纬度
+  glm::dvec2 extentMin = glm::dvec2();
+
+  //瓦片范围的右上角 经纬度
+  glm::dvec2 extentMax = glm::dvec2();
 
 };
 } // namespace CesiumGltf
