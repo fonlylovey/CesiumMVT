@@ -38,12 +38,20 @@ public:
 	UCesiumVectorComponent(const FObjectInitializer& ObjectInitializer);
 	virtual ~UCesiumVectorComponent();
 
-	void BuildMesh(const FTileModel* tileModel, FString strName);
-
 	virtual void BeginDestroy() override;
+
+private:
+	void BuildMesh(const FTileModel* tileModel, FString strName);
 
 	UMaterialInterface* createMaterial(const FLinearColor& color);
 
+    void buildPoints(const FTileModel* tileModel, FString strName);
+
+    void buildLines(const FTileModel* tileModel, FString strName);
+
+    void buildPolygons(const FTileModel* tileModel, FString strName);
+
+public:
 	UPROPERTY(EditAnywhere, Category = "Cesium")
 	UMaterialInterface* BaseMaterial = nullptr;
 
@@ -51,10 +59,14 @@ public:
 	UMaterialInterface* VectorMaterial = nullptr;
 
 	UPROPERTY(EditAnywhere, Category = "Cesium")
-	UStaticMeshComponent* lineMeshComponent;
+	UStaticMeshComponent* outlineMeshComponent;
 
 	UPROPERTY(EditAnywhere, Category = "Cesium")
 	UStaticMeshComponent* polygonMeshComponent;
+
+    UPROPERTY(EditAnywhere, Category = "Cesium")
+    ULineMeshComponent* lineMeshComponent;
+
 	bool isAttach = false;
 
     int Level = 0;

@@ -153,8 +153,7 @@ public class CesiumRuntime : ModuleRules
                 "SunPosition",
                 "DeveloperSettings",
                 "UMG",
-                "Renderer",
-                "CustomMeshComponent"
+                "Renderer"
             }
         );
 

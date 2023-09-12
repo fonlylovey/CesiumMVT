@@ -147,6 +147,7 @@ namespace
 	}
 	catch (std::runtime_error ex)
 	{
+        result.model = nullptr;
 		result.errors.push_back("Failed to process data!");
 	}
    

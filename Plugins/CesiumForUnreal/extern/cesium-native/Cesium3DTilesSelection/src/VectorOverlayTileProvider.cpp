@@ -188,6 +188,15 @@ VectorOverlayTileProvider::loadTileDataFromUrl(
         const char* charData = reinterpret_cast<const char*>(data.data());
         const std::string stringData(charData, dataSize);
         CesiumGltfReader::VectorReaderResult loadedData = _vectorReader.readVector(stringData);
+        if (!loadedData.errors.empty())
+        {
+          return LoadedVectorOverlayData{
+              nullptr,
+              options.rectangle,
+              std::move(options.credits),
+              {"vector request for " + tileUrl + " failed."},
+              {}};
+        }
 		loadedData.model->level = options.level;
 		loadedData.model->row = options.Row;
 		loadedData.model->col = options.Col;

@@ -30,9 +30,6 @@ public:
 	void RemoveAllLines();
 
 	UFUNCTION(BlueprintCallable, Category = "Components|LineRenderer")
-	void SetLineVisible(int32 SectionIndex, bool bNewVisibility);
-
-	UFUNCTION(BlueprintCallable, Category = "Components|LineRenderer")
 	bool IsLineVisible(int32 SectionIndex) const;
 
 	/** Returns number of sections currently created for this component */

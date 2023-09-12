@@ -9,6 +9,9 @@ class UMaterialInterface;
 /**
 /** Line section description */
 
+enum class VectorType { UNKNOWN, Point, LineString, Polygon };
+
+
 USTRUCT()
 struct FCesiumMeshSection
 {
@@ -77,6 +80,7 @@ struct FTileModel
 
     FLinearColor OutlineColor = FLinearColor::Red;
 
+    VectorType VectorType = VectorType::UNKNOWN;
 	//当前瓦片的名称
 	FString TileName;
 };

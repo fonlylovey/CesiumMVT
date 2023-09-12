@@ -50,6 +50,9 @@ public:
 		meta = (EditCondition = "bSpecifyZoomLevels", ClampMin = 0))
 	int32 MaximumLevel = 10;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cesium")
+    FString LayerName;
+
 	/**
 	 * 瓦片样式
 	 */

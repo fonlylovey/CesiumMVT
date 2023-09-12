@@ -78,12 +78,6 @@ void ULineMeshComponent::RemoveAllLines()
     SectionMaterials.Empty();
 }
 
-void ULineMeshComponent::SetLineVisible(int32 SectionIndex, bool bNewVisibility)
-{
-	FLineMeshSceneProxy* LineMeshSceneProxy = (FLineMeshSceneProxy*)SceneProxy;
-	LineMeshSceneProxy->SetMeshSectionVisible(SectionIndex, bNewVisibility);
-}
-
 bool ULineMeshComponent::IsLineVisible(int32 SectionIndex) const
 {
     FLineMeshSceneProxy* LineMeshSceneProxy = (FLineMeshSceneProxy*)SceneProxy;
@@ -126,7 +120,7 @@ UMaterialInterface* ULineMeshComponent::CreateOrUpdateMaterial(int32 SectionInde
     if (!SectionMaterials.Contains(SectionIndex))
     {
 		FScopeLock ScopeLock(Mutex);
-        UMaterialInstanceDynamic* MI = UMaterialInstanceDynamic::Create(Material, Material);
+        UMaterialInstanceDynamic* MI = UMaterialInstanceDynamic::Create(Material, this);
         SectionMaterials.Add(SectionIndex, MI);
         OverrideMaterials.Add(MI);
     }

@@ -5,7 +5,6 @@
 #include "Engine/StaticMesh.h"
 #include "Materials/MaterialInterface.h"
 #include "CesiumMeshSection.h"
-#include "CustomMeshComponent.h"
 #include "Cesium3DTilesSelection/MVTUtilities.h"
 #include "Cesium3DTilesSelection/VectorOverlayTileProvider.h"
 #include "CesiumGeoreference.h"
@@ -13,11 +12,6 @@
 
 namespace
 {
-    int zig_zag_decode(int n)
-    {
-        return (n >> 1) ^ (-(n & 1));
-    }
-
     //根据pbf协议，将像素坐标转换成WGS84经纬度坐标
 	glm::dvec3 PixelToWGS84(glm::ivec3& pbfPos,
 							int Row,
@@ -90,7 +84,7 @@ namespace
 				    int index = 0;
 				    for (const CesiumGltf::VectorFeature& feature : layer.features)
 				    {
-					
+                        pTileModelData->VectorType = static_cast<VectorType>(feature.featureType);
 					    TArray<FVector> UEArray;
                         TArray<FVector2d> UELinesArray;
                         //三角剖分用的数组
@@ -224,9 +218,86 @@ UCesiumVectorComponent::~UCesiumVectorComponent()
 
 void UCesiumVectorComponent::BuildMesh(const FTileModel* tileModel, FString strName)
 {
-    //绘制面
+    if(tileModel->VectorType == VectorType::Point)
     {
-        polygonMeshComponent = NewObject<UStaticMeshComponent>(this, *FString("Mesh_" + strName));
+        buildPoints(tileModel, strName);
+    }
+    //绘制线矢量
+    else if(tileModel->VectorType == VectorType::LineString)
+    {
+        buildLines(tileModel, strName);
+    }
+    else if (tileModel->VectorType == VectorType::Polygon)
+    {
+        buildPolygons(tileModel, strName);
+    }
+    
+}
+
+void UCesiumVectorComponent::BeginDestroy()
+{
+	 Super::BeginDestroy();
+	 if(outlineMeshComponent != nullptr)
+	 {
+		outlineMeshComponent->SetVisibility(false, true);
+        outlineMeshComponent->ConditionalBeginDestroy();
+	 }
+     if (IsValid(polygonMeshComponent))
+     {
+         polygonMeshComponent->SetVisibility(false, true);
+         polygonMeshComponent->ConditionalBeginDestroy();
+     }
+     if(lineMeshComponent != nullptr)
+	 {
+		lineMeshComponent->SetVisibility(false, true);
+        lineMeshComponent->ConditionalBeginDestroy();
+	 }
+}
+
+UMaterialInterface* UCesiumVectorComponent::createMaterial(const FLinearColor& color)
+{
+    UMaterialInstanceDynamic* mat = UMaterialInstanceDynamic::Create(BaseMaterial, this);
+    mat->SetVectorParameterValue(TEXT("FillColor"), color);
+	mat->TwoSided = true;
+	return mat;
+}
+
+void UCesiumVectorComponent::buildPoints(const FTileModel* tileModel, FString strName)
+{
+
+}
+
+void UCesiumVectorComponent::buildLines(const FTileModel* tileModel, FString strName)
+{
+    lineMeshComponent = NewObject<ULineMeshComponent>(this, *FString("Line_" + strName));
+	lineMeshComponent->Material = BaseMaterial;
+
+	int index = 0;
+	int sectionIndex = 0;
+    TArray<FVector>worldPosArray;
+	for (const FCesiumMeshSection& section : tileModel->Sections)
+	{
+		int32 count = section.IndexBuffer.Num();
+		worldPosArray.Empty();
+		for (int32 i = 0; i < section.VertexBuffer.Num(); i++)
+		{
+			//int32 theIndex = section.IndexBuffer[i];
+			FVector3f pos = section.VertexBuffer[i];
+			worldPosArray.Add(FVector(pos));
+		}
+		lineMeshComponent->CreateLine(sectionIndex, worldPosArray, tileModel->FillColor);
+		sectionIndex++;
+		++index;
+	}
+    lineMeshComponent->SetupAttachment(this);
+	lineMeshComponent->RegisterComponent();
+}
+
+void UCesiumVectorComponent::buildPolygons(const FTileModel* tileModel, FString strName)
+{
+     //绘制面
+    {
+        polygonMeshComponent = NewObject<UStaticMeshComponent>(this, *FString("Poly_" + strName));
         UStaticMesh* pStaticMesh = NewObject<UStaticMesh>(polygonMeshComponent);
         polygonMeshComponent->SetStaticMesh(pStaticMesh);
 	    pStaticMesh->NeverStream = true;
@@ -308,9 +379,9 @@ void UCesiumVectorComponent::BuildMesh(const FTileModel* tileModel, FString strN
     if (tileModel->Outline)
     {
         /*
-        lineMeshComponent = NewObject<UStaticMeshComponent>(this, *FString("Line_" + strName));
-	    UStaticMesh* pStaticMesh = NewObject<UStaticMesh>(lineMeshComponent);
-        lineMeshComponent->SetStaticMesh(pStaticMesh);
+        outlineMeshComponent = NewObject<UStaticMeshComponent>(this, *FString("Line_" + strName));
+	    UStaticMesh* pStaticMesh = NewObject<UStaticMesh>(outlineMeshComponent);
+        outlineMeshComponent->SetStaticMesh(pStaticMesh);
 	    pStaticMesh->NeverStream = true;
 	
 	    pStaticMesh->SetFlags(RF_Transient | RF_DuplicateTransient | RF_TextExportTransient);
@@ -379,31 +450,8 @@ void UCesiumVectorComponent::BuildMesh(const FTileModel* tileModel, FString strN
 	    pStaticMesh->AddMaterial(pMaterial);
 	    pStaticMesh->InitResources();
         pStaticMesh->CalculateExtendedBounds();
-        lineMeshComponent->SetupAttachment(this);
-	    lineMeshComponent->RegisterComponent();
+        outlineMeshComponent->SetupAttachment(this);
+	    outlineMeshComponent->RegisterComponent();
         */
     }
-}
-
-void UCesiumVectorComponent::BeginDestroy()
-{
-	 Super::BeginDestroy();
-	 if(lineMeshComponent != nullptr)
-	 {
-		lineMeshComponent->SetVisibility(false, true);
-        lineMeshComponent->ConditionalBeginDestroy();
-	 }
-     if (IsValid(polygonMeshComponent))
-     {
-         polygonMeshComponent->SetVisibility(false, true);
-         polygonMeshComponent->ConditionalBeginDestroy();
-     }
-}
-
-UMaterialInterface* UCesiumVectorComponent::createMaterial(const FLinearColor& color)
-{
-    UMaterialInstanceDynamic* mat = UMaterialInstanceDynamic::Create(BaseMaterial, this);
-    mat->SetVectorParameterValue(TEXT("FillColor"), color);
-	mat->TwoSided = true;
-	return mat;
 }

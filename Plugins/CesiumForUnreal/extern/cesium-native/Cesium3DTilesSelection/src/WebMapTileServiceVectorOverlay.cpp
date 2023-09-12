@@ -202,7 +202,13 @@ WebMapTileServiceVectorOverlay::createTileProvider(
             }
 
             const gsl::span<const std::byte> data = pResponse->data();
-
+            if(pResponse->statusCode() != 200) 
+            {
+              return nonstd::make_unexpected(RasterOverlayLoadFailureDetails{
+                  RasterOverlayLoadType::TileProvider,
+                  std::move(pRequest),
+                  "No response received from web map tile service."});
+            }
             std::string str(reinterpret_cast<const char*>(data.data()));
             tinyxml2::XMLDocument doc;
             const tinyxml2::XMLError error = doc.Parse(
@@ -245,11 +251,38 @@ WebMapTileServiceVectorOverlay::createTileProvider(
                   "Web map tile service XML document does not have a Layer "
                   "element."});
             }
+
             tinyxml2::XMLElement* pTitle = pLayer->FirstChildElement("ows:Title");
             std::string strLayerName = "";//sip:sip_road
             if (pTitle != nullptr)
             {
                 strLayerName = pTitle->GetText();
+            }
+            tinyxml2::XMLElement* pLayerName = pLayer->FirstChildElement("ows:Identifier");
+            if (pTitle != nullptr) {
+                strLayerName = pLayerName->GetText();
+            }
+
+            while (strLayerName != options.layers) {
+                pLayer = pLayer->NextSiblingElement();
+                if (pLayer != nullptr && strcmp("Layer", pLayer->Name()) == 0)
+                {
+                  tinyxml2::XMLElement* pLayerNameElement =
+                      pLayer->FirstChildElement("ows:Identifier");
+                  if (pTitle != nullptr) {
+                    strLayerName = pLayerNameElement->GetText();
+                  }
+                }
+                else
+                {
+                  return nonstd::make_unexpected(
+                      RasterOverlayLoadFailureDetails{
+                          RasterOverlayLoadType::TileProvider,
+                          std::move(pRequest),
+                          "Web map tile service XML document does not have a "
+                          "Contents "
+                          "element."});
+                }
             }
 
 			tinyxml2::XMLElement* pBox = pLayer->FirstChildElement("ows:WGS84BoundingBox");
