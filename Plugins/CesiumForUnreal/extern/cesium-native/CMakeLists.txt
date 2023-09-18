@@ -206,4 +206,14 @@ install(TARGETS expected-lite)
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/extern/expected-lite/include/nonstd TYPE INCLUDE)
 
 install(TARGETS VectorTileReader)
+
 install(TARGETS geos)
+
+install(DIRECTORY extern/geos/include/geos
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    COMPONENT geos
+)
+install(FILES extern/geos/include/geos.h
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    COMPONENT geos
+)

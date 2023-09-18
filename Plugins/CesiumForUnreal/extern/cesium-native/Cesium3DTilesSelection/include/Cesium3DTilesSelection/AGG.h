@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------
 // Anti-Grain Geometry - Version 2.1 Lite
-// Copyright (C) 2002-2003 Maxim Shemanarev (McSeem)
+// Copyright (C) 2002-2003 
 //
 // Permission to copy, use, modify, sell and distribute this software
 // is granted provided this copyright notice appears in all copies.
@@ -12,8 +12,6 @@
 // libray - in producing this work. See http://www.freetype.org for details.
 //
 //----------------------------------------------------------------------------
-// Contact: mcseem@antigrain.com
-//          mcseemagg@yahoo.com
 //          http://www.antigrain.com
 //----------------------------------------------------------------------------
 #ifndef AGGLITE_H
@@ -82,10 +80,9 @@ struct rgba8 {
 };
 
 //========================================================================
-// Rendering buffer wrapper. This class does not know anything about
-// memory organizations, all it does it keeps an array of pointers
-// to each pixel row. The general rules of rendering are as follows.
-//
+// 渲染缓冲区包装器。这个类对内存组织一无所知，
+// 它所做的只是保留一个指向每个像素行的指针数组。渲染的一般规则如下。
+
 // 1. Allocate or create somehow a rendering buffer itself. Since
 //    the library does not depend on any particular platform or
 //    architecture it was decided that it's your responsibility
