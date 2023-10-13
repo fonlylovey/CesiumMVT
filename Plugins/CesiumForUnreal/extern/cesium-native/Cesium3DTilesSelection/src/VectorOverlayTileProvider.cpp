@@ -13,6 +13,8 @@
 
 #include <rapidjson/document.h>
 #include <sstream>
+#include <iostream>
+#include "../include/Cesium3DTilesSelection/MVTUtilities.h"
 
 using namespace CesiumAsync;
 using namespace CesiumGeometry;
@@ -105,8 +107,8 @@ VectorOverlayTileProvider::getTile(
 void VectorOverlayTileProvider::removeTile(VectorOverlayTile* pTile) noexcept
 {
   assert(pTile->getReferenceCount() == 0);
-  pTile; //test
-  //this->_tileDataBytes -= int64_t(pTile->getVectorModel().pixelData.size());
+  if(pTile->getVectorModel() != nullptr)
+    this->_tileDataBytes -= int64_t(pTile->getVectorModel()->layers.size());
 }
 
 void VectorOverlayTileProvider::loadTile(VectorOverlayTile& tile)
@@ -157,9 +159,23 @@ VectorOverlayTileProvider::loadTileDataFromUrl(
               {"Vector request for " + tileUrl + " failed."},
               {}};
         }
-		
-        if (pResponse->statusCode() != 0 &&
-            (pResponse->statusCode() < 200 || pResponse->statusCode() >= 300))
+
+	    auto noneModel = new CesiumGltf::VectorModel;
+        noneModel->level = options.level;
+        noneModel->row = options.Row;
+        noneModel->col = options.Col;
+        if(pResponse->statusCode() == 400) 
+        {
+            noneModel->TypeName = "400 None Data";
+          return LoadedVectorOverlayData{
+              noneModel,
+              options.rectangle,
+              std::move(options.credits),
+              {},
+              {}};
+        }
+
+        if (pResponse->statusCode() != 200)
         {
           std::string message = "vector response code " +
                                 std::to_string(pResponse->statusCode()) +
@@ -174,9 +190,9 @@ VectorOverlayTileProvider::loadTileDataFromUrl(
 
         if (pResponse->data().empty())
         {
-
+            noneModel->TypeName = "200 None Data";
           return LoadedVectorOverlayData{
-              nullptr,
+              noneModel,
               options.rectangle,
               std::move(options.credits),
               {"vector request for " + tileUrl + " failed."},
@@ -238,50 +254,46 @@ struct LoadResult {
   void* pRendererResources = nullptr;
 };
 
-static LoadResult createLoadResultFromLoadedData(
-    const std::shared_ptr<IPrepareRendererResources>& pPrepareRendererResources,
-    const std::shared_ptr<spdlog::logger>& pLogger,
-    LoadedVectorOverlayData&& loadedData,
-    const std::any& rendererOptions)
-{
-  pLogger;
-  if (loadedData.vectorModel == nullptr) {
-    LoadResult result;
-    result.state = VectorOverlayTile::LoadState::Failed;
-    return result;
-  }
+    static LoadResult createLoadResultFromLoadedData(
+        const std::shared_ptr<IPrepareRendererResources>& pPrepareRendererResources,
+        const std::shared_ptr<spdlog::logger>& pLogger,
+        LoadedVectorOverlayData&& loadedData,
+        const std::any& rendererOptions)
+    {
+     //警告级别太高，变量，参数声明没有引用会报错
+      pLogger;
 
-  if (!loadedData.warnings.empty()) {
-    LoadResult result;
-    result.state = VectorOverlayTile::LoadState::Failed;
-    return result;
-  }
+      if (!loadedData.errors.empty()) {
+        LoadResult result;
+        result.state = VectorOverlayTile::LoadState::Failed;
+        SPDLOG_INFO("TileError {}", loadedData.errors[0]);
+        return result;
+      }
 
-  CesiumGltf::VectorModel* model = loadedData.vectorModel;
-  if (model->layers.size() > 0)
-  {
-    void* pRendererResources = nullptr;
-    if (pPrepareRendererResources) 
-	{
-      pRendererResources = pPrepareRendererResources->prepareVectorInLoadThread(
-          model,
-          rendererOptions);
+      if (loadedData.vectorModel == nullptr) 
+      {
+        LoadResult result;
+        result.state = VectorOverlayTile::LoadState::Failed;
+        return result;
+      } 
+      else 
+      {
+        void* pRendererResources = nullptr;
+        if (pPrepareRendererResources) {
+          pRendererResources = pPrepareRendererResources->prepareVectorInLoadThread(
+              loadedData.vectorModel,
+              rendererOptions);
+        }
+
+        LoadResult result;
+        result.state = VectorOverlayTile::LoadState::Loaded;
+        result.model = loadedData.vectorModel;
+        result.rectangle = loadedData.rectangle;
+        result.credits = std::move(loadedData.credits);
+        result.pRendererResources = pRendererResources;
+        return result;
+      }
     }
-
-    LoadResult result;
-    result.state = VectorOverlayTile::LoadState::Loaded;
-    result.model = model;
-    result.rectangle = loadedData.rectangle;
-    result.credits = std::move(loadedData.credits);
-    result.pRendererResources = pRendererResources;
-    return result;
-  }
-
-  LoadResult result;
-  result.pRendererResources = nullptr;
-  result.state = VectorOverlayTile::LoadState::Failed;
-  return result;
-}
 
 } // namespace
 
@@ -292,7 +304,6 @@ void VectorOverlayTileProvider::doLoad(VectorOverlayTile& tile, bool isThrottled
     // Already loading or loaded, do nothing.
     return;
   }
-
   // CESIUM_TRACE_USE_TRACK_SET(this->_loadingSlots);
 
   // Don't let this tile be destroyed while it's loading.
@@ -317,6 +328,9 @@ void VectorOverlayTileProvider::doLoad(VectorOverlayTile& tile, bool isThrottled
                 pLogger,
                 std::move(loadedData),
                 rendererOptions);
+              if(result.state == VectorOverlayTile::LoadState::Unloaded) {
+                  return result;
+              }
             return result;
           })
       .thenInMainThread(
@@ -327,13 +341,12 @@ void VectorOverlayTileProvider::doLoad(VectorOverlayTile& tile, bool isThrottled
             pTile->_vectorModel = result.model;
             pTile->_tileCredits = std::move(result.credits);
             pTile->setState(result.state);
-            //要重写
+            // 
             if (pTile->getVectorModel() != nullptr) 
 			{
 				 thisPtr->_tileDataBytes +=
                 int64_t(pTile->getVectorModel()->layers.size());
-            }
-           
+            } 
 
             thisPtr->finalizeTileLoad(isThrottledLoad);
           })
@@ -341,7 +354,7 @@ void VectorOverlayTileProvider::doLoad(VectorOverlayTile& tile, bool isThrottled
           [thisPtr, pTile, isThrottledLoad](const std::exception& /*e*/)
         {
             pTile->_pRendererResources = nullptr;
-            pTile->_vectorModel = {};
+            pTile->_vectorModel = nullptr;
             pTile->_tileCredits = {};
             pTile->setState(VectorOverlayTile::LoadState::Failed);
 

@@ -213,13 +213,6 @@ private:
       Meta = (AllowPrivateAccess))
   UCesiumBoundingVolumePoolComponent* BoundingVolumePoolComponent = nullptr;
 
-UPROPERTY(
-      Transient,
-      BlueprintReadOnly,
-      Category = "Cesium",
-      Meta = (AllowPrivateAccess))
-  UVectorSSVComponent* VectorRenderComponent = nullptr;
-
   /**
    * The custom view extension this tileset uses to pull renderer view
    * information.
@@ -539,7 +532,7 @@ public:
    *
    * Only applicable when EnableOcclusionCulling is enabled. When this option
    * is enabled, there may be small delays before tiles are refined, but there
-   * may be an overall performance advantage by avoiding loads of descendants
+   * may be an overall performance advantage by avoiding loads of descendants.0
    * that will be found to be occluded.
    */
   UPROPERTY(

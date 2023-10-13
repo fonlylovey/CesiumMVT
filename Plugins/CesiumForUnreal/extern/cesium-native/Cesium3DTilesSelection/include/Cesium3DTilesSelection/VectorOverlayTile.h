@@ -210,10 +210,11 @@ public:
     this->_pRendererResources = pValue;
   }
 
- void setTileID(int level, int row, int col) {
+ void setTileID(int level, int row, int col, int tmsRow) {
     _level = level;
     _row = row;
     _col = col;
+    _tmsRow = tmsRow;
   }
 
 private:
@@ -235,6 +236,7 @@ private:
   void* _pRendererResources;
   int _level;
   int _row;
+  int _tmsRow;
   int _col;
 };
 } // namespace Cesium3DTilesSelection

@@ -454,6 +454,7 @@ QuadtreeVectorOverlayTileProvider::loadTileData(
         // This set of images is only "useful" if at least one actually has
         // image data, and that image data is _not_ from an ancestor. We can
         // identify ancestor images because they have a `subset`.
+                              /*
         const bool haveAnyUsefulImageData = std::any_of(
             models.begin(),
             models.end(),
@@ -475,8 +476,10 @@ QuadtreeVectorOverlayTileProvider::loadTileData(
               {},
               {},
               {}};
+        }*/
+        if(models.empty()) {
+          return LoadedVectorOverlayData{nullptr, Rectangle(), {}, {}, {}};
         }
-
         VectorModel* model = models.at(0).pLoaded->vectorModel;
         return LoadedVectorOverlayData{std::move(model), rectangle, {}, {}, {}};
       });

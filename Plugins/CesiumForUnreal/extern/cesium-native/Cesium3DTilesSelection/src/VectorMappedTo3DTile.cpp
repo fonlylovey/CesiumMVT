@@ -70,18 +70,25 @@ VectorMappedTo3DTile::VectorMappedTo3DTile(
 bool VectorMappedTo3DTile::update(IPrepareRendererResources& pPrepareRendererResources, Tile& tile) 
 {
     assert(this->_pLoadingTile != nullptr || this->_pReadyTile != nullptr);
-
+ 
     if (this->getState() == AttachmentState::Attached) 
     {
         return !this->_originalFailed && this->_pReadyTile;
     }
 
+    VectorOverlayTile::LoadState state = this->_pLoadingTile->getState();
+
+    //
+    if(state == VectorOverlayTile::LoadState::Unloaded) {
+        VectorOverlayTileProvider& provider = _pLoadingTile->getTileProvider();
+        provider.loadTileThrottled(*_pLoadingTile);
+        //SPDLOG_INFO("update {} state:{}", keyStr, (int)state);
+        return false;
+    }
     // If the loading tile has failed, try its parent's loading tile.
-    
     Tile* pTile = &tile;
-/*
-    while (this->_pLoadingTile &&
-            this->_pLoadingTile->getState() ==
+
+    while (this->_pLoadingTile && state ==
                 VectorOverlayTile::LoadState::Failed && pTile) 
     {
         // Note when our original tile fails to load so that we don't report more
@@ -98,11 +105,10 @@ bool VectorMappedTo3DTile::update(IPrepareRendererResources& pPrepareRendererRes
                 this->_pLoadingTile = pOverlayTile;
             }
         }
-    }*/
+    }
 
     // If the loading tile is now ready, make it the ready tile.
-    if (this->_pLoadingTile &&
-        this->_pLoadingTile->getState() >= VectorOverlayTile::LoadState::Loaded) 
+    if (this->_pLoadingTile && state >= VectorOverlayTile::LoadState::Loaded) 
     {
         // Unattach the old tile
         if (this->_pReadyTile && this->getState() != AttachmentState::Unattached) 
@@ -163,6 +169,7 @@ bool VectorMappedTo3DTile::update(IPrepareRendererResources& pPrepareRendererRes
             // Compute the translation and scale for the new tile.
             this->computeTranslationAndScale(tile);
         }
+       
     }
 
     // Attach the ready tile if it's not already attached.
@@ -307,7 +314,7 @@ VectorMappedTo3DTile* addRealTile(
         {
             auto tileID = MVTUtilities::GetTileID(tile.getTileID());
             int wmtsY = static_cast<int>(glm::pow(2, tileID.level)) - 1 - tileID.y;
-            pTile->setTileID(tileID.level, wmtsY, tileID.x);
+            pTile->setTileID(tileID.level, wmtsY, tileID.x, tileID.y);
             return &tile.getMappedVectorTiles().emplace_back(VectorMappedTo3DTile(pTile, textureCoordinateIndex));
         }
     }
@@ -323,8 +330,8 @@ VectorMappedTo3DTile* addRealTile(
 {
     IntrusivePointer<VectorOverlayTile> pTile = getPlaceholderTile(placeholder);
     auto tileID = MVTUtilities::GetTileID(tile.getTileID());
-            int wmtsY = static_cast<int>(glm::pow(2, tileID.level)) - 1 - tileID.y;
-            pTile->setTileID(tileID.level, wmtsY, tileID.x);
+    int wmtsY = static_cast<int>(glm::pow(2, tileID.level)) - 1 - tileID.y;
+    pTile->setTileID(tileID.level, wmtsY, tileID.x, tileID.y);
 
   if (tileProvider.isPlaceholder())
   {

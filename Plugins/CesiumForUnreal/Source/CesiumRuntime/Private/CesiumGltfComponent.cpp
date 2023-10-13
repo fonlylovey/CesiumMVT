@@ -57,6 +57,8 @@
 #include <glm/gtc/quaternion.hpp>
 #include <glm/mat3x3.hpp>
 #include <iostream>
+#include <Cesium3DTilesSelection/VectorOverlayTile.h>
+#include <Cesium3DTilesSelection/VectorOverlay.h>
 
 #if WITH_EDITOR
 #include "ScopedTransaction.h"
@@ -2375,6 +2377,133 @@ void UCesiumGltfComponent::DetachRasterTile(
               this->Transparent1x1);
         }
       });
+}
+
+void UCesiumGltfComponent::AttachVectorTile(const Cesium3DTilesSelection::Tile& tile, const Cesium3DTilesSelection::VectorOverlayTile& vectorTile, UTexture2D* pTexture, const glm::dvec2& translation, const glm::dvec2& scale, int32_t textureCoordinateID)
+{
+    
+#if CESIUM_UNREAL_ENGINE_DOUBLE
+  FVector4 translationAndScale(translation.x, translation.y, scale.x, scale.y);
+#else
+  FLinearColor translationAndScale(
+      translation.x,
+      translation.y,
+      scale.x,
+      scale.y);
+#endif
+  auto fun = [this, &vectorTile, pTexture, &translationAndScale, textureCoordinateID](
+      UCesiumGltfPrimitiveComponent* pPrimitive,
+      UMaterialInstanceDynamic* pMaterial,
+      UCesiumMaterialUserData* pCesiumData)
+  {
+      if (pCesiumData) 
+      {
+          FString name = UTF8_TO_TCHAR(vectorTile.getOverlay().getName().c_str());
+
+          for (int32 i = 0; i < pCesiumData->LayerNames.Num(); ++i) 
+          {
+            if (pCesiumData->LayerNames[i] != name) 
+            {
+              continue;
+            }
+            if(pTexture == nullptr)
+            {
+                pMaterial->SetTextureParameterValueByInfo(
+                FMaterialParameterInfo(
+                    "Texture",
+                    EMaterialParameterAssociation::LayerParameter,
+                    i),
+                this->Transparent1x1);
+            }
+            else
+            {
+                 pMaterial->SetTextureParameterValueByInfo(
+                FMaterialParameterInfo(
+                    "Texture",
+                    EMaterialParameterAssociation::LayerParameter,
+                    i),
+                pTexture);
+            }
+           
+            pMaterial->SetVectorParameterValueByInfo(
+                FMaterialParameterInfo(
+                    "TranslationScale",
+                    EMaterialParameterAssociation::LayerParameter,
+                    i),
+                translationAndScale);
+            pMaterial->SetScalarParameterValueByInfo(
+                FMaterialParameterInfo(
+                    "TextureCoordinateIndex",
+                    EMaterialParameterAssociation::LayerParameter,
+                    i),
+                static_cast<float>(
+                    pPrimitive->overlayTextureCoordinateIDToUVIndex
+                        [textureCoordinateID]));
+          }
+      } 
+      else
+      {
+          if (pTexture == nullptr)
+          {
+              pMaterial->SetTextureParameterValue(createSafeName(vectorTile.getOverlay().getName(), "_Texture"),
+                                                  this->Transparent1x1);
+          }
+          else
+          {
+              pMaterial->SetTextureParameterValue(createSafeName(vectorTile.getOverlay().getName(), "_Texture"),
+                                                  pTexture);
+          }
+          
+          pMaterial->SetVectorParameterValue(
+              createSafeName(
+                  vectorTile.getOverlay().getName(),
+                  "_TranslationScale"),
+              translationAndScale);
+          pMaterial->SetScalarParameterValue(
+              createSafeName(
+                  vectorTile.getOverlay().getName(),
+                  "_TextureCoordinateIndex"),
+              static_cast<float>(pPrimitive->overlayTextureCoordinateIDToUVIndex
+                                     [textureCoordinateID]));
+      }
+  };
+  forEachPrimitiveComponent(this, fun);
+}
+
+void UCesiumGltfComponent::DetachVectorTile(const Cesium3DTilesSelection::Tile& tile, const Cesium3DTilesSelection::VectorOverlayTile& vectorTile, UTexture2D* pTexture)
+{
+    auto fun = [this, &vectorTile, pTexture](
+      UCesiumGltfPrimitiveComponent* pPrimitive,
+      UMaterialInstanceDynamic* pMaterial,
+      UCesiumMaterialUserData* pCesiumData)
+    {
+        if (pCesiumData)
+        {
+            FString name = UTF8_TO_TCHAR(vectorTile.getOverlay().getName().c_str());
+            for (int32 i = 0; i < pCesiumData->LayerNames.Num(); ++i)
+            {
+                if (pCesiumData->LayerNames[i] != name)
+                {
+                    continue;
+                }
+
+                pMaterial->SetTextureParameterValueByInfo(
+                    FMaterialParameterInfo(
+                        "Texture",
+                        EMaterialParameterAssociation::LayerParameter,
+                        i),
+                    this->Transparent1x1);
+            }
+        }
+        else
+        {
+            pMaterial->SetTextureParameterValue(
+                createSafeName(vectorTile.getOverlay().getName(), "_Texture"),
+                this->Transparent1x1);
+        }
+    };
+
+    forEachPrimitiveComponent(this, fun);
 }
 
 void UCesiumGltfComponent::SetCollisionEnabled(

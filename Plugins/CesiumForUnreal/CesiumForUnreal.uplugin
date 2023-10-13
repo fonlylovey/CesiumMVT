@@ -30,14 +30,18 @@
             "WhitelistPlatforms": [ "Win64", "Mac", "Linux", "Android", "IOS" ]
         }
     ],
-	"Plugins": [
-		{
-			"Name": "SunPosition",
-			"Enabled": true
-		},
-		{
-			"Name": "Water",
-			"Enabled": true
-		}
-	]
+    "Plugins": [
+        {
+            "Name": "SunPosition",
+            "Enabled": true
+        },
+        {
+            "Name": "Water",
+            "Enabled": true
+        },
+        {
+            "Name": "OpenCV",
+            "Enabled": true
+        }
+    ]
 }

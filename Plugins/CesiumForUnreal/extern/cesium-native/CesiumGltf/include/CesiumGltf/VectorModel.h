@@ -95,7 +95,7 @@ struct VectorStyle
 /** @copydoc VectorModel */
 struct CESIUMGLTF_API VectorModel
 {
-  static inline constexpr const char* TypeName = "VectorModel";
+  char* TypeName = "VectorModel";
   ~VectorModel()
   {
 	  layers.clear();

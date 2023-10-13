@@ -29,6 +29,7 @@ struct Model;
 namespace Cesium3DTilesSelection {
 class Tile;
 class RasterOverlayTile;
+class VectorOverlayTile;
 } // namespace Cesium3DTilesSelection
 
 namespace CesiumGeometry {
@@ -109,6 +110,20 @@ public:
       const Cesium3DTilesSelection::RasterOverlayTile& RasterTile,
       UTexture2D* Texture);
 
+  //mapmost add by fengya
+  void AttachVectorTile(
+      const Cesium3DTilesSelection::Tile& Tile,
+      const Cesium3DTilesSelection::VectorOverlayTile& VectorTile,
+      UTexture2D* Texture,
+      const glm::dvec2& Translation,
+      const glm::dvec2& Scale,
+      int32_t TextureCoordinateID);
+
+  void DetachVectorTile(
+      const Cesium3DTilesSelection::Tile& Tile,
+      const Cesium3DTilesSelection::VectorOverlayTile& VectorTile,
+      UTexture2D* Texture);
+
   UFUNCTION(BlueprintCallable, Category = "Collision")
   virtual void SetCollisionEnabled(ECollisionEnabled::Type NewType);
 
@@ -116,11 +131,6 @@ public:
 
   void UpdateFade(float fadePercentage, bool fadingIn);
 
-  int level = 0;
-
-  int row = 0;
-
-  int col = 0;
 private:
   UPROPERTY()
   UTexture2D* Transparent1x1 = nullptr;

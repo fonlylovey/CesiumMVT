@@ -185,6 +185,9 @@ public class CesiumRuntime : ModuleRules
         {
             PrivateDependencyModuleNames.Add("Chaos");
         }
+        
+        PrivateDependencyModuleNames.Add("OpenCV");
+        PrivateDependencyModuleNames.Add("OpenCVHelper");
 
         if (Target.bBuildEditor == true)
         {

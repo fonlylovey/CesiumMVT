@@ -238,6 +238,13 @@ void FLineMeshSceneProxy::AddNewSection_GameThread(FLineMeshSection* SrcSection)
 		SetUsedMaterialForVerification(UsedMaterials);
 #endif
 */
+        AsyncTask(
+				 ENamedThreads::GameThread,
+				 [this]()
+				 {
+					 Component->UpdateLocalBounds();
+				 }
+			 );
 }
 
 int32 FLineMeshSceneProxy::GetNumSections() const

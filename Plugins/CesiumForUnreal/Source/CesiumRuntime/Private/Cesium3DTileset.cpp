@@ -71,7 +71,7 @@ FCesium3DTilesetLoadFailure OnCesium3DTilesetLoadFailure{};
 #include "CesiumVectorComponent.h"
 #include <Cesium3DTilesSelection/Tile.h>
 #include <Cesium3DTilesSelection/TileID.h>
-#include <VectorSSVComponent.h>
+#include "VectorRasterizer.h"
 
 // Sets default values
 ACesium3DTileset::ACesium3DTileset()
@@ -595,20 +595,6 @@ void ACesium3DTileset::OnConstruction(const FTransform& Transform) {
         pGltf->SetCollisionEnabled(ECollisionEnabled::NoCollision);
       }
     }
-
-    //mapmost add fengya
-    
-    TArray<UCesiumVectorComponent*> vectorComponents;
-    this->GetComponents<UCesiumVectorComponent>(vectorComponents);
-
-    for (UCesiumVectorComponent* pVector : vectorComponents) 
-    {
-      if (IsValid(pVector)) 
-      {
-        pVector->SetVisibility(false, true);
-      }
-    }
-    
   }
 }
 
@@ -694,10 +680,6 @@ public:
           this->_pActor->GetCustomDepthParameters(),
           tile.getContentBoundingVolume().value_or(tile.getBoundingVolume()),
           this->_pActor->GetCreateNavCollision());
-          double wmtsY = glm::pow(2, tileID.level) - 1.f - (double)tileID.y;
-          gltfComponent->level = tileID.level;
-          gltfComponent->row = wmtsY;
-          gltfComponent->col = tileID.x;
       return gltfComponent;
     }
     // UE_LOG(LogCesium, VeryVerbose, TEXT("No content for tile"));
@@ -860,41 +842,29 @@ public:
         return nullptr;
     }
     auto pOptions = *ppOptions;
-    /*
-    //在这个函数出栈之后 参数model会被析构，变成野指针，所以需要new一个新的指针接收数据后续使用
-    CesiumGltf::VectorModel* theModel = new CesiumGltf::VectorModel;
-	
-	
-    //这个函数是异步线程，可以在这里面把所有坐标都转换好，然后到InMainThread主线程函数直接创建组件 
-    if(pModel->layers.size() > 0)
-    {
-	    theModel->layers = pModel->layers;
-	    theModel->level = model.level;
-	    theModel->Row = model.Row;
-	    theModel->Col = model.Col;
-    }*/
-	
-    //return 的这个参数会在后续逻辑中传入prepareVectorInMainThread使用
-    return pModel;
+    FVectorRasterizer rasterizer;
+    GeometryTile* tileData = rasterizer.LoadTileModel(pModel);
+    return tileData;
   }
 
   virtual void* prepareVectorInMainThread(
         Cesium3DTilesSelection::VectorOverlayTile& vectorTile,
         void* pLoadThreadResult)
-  {
-        //pLoadThreadResult就是prepareVectorInLoadThread()函数的返回值
-        CesiumGltf::VectorModel* pModelData = static_cast<CesiumGltf::VectorModel*>(pLoadThreadResult);
-        UCesiumVectorComponent* pVectorContent = UCesiumVectorComponent::CreateOnGameThread(pModelData, vectorTile, _pActor);
-       if (pModelData->level != pVectorContent->Level ||
-           pModelData->row != pVectorContent->Row ||
-           pModelData->col != pVectorContent->Col)
-       {
-           int aa = 0;
-       }
-       FString strName = FString::FormatAsNumber(pModelData->level) + "_" +
-       FString::FormatAsNumber(pModelData->row) + "_" + FString::FormatAsNumber(pModelData->col);
-       UE_LOG(LogTemp, Error, TEXT("create vector %s"), *strName);
-       return pVectorContent;
+   {
+        if(pLoadThreadResult != nullptr)
+        {
+            //pLoadThreadResult就是prepareVectorInLoadThread()函数的返回值
+                GeometryTile* pModelData = static_cast<GeometryTile*>(pLoadThreadResult);
+                if(pModelData->GeometryList.empty())
+                {
+                    //return nullptr;
+                }
+                FVectorRasterizer rasterizer;
+                UTexture2D* pTexture = rasterizer.Rasterizer(pModelData);
+                delete pModelData;
+                return pTexture;
+        }
+        return nullptr;
   }
 
   virtual void freeVector(
@@ -902,7 +872,12 @@ public:
 	    void* pLoadThreadResult,
 	    void* pMainThreadResult) noexcept
   {
-
+       if (pMainThreadResult) 
+       {
+           UTexture* pTexture = static_cast<UTexture*>(pMainThreadResult);
+           pTexture->RemoveFromRoot();
+           CesiumTextureUtility::destroyTexture(pTexture);
+       }
 
   }
 
@@ -916,24 +891,38 @@ public:
    {
       const Cesium3DTilesSelection::TileContent& content = tile.getContent();
       Cesium3DTilesSelection::TileRenderContent* pRenderContent = const_cast<Cesium3DTilesSelection::TileRenderContent*>(content.getRenderContent());
-      
-      auto tileID = Cesium3DTilesSelection::MVTUtilities::GetTileID(tile.getTileID());
-      double wmtsY = glm::pow(2, tileID.level) - 1.f - (double)tileID.y;
-      FString strName = FString::FormatAsNumber(tileID.level) + "_" + FString::FormatAsNumber(wmtsY) + "_" + FString::FormatAsNumber(tileID.x);
-      //UE_LOG(LogTemp, Error, TEXT("attach tiles %s"), *strName);
-      
       UCesiumGltfComponent* pGltfContent = reinterpret_cast<UCesiumGltfComponent*>(pRenderContent->getRenderResources());
-      UCesiumVectorComponent* pVectorComponent = static_cast<UCesiumVectorComponent*>(pMainThreadRendererResources);
-      if (IsValid(pVectorComponent))
+      UTexture2D* texture = static_cast<UTexture2D*>(pMainThreadRendererResources);
+      auto vectorContent = pRenderContent->getVectorResources();
+      auto model = VectorTile.getVectorModel();
+      auto tileID = Cesium3DTilesSelection::MVTUtilities::GetWTMSTileID(tile.getTileID());
+
+      if(IsValid(texture) && model != nullptr)
       {
-         
-           if (tileID.level != pVectorComponent->Level &&
-               wmtsY != pVectorComponent->Row &&
-               tileID.x != pVectorComponent->Col)
-           {
-               auto thePtr = (void*)pVectorComponent;
-               pRenderContent->setVectorResources(thePtr);
-           }
+          bool isCurrent = model->row == tileID.y && model->col == tileID.x;
+          if (IsValid(pGltfContent) && isCurrent)
+          {
+              pGltfContent->AttachVectorTile(
+                  tile,
+                  VectorTile,
+                  texture,
+                  translation,
+                  scale,
+                  overlayTextureCoordinateID);
+          }
+      }
+      else
+      {
+          if (IsValid(pGltfContent))
+          {
+              pGltfContent->AttachVectorTile(
+                  tile,
+                  VectorTile,
+                  nullptr,
+                  translation,
+                  scale,
+                  overlayTextureCoordinateID);
+          }
       }
      
    }
@@ -946,15 +935,15 @@ public:
   {
       const Cesium3DTilesSelection::TileContent& content = tile.getContent();
       const Cesium3DTilesSelection::TileRenderContent* pRenderContent = content.getRenderContent();
-      auto tileID = Cesium3DTilesSelection::MVTUtilities::GetTileID(tile.getTileID());
-      double wmtsY = glm::pow(2, tileID.level) - 1.f - (double)tileID.y;
-      FString strName = FString::FormatAsNumber(tileID.level) + "_" + FString::FormatAsNumber(wmtsY) + "_" + FString::FormatAsNumber(tileID.x);
-      //UE_LOG(LogTemp, Error, TEXT("dettach tiles %s"), *strName);
-       UCesiumVectorComponent* pVectorComponent = static_cast<UCesiumVectorComponent*>(pMainThreadRendererResources);
-      if (IsValid(pVectorComponent))
+      auto vectorContent = pRenderContent->getVectorResources();
+      UCesiumGltfComponent* pGltfContent = reinterpret_cast<UCesiumGltfComponent*>(pRenderContent->getRenderResources());
+      UTexture2D* texture = static_cast<UTexture2D*>(pMainThreadRendererResources);
+      if (IsValid(pGltfContent) && texture != nullptr)
       {
-          //pVectorComponent->DetachFromParent();
-          //pVectorComponent->SetVisibility(false, true);
+          pGltfContent->DetachVectorTile(
+            tile,
+            VectorTile,
+            texture);
       }
   }
 
@@ -1076,9 +1065,6 @@ void ACesium3DTileset::LoadTileset() {
   if (this->BoundingVolumePoolComponent) {
     this->BoundingVolumePoolComponent->initPool(this->OcclusionPoolSize);
   }
-
-  VectorRenderComponent = NewObject<UVectorSSVComponent>(this);
-  VectorRenderComponent->RegisterComponent();
 
   Cesium3DTilesSelection::TilesetExternals externals{
       pAssetAccessor,
@@ -1797,9 +1783,6 @@ void hideTiles(const std::vector<Cesium3DTilesSelection::Tile*>& tiles) {
     if (Gltf && Gltf->IsVisible()) {
       TRACE_CPUPROFILER_EVENT_SCOPE(Cesium::SetVisibilityFalse)
       Gltf->SetVisibility(false, true);
-      FString strName = FString::FormatAsNumber(Gltf->level) + "_" + FString::FormatAsNumber(Gltf->row) + 
-        "_" + FString::FormatAsNumber(Gltf->col);
-      //UE_LOG(LogTemp, Error, TEXT("hide Gltf tile %s"), *strName);
     } else {
       // TODO: why is this happening?
       UE_LOG(
@@ -1807,28 +1790,6 @@ void hideTiles(const std::vector<Cesium3DTilesSelection::Tile*>& tiles) {
           Verbose,
           TEXT("Tile to no longer render does not have a visible Gltf"));
     }
-
-    //mapmost add fengya
-    
-    UCesiumVectorComponent* pVector = static_cast<UCesiumVectorComponent*>(
-        pRenderContent->getVectorResources());
-    if (IsValid(pVector) && pVector->IsVisible()) 
-    {
-      TRACE_CPUPROFILER_EVENT_SCOPE(Cesium::SetVisibilityFalse)
-      pVector->SetVisibility(false, true);
-      FString strName = FString::FormatAsNumber(pVector->Level) + "_" + FString::FormatAsNumber(pVector->Row) +
-        "_" + FString::FormatAsNumber(pVector->Col);
-      UE_LOG(LogTemp, Error, TEXT("hide vector tile %s"), *strName);
-    } 
-    else
-    {
-      // TODO: why is this happening?
-      UE_LOG(
-          LogCesium,
-          Verbose,
-          TEXT("Tile to no longer render does not have a visible Vector"));
-    }
-    
   }
 }
 
@@ -2049,9 +2010,6 @@ void ACesium3DTileset::showTilesToRender(
     if (!Gltf->IsVisible()) {
       TRACE_CPUPROFILER_EVENT_SCOPE(Cesium::SetVisibilityTrue)
       Gltf->SetVisibility(true, true);
-      FString strName = FString::FormatAsNumber(Gltf->level) + "_" + FString::FormatAsNumber(Gltf->row) + 
-        "_" + FString::FormatAsNumber(Gltf->col);
-      //UE_LOG(LogTemp, Error, TEXT("show Gltf tile %s"), *strName);
     }
 
     {
@@ -2059,26 +2017,6 @@ void ACesium3DTileset::showTilesToRender(
       Gltf->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
     }
 
-    //mapmost add fengya
-    
-    UCesiumVectorComponent* pVector = static_cast<UCesiumVectorComponent*>(pRenderContent->getVectorResources());
-    if (IsValid(pVector) && !pVector->IsVisible()) 
-    {
-      TRACE_CPUPROFILER_EVENT_SCOPE(Cesium::SetVisibilityFalse)
-      pVector->SetVisibility(true, true);
-      FString strName = FString::FormatAsNumber(pVector->Level) + "_" + FString::FormatAsNumber(pVector->Row) + 
-        "_" + FString::FormatAsNumber(pVector->Col);
-      UE_LOG(LogTemp, Error, TEXT("show vector tile %s"), *strName);
-    } 
-    else
-    {
-      // TODO: why is this happening?
-      UE_LOG(
-          LogCesium,
-          Verbose,
-          TEXT("Tile to no longer render does not have a visible Vector"));
-    }
-    
   }
 }
 

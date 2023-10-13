@@ -48,7 +48,7 @@ public:
 		BlueprintReadWrite,
 		Category = "Cesium",
 		meta = (EditCondition = "bSpecifyZoomLevels", ClampMin = 0))
-	int32 MaximumLevel = 10;
+	int32 MaximumLevel = 20;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cesium")
     FString LayerName;
@@ -63,10 +63,10 @@ public:
 	FLinearColor FillColor = FLinearColor::Yellow;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Vector Styles")
-	bool Outline = true;
+	bool Outline = false;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Vector Styles")
-    float LineWidth = 500;
+    float LineWidth = 5;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Vector Styles")
 	FLinearColor OutlineColor = FLinearColor::Yellow;

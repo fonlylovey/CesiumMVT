@@ -1,11 +1,7 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
-#include "Components/MeshComponent.h"
-#include "Components/LineBatchComponent.h"
-#include <glm/mat4x4.hpp>
-#include "Cesium3DTilesSelection/BoundingVolume.h"
-#include "LineMeshComponent.h"
+#include "Components/SceneComponent.h"
 #include "CesiumVectorComponent.generated.h"
 
 class UMaterialInterface;
@@ -15,13 +11,9 @@ struct VectorModel;
 }
 
 namespace Cesium3DTilesSelection {
-class Tile;
 class VectorOverlayTile;
 } // namespace Cesium3DTilesSelection
 
-class FPrimitiveSceneProxy;
-class FLineMeshSceneProxy;
-struct FCesiumMeshSection;
 struct FTileModel;
 
 UCLASS(BlueprintType, Blueprintable)
@@ -41,35 +33,23 @@ public:
 	virtual void BeginDestroy() override;
 
 private:
-	void BuildMesh(const FTileModel* tileModel, FString strName);
+    // using Raster way render
+    void RenderRaster(const CesiumGltf::VectorModel* pModelData);
 
-	UMaterialInterface* createMaterial(const FLinearColor& color);
+    // using geometry way render
+    void RenderGeometry(const CesiumGltf::VectorModel* pModelData,
+                      Cesium3DTilesSelection::VectorOverlayTile& vectorTile);
 
-    void buildPoints(const FTileModel* tileModel, FString strName);
+    // using Tencil Volume Shadow way render
+    void RenderSVS() { 
+    //none
+    };
 
-    void buildLines(const FTileModel* tileModel, FString strName);
-
-    void buildPolygons(const FTileModel* tileModel, FString strName);
-
+    class UCesiumVectorRasterizerComponent* RasterComponent;
+    class UCesiumVectorRasterizerComponent* GeometryComponent;
 public:
-	UPROPERTY(EditAnywhere, Category = "Cesium")
-	UMaterialInterface* BaseMaterial = nullptr;
-
-	UPROPERTY(EditAnywhere, Category = "Cesium")
-	UMaterialInterface* VectorMaterial = nullptr;
-
-	UPROPERTY(EditAnywhere, Category = "Cesium")
-	UStaticMeshComponent* outlineMeshComponent;
-
-	UPROPERTY(EditAnywhere, Category = "Cesium")
-	UStaticMeshComponent* polygonMeshComponent;
-
-    UPROPERTY(EditAnywhere, Category = "Cesium")
-    ULineMeshComponent* lineMeshComponent;
-
-	bool isAttach = false;
-
     int Level = 0;
     int Row = 0;
     int Col = 0;
+
 };
