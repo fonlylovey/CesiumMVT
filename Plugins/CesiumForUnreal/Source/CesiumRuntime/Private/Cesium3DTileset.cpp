@@ -861,6 +861,8 @@ public:
                 }
                 FVectorRasterizer rasterizer;
                 UTexture2D* pTexture = rasterizer.Rasterizer(pModelData);
+                pTexture->AddressX = TA_Clamp;
+                pTexture->AddressY = TA_Clamp;
                 delete pModelData;
                 return pTexture;
         }
@@ -895,12 +897,9 @@ public:
       UTexture2D* texture = static_cast<UTexture2D*>(pMainThreadRendererResources);
       auto vectorContent = pRenderContent->getVectorResources();
       auto model = VectorTile.getVectorModel();
-      auto tileID = Cesium3DTilesSelection::MVTUtilities::GetWTMSTileID(tile.getTileID());
-
-      if(IsValid(texture) && model != nullptr)
+      if(model != nullptr)
       {
-          bool isCurrent = model->row == tileID.y && model->col == tileID.x;
-          if (IsValid(pGltfContent) && isCurrent)
+          if (!model->layers.empty())
           {
               pGltfContent->AttachVectorTile(
                   tile,
@@ -911,20 +910,6 @@ public:
                   overlayTextureCoordinateID);
           }
       }
-      else
-      {
-          if (IsValid(pGltfContent))
-          {
-              pGltfContent->AttachVectorTile(
-                  tile,
-                  VectorTile,
-                  nullptr,
-                  translation,
-                  scale,
-                  overlayTextureCoordinateID);
-          }
-      }
-     
    }
 
   virtual void detachVectorInMainThread(
@@ -938,7 +923,8 @@ public:
       auto vectorContent = pRenderContent->getVectorResources();
       UCesiumGltfComponent* pGltfContent = reinterpret_cast<UCesiumGltfComponent*>(pRenderContent->getRenderResources());
       UTexture2D* texture = static_cast<UTexture2D*>(pMainThreadRendererResources);
-      if (IsValid(pGltfContent) && texture != nullptr)
+      
+      if (IsValid(pGltfContent))
       {
           pGltfContent->DetachVectorTile(
             tile,

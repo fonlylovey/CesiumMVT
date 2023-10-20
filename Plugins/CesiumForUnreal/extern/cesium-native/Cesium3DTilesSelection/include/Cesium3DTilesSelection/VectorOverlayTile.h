@@ -217,6 +217,8 @@ public:
     _tmsRow = tmsRow;
   }
 
+  std::string getTileID();
+
 private:
   friend class VectorOverlayTileProvider;
 

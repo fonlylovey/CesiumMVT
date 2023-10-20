@@ -448,41 +448,18 @@ QuadtreeVectorOverlayTileProvider::loadTileData(
 
   return this->getAsyncSystem()
       .all(std::move(tiles))
-      .thenInWorkerThread([projection = this->getProjection(),
-                           rectangle = overlayTile.getRectangle()](std::vector<LoadedQuadtreeData>&& models)
-        {
-        // This set of images is only "useful" if at least one actually has
-        // image data, and that image data is _not_ from an ancestor. We can
-        // identify ancestor images because they have a `subset`.
-                              /*
-        const bool haveAnyUsefulImageData = std::any_of(
-            models.begin(),
-            models.end(),
-            [](const LoadedQuadtreeData& model)
-          {
-              return model.pLoaded->vectorModel != nullptr &&
-                     !model.subset.has_value();
-            });
-
-        if (!haveAnyUsefulImageData)
-        {
-          // For non-useful sets of images, just return an empty image,
-          // signalling that the parent tile should be used instead.
-          // See https://github.com/CesiumGS/cesium-native/issues/316 for an
-          // edge case that is not yet handled.
-          return LoadedVectorOverlayData{
-              nullptr,
-              Rectangle(),
-              {},
-              {},
-              {}};
-        }*/
-        if(models.empty()) {
-          return LoadedVectorOverlayData{nullptr, Rectangle(), {}, {}, {}};
-        }
-        VectorModel* model = models.at(0).pLoaded->vectorModel;
-        return LoadedVectorOverlayData{std::move(model), rectangle, {}, {}, {}};
-      });
+      .thenInWorkerThread(
+            [projection = this->getProjection(),
+                           rectangle = overlayTile.getRectangle(), strID = overlayTile.getTileID()](std::vector<LoadedQuadtreeData>&& models) 
+            {
+                if (models.empty()) 
+                {
+                  return LoadedVectorOverlayData{nullptr, Rectangle(), {}, {}, {}};
+                }
+                VectorModel* model = models.at(0).pLoaded->vectorModel;
+                return LoadedVectorOverlayData{std::move(model), rectangle, {}, {}, {}};
+            }
+    );
 }
 
 void QuadtreeVectorOverlayTileProvider::unloadCachedTiles() {

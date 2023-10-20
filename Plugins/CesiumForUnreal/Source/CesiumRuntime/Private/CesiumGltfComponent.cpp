@@ -2381,7 +2381,7 @@ void UCesiumGltfComponent::DetachRasterTile(
 
 void UCesiumGltfComponent::AttachVectorTile(const Cesium3DTilesSelection::Tile& tile, const Cesium3DTilesSelection::VectorOverlayTile& vectorTile, UTexture2D* pTexture, const glm::dvec2& translation, const glm::dvec2& scale, int32_t textureCoordinateID)
 {
-    
+    //translation.x, translation.y, scale.x, scale.y
 #if CESIUM_UNREAL_ENGINE_DOUBLE
   FVector4 translationAndScale(translation.x, translation.y, scale.x, scale.y);
 #else
@@ -2406,24 +2406,12 @@ void UCesiumGltfComponent::AttachVectorTile(const Cesium3DTilesSelection::Tile& 
             {
               continue;
             }
-            if(pTexture == nullptr)
-            {
-                pMaterial->SetTextureParameterValueByInfo(
-                FMaterialParameterInfo(
-                    "Texture",
-                    EMaterialParameterAssociation::LayerParameter,
-                    i),
-                this->Transparent1x1);
-            }
-            else
-            {
-                 pMaterial->SetTextureParameterValueByInfo(
+           pMaterial->SetTextureParameterValueByInfo(
                 FMaterialParameterInfo(
                     "Texture",
                     EMaterialParameterAssociation::LayerParameter,
                     i),
                 pTexture);
-            }
            
             pMaterial->SetVectorParameterValueByInfo(
                 FMaterialParameterInfo(
@@ -2443,17 +2431,8 @@ void UCesiumGltfComponent::AttachVectorTile(const Cesium3DTilesSelection::Tile& 
       } 
       else
       {
-          if (pTexture == nullptr)
-          {
-              pMaterial->SetTextureParameterValue(createSafeName(vectorTile.getOverlay().getName(), "_Texture"),
-                                                  this->Transparent1x1);
-          }
-          else
-          {
-              pMaterial->SetTextureParameterValue(createSafeName(vectorTile.getOverlay().getName(), "_Texture"),
-                                                  pTexture);
-          }
-          
+          pMaterial->SetTextureParameterValue(
+              createSafeName(vectorTile.getOverlay().getName(), "_Texture"), pTexture);
           pMaterial->SetVectorParameterValue(
               createSafeName(
                   vectorTile.getOverlay().getName(),

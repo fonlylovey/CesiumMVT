@@ -48,6 +48,8 @@ private:
 
     UTexture2D* RasterizerPoly(const GeometryTile* pTileModel);
 
+    UTexture2D* RasterizerNone(const GeometryTile* pTileModel);
+
     //ue 获取的是[0, 1]之间的颜色，转换成[0， 255]
     cv::Scalar glmColorToCVColor(glm::dvec4 color);
 };

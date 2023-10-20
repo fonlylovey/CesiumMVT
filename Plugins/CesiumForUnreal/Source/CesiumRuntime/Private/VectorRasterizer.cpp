@@ -99,6 +99,7 @@ UTexture2D* FVectorRasterizer::Rasterizer(const GeometryTile* pTileModel)
             texture = RasterizerPoly(pTileModel);
             break;
         default :
+            texture = RasterizerNone(pTileModel);
             break;
     }
     return texture;
@@ -113,7 +114,7 @@ int FVectorRasterizer::Clamp(int value, int min, int max)
 
 UTexture2D* FVectorRasterizer::RasterizerPoint(const GeometryTile* pTileModel)
 {
-     //必须使用8字节4通道的图像
+    //必须使用8字节4通道的图像
     cv::Mat image =cv:: Mat(256, 256, CV_8UC4, cv::Scalar(0, 0, 0, 0));
     
     UTexture2D* tex = FOpenCVHelper::TextureFromCvMat(image);
@@ -163,13 +164,24 @@ UTexture2D* FVectorRasterizer::RasterizerPoly(const GeometryTile* pTileModel)
     cv::Scalar outlineColor = glmColorToCVColor(pTileModel->Style.outlineColor);
     cv::fillPoly(image, geomList, fillColor, cv::LineTypes::LINE_8, 0);
     cv::drawContours(image, geomList, -1, fillColor, 0, cv::LineTypes::LINE_AA, hierarchy, 0);
-    //cv::putText(image, pTileModel->Name, cv::Point(20, 125), cv::FONT_HERSHEY_SIMPLEX, 0.8, cv::Scalar(0, 0, 0, 255), 2);
+    cv::putText(image, pTileModel->Name, cv::Point(20, 125), cv::FONT_HERSHEY_SIMPLEX, 0.8, cv::Scalar(0, 0, 0, 255), 2);
     if(pTileModel->Style.isOutline)
     {
         cv::polylines(image, geomList, true, outlineColor, pTileModel->Style.lineWidth, cv::LineTypes::LINE_AA);
     }
-
+   
     UTexture2D* tex = FOpenCVHelper::TextureFromCvMat(image);
+    tex->AddToRoot();
+    return tex;
+}
+
+UTexture2D* FVectorRasterizer::RasterizerNone(const GeometryTile* pTileModel)
+{
+    //必须使用8字节4通道的图像
+    cv::Mat image =cv:: Mat(256, 256, CV_8UC4, cv::Scalar(0, 0, 0, 0));
+    
+    UTexture2D* tex = FOpenCVHelper::TextureFromCvMat(image);
+    cv::putText(image, pTileModel->Name, cv::Point(20, 125), cv::FONT_HERSHEY_SIMPLEX, 0.8, cv::Scalar(0, 0, 0, 255), 2);
     tex->AddToRoot();
     return tex;
 }

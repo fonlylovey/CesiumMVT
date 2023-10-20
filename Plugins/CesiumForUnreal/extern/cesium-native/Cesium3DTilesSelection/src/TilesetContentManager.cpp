@@ -917,7 +917,9 @@ void TilesetContentManager::loadTileContent(
   //mapmost add fengya
   std::vector<CesiumGeospatial::Projection> vectorProjections =
       mapVectorOverlaysToTile(tile, this->_vectorCollection, tilesetOptions);
-
+  //将矢量的投影信息，插入到projections当中
+   projections.insert(projections.end(), vectorProjections.begin(), vectorProjections.end());
+   
   // begin loading tile
   notifyTileStartLoading(&tile);
   tile.setState(TileLoadState::ContentLoading);

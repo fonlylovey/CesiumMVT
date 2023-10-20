@@ -195,7 +195,7 @@ VectorOverlayTileProvider::loadTileDataFromUrl(
               noneModel,
               options.rectangle,
               std::move(options.credits),
-              {"vector request for " + tileUrl + " failed."},
+              {},
               {}};
         }
         const gsl::span<const std::byte> data = pResponse->data();
@@ -320,7 +320,8 @@ void VectorOverlayTileProvider::doLoad(VectorOverlayTile& tile, bool isThrottled
       .thenInWorkerThread(
           [pPrepareRendererResources = this->getPrepareRendererResources(),
            pLogger = this->getLogger(),
-           rendererOptions = this->_pOwner->getOptions().rendererOptions](
+           rendererOptions = this->_pOwner->getOptions().rendererOptions,
+           strID = tile.getTileID()](
               LoadedVectorOverlayData&& loadedData)
         {
               LoadResult result = createLoadResultFromLoadedData(

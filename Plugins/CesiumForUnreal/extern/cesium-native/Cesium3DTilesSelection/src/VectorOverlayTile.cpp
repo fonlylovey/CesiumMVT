@@ -95,6 +95,13 @@ void VectorOverlayTile::loadInMainThread()
   this->setState(LoadState::Done);
 }
 
+std::string VectorOverlayTile::getTileID() 
+{
+  std::string str = std::to_string(_level) + "_" + std::to_string(_col) + "_" +
+                    std::to_string(_row);
+  return str;
+}
+
 void VectorOverlayTile::setState(LoadState newState) noexcept
 {
   this->_state = newState;
