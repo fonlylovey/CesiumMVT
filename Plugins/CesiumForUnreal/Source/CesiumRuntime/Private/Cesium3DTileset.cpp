@@ -857,12 +857,11 @@ public:
                 GeometryTile* pModelData = static_cast<GeometryTile*>(pLoadThreadResult);
                 if(pModelData->GeometryList.empty())
                 {
-                    //return nullptr;
                 }
                 FVectorRasterizer rasterizer;
                 UTexture2D* pTexture = rasterizer.Rasterizer(pModelData);
-                pTexture->AddressX = TA_Clamp;
-                pTexture->AddressY = TA_Clamp;
+                pTexture->AddressX = TA_MAX;
+                pTexture->AddressY = TA_MAX;
                 delete pModelData;
                 return pTexture;
         }
@@ -901,6 +900,8 @@ public:
       {
           if (!model->layers.empty())
           {
+              //auto texObj = StaticLoadObject(UTexture2D::StaticClass(), nullptr, TEXT("/Script/Engine.Texture2D'/Game/123.123'"));
+              //texture = static_cast<UTexture2D*>(texObj);
               pGltfContent->AttachVectorTile(
                   tile,
                   VectorTile,
@@ -1930,11 +1931,6 @@ void ACesium3DTileset::showTilesToRender(
     const std::vector<Cesium3DTilesSelection::Tile*>& tiles) {
 	TRACE_CPUPROFILER_EVENT_SCOPE(Cesium::ShowTilesToRender)
 
-    for (Cesium3DTilesSelection::Tile* pTile : tiles)
-    {
-        auto tileID = Cesium3DTilesSelection::MVTUtilities::GetTileID(pTile->getTileID());
-        _maxLevel = _maxLevel < tileID.level ? tileID.level : _maxLevel;
-    }
   for (Cesium3DTilesSelection::Tile* pTile : tiles) {
     if (pTile->getState() != Cesium3DTilesSelection::TileLoadState::Done) {
       continue;

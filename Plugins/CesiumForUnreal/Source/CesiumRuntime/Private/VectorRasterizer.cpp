@@ -70,10 +70,8 @@ GeometryTile* FVectorRasterizer::LoadTileModel(CesiumGltf::VectorModel* pModel)
                         geometry->Inner = geom.ringType == CesiumGltf::RingType::Inner ? true : false;
                         for (int i = 0; i < geom.points.size(); i++ )
 						{
-                            glm::ivec3 pixelPosS = geom.points.at(i);
-                            int pixX = Clamp(pixelPosS.x, 0, tileWidth) / 16;
-                            int pixY = Clamp(pixelPosS.y, 0, tileWidth) / 16;
-                            geometry->Points.emplace_back(cv::Point(pixX, pixY));
+                            glm::ivec3 pixelPosS = geom.points.at(i) / 16;
+                            geometry->Points.emplace_back(cv::Point(pixelPosS.x, pixelPosS.y));
 						}
                         tileData->GeometryList.push_back(geometry);
 					}
@@ -162,14 +160,14 @@ UTexture2D* FVectorRasterizer::RasterizerPoly(const GeometryTile* pTileModel)
 
     cv::Scalar fillColor = glmColorToCVColor(pTileModel->Style.fillColor);
     cv::Scalar outlineColor = glmColorToCVColor(pTileModel->Style.outlineColor);
-    cv::fillPoly(image, geomList, fillColor, cv::LineTypes::LINE_8, 0);
-    cv::drawContours(image, geomList, -1, fillColor, 0, cv::LineTypes::LINE_AA, hierarchy, 0);
-    cv::putText(image, pTileModel->Name, cv::Point(20, 125), cv::FONT_HERSHEY_SIMPLEX, 0.8, cv::Scalar(0, 0, 0, 255), 2);
+    //cv::polylines(image, geomList, false, fillColor, 1, cv::LineTypes::LINE_4);
+    cv::fillPoly(image, geomList, fillColor, cv::LineTypes::LINE_AA, 0);
+    //cv::drawContours(image, geomList, -1, fillColor, 0, cv::LineTypes::LINE_AA, hierarchy, 0);
+    cv::putText(image, pTileModel->Name, cv::Point(20, 125), cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(0, 0, 0, 255), 2);
     if(pTileModel->Style.isOutline)
     {
         cv::polylines(image, geomList, true, outlineColor, pTileModel->Style.lineWidth, cv::LineTypes::LINE_AA);
     }
-   
     UTexture2D* tex = FOpenCVHelper::TextureFromCvMat(image);
     tex->AddToRoot();
     return tex;

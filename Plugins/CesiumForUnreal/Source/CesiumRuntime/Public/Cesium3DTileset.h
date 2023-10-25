@@ -1158,6 +1158,5 @@ private:
   std::vector<Cesium3DTilesSelection::Tile*> _tilesToHideNextFrame;
 
   int32 _tilesetsBeingDestroyed;
-  unsigned char _maxLevel = 0;
   friend class UnrealResourcePreparer;
 };
