@@ -29,8 +29,6 @@ class ACesiumCartographicSelection;
 class UCesiumBoundingVolumePoolComponent;
 class CesiumViewExtension;
 struct FCesiumCamera;
-class UVectorSSVComponent;
-
 
 
 namespace Cesium3DTilesSelection {
@@ -1158,5 +1156,7 @@ private:
   std::vector<Cesium3DTilesSelection::Tile*> _tilesToHideNextFrame;
 
   int32 _tilesetsBeingDestroyed;
+
   friend class UnrealResourcePreparer;
+  friend class VectorMapResourceWorker;
 };

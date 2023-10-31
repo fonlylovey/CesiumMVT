@@ -29,7 +29,7 @@ public:
    * @param pAssetAccessor The interface used to obtain assets (tiles, etc.) for
    * this Vector overlay.
    * @param credit The {@link Credit} for this tile provider, if it exists.
-   * @param pPrepareRendererResources The interface used to prepare Vector
+   * @param IPrepareVectorMapResources The interface used to prepare Vector
    * images for rendering.
    * @param pLogger The logger to which to send messages about the tile provider
    * and tiles.
@@ -45,8 +45,8 @@ public:
       const CesiumAsync::AsyncSystem& asyncSystem,
       const std::shared_ptr<CesiumAsync::IAssetAccessor>& pAssetAccessor,
       std::optional<Credit> credit,
-      const std::shared_ptr<IPrepareRendererResources>&
-          pPrepareRendererResource,
+      const std::shared_ptr<IPrepareVectorMapResources>&
+          pPrepareMapResources,
       const std::shared_ptr<spdlog::logger>& pLogger,
       const CesiumGeospatial::Projection& projection,
       const CesiumGeometry::QuadtreeTilingScheme& tilingScheme,

@@ -11,43 +11,19 @@
 
 #include <functional>
 #include <memory>
-#include <CesiumAsync/Future.h>
 
 namespace Cesium3DTilesSelection {
 
 class CreditSystem;
 
 /**
- * @brief 
+ * @brief Options for XYZ overlays.
  */
-struct TileMapServiceVectorOverlayOptions {
-
-  /**
-   * @brief The file extension for images on the server.
-   */
-  std::optional<std::string> fileExtension;
-
-  /**
+struct VectorMapOverlayOptions {
+ /**
    * @brief A credit for the data source, which is displayed on the canvas.
    */
   std::optional<std::string> credit;
-
-  /**
-   * @brief The minimum level-of-detail supported by the imagery provider.
-   *
-   * Take care when specifying this that the number of tiles at the minimum
-   * level is small, such as four or less. A larger number is likely to
-   * result in rendering problems.
-   */
-  std::optional<uint32_t> minimumLevel;
-
-  /**
-   * @brief The maximum level-of-detail supported by the imagery provider.
-   *
-   * This will be `std::nullopt` if there is no limit.
-   */
-  std::optional<uint32_t> maximumLevel;
-
   /**
    * @brief The {@link CesiumGeometry::Rectangle}, in radians, covered by the
    * image.
@@ -73,31 +49,12 @@ struct TileMapServiceVectorOverlayOptions {
    * is specified, the {@link CesiumGeospatial::Ellipsoid::WGS84} is used.
    */
   std::optional<CesiumGeospatial::Ellipsoid> ellipsoid;
-
-  /**
-   * @brief Pixel width of image tiles.
-   */
-  std::optional<uint32_t> tileWidth;
-
-  /**
-   * @brief Pixel height of image tiles.
-   */
-  std::optional<uint32_t> tileHeight;
-
-  /**
-   * @brief An otion to flip the x- and y values of a tile map resource.
-   *
-   * Older versions of gdal2tiles.py flipped X and Y values in
-   * `tilemapresource.xml`. Specifying this option will do the same, allowing
-   * for loading of these incorrect tilesets.
-   */
-  std::optional<bool> flipXY;
 };
 
 /**
- * @brief A {@link VectorOverlay} based on tile map service imagery.
+ * @brief A {@link VectorOverlay} accessing vector from a XYZ server.
  */
-class CESIUM3DTILESSELECTION_API TileMapServiceVectorOverlay final
+class CESIUM3DTILESSELECTION_API VectorMapServiceOverlay final
     : public VectorOverlay {
 public:
   /**
@@ -107,19 +64,16 @@ public:
    * @param url The base URL.
    * @param headers The headers. This is a list of pairs of strings of the
    * form (Key,Value) that will be inserted as request headers internally.
-   * @param tmsOptions The {@link TileMapServiceVectorOverlayOptions}.
+   * @param wmsOptions The {@link VectorOverlayOptions}.
    * @param overlayOptions The {@link VectorOverlayOptions} for this instance.
    */
-  TileMapServiceVectorOverlay(
+  VectorMapServiceOverlay(
       const std::string& name,
       const std::string& url,
       const std::vector<CesiumAsync::IAssetAccessor::THeader>& headers = {},
-      const TileMapServiceVectorOverlayOptions& tmsOptions = {},
+      const VectorMapOverlayOptions& xyzOptions = {},
       const VectorOverlayOptions& overlayOptions = {});
- 
-  virtual ~TileMapServiceVectorOverlay() override;
-
-  
+  virtual ~VectorMapServiceOverlay() override;
 
   virtual CesiumAsync::Future<CreateTileProviderResult> createTileProvider(
       const CesiumAsync::AsyncSystem& asyncSystem,
@@ -132,9 +86,9 @@ public:
       const override;
 
 private:
-  std::string _url;
+  std::string _baseUrl;
   std::vector<CesiumAsync::IAssetAccessor::THeader> _headers;
-  TileMapServiceVectorOverlayOptions _options;
+  VectorMapOverlayOptions _options;
 };
 
 } // namespace Cesium3DTilesSelection

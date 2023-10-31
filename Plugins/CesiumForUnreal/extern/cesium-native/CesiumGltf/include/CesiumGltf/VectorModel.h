@@ -29,6 +29,16 @@ POLYGONº∏∫Œ¿‡–Õ±Ì æ√ÊªÚ∂‡√Êº∏∫Œ£¨√ø∏ˆ√Ê”–«“÷ª”–“ª∏ˆÕ‚ª∑∫Õ¡„∏ˆªÚ∂‡∏ˆƒ⁄ª∑°£√Êº∏∫Œµ
 */
 namespace CesiumGltf
 {
+
+class FailureInfos 
+{
+public:
+
+  std::shared_ptr<CesiumAsync::IAssetRequest> pRequest = nullptr;
+
+  std::string message = "";
+};
+
 enum class FeatureType { UNKNOWN, Point, LineString, Polygon };
 
 enum class RingType { Outer, Inner, Invalid };
@@ -121,4 +131,59 @@ struct CESIUMGLTF_API VectorModel
   glm::dvec2 extentMax = glm::dvec2();
 
 };
+
+
+/************************************************************************/
+/*  ∏¡øÕﬂ∆¨µÿÕºœ‡πÿ∂®“Â                                                  */
+/************************************************************************/
+
+enum class SoureType
+{
+    Vector,
+    Raster,
+    RasterDEM,
+    Geojson,
+    Image,
+    Video
+};
+
+enum class LayerType 
+{ 
+    Background,
+    Circle,
+    Line,
+    Fill,
+    Symbol,
+    Raster,
+    FillExtrusion,
+    Heatmap,
+    Hillshade
+};
+
+struct MapSourceData 
+{
+std::string sourceName = "";
+SoureType type = SoureType::Vector;
+std::string url = "";
+};
+
+struct MapLayerData
+{
+std::string id = "";
+std::string source = "";
+std::string sourceLayer = "";
+LayerType type = LayerType::Background;
+};
+
+struct MapStyleData 
+{
+int version = 8;
+std::string name = "";
+std::string sprite = "";
+std::string glyphs = "";
+std::vector<MapSourceData> sources;
+std::vector<MapLayerData> laysers;
+};
+
+
 } // namespace CesiumGltf

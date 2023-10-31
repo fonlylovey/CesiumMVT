@@ -1,4 +1,4 @@
-#include "Cesium3DTilesSelection/WebMapTileServiceVectorOverlay.h"
+#include "Cesium3DTilesSelection/XYZVectorOverlay.h"
 
 #include "Cesium3DTilesSelection/CreditSystem.h"
 #include "Cesium3DTilesSelection/QuadtreeVectorOverlayTileProvider.h"
@@ -27,10 +27,10 @@ using namespace CesiumUtility;
 
 namespace Cesium3DTilesSelection {
 
-class WMTSVectorTileProvider final
+class XYZVectorTileProvider final
     : public QuadtreeVectorOverlayTileProvider {
 public:
-  WMTSVectorTileProvider(
+  XYZVectorTileProvider(
       const IntrusivePointer<const VectorOverlay>& pOwner,
       const CesiumAsync::AsyncSystem& asyncSystem,
       const std::shared_ptr<IAssetAccessor>& pAssetAccessor,
@@ -75,7 +75,7 @@ public:
         _tileMatrixSet(tileMatrixSet)
         {}
 
-  virtual ~WMTSVectorTileProvider() {}
+  virtual ~XYZVectorTileProvider() {}
 
 protected:
   virtual CesiumAsync::Future<LoadedVectorOverlayData> loadQuadtreeTileData(
@@ -138,21 +138,21 @@ private:
   std::vector<IAssetAccessor::THeader> _headers;
 };
 
-WebMapTileServiceVectorOverlay::WebMapTileServiceVectorOverlay(
+XYZVectorOverlay::XYZVectorOverlay(
     const std::string& name,
     const std::string& url,
     const std::vector<IAssetAccessor::THeader>& headers,
-    const WebMapTileServiceVectorOverlayOptions& wmsOptions,
+    const XYZVectorOverlayOptions& xyzOptions,
     const VectorOverlayOptions& overlayOptions)
     : VectorOverlay(name, overlayOptions),
       _baseUrl(url),
       _headers(headers),
-      _options(wmsOptions) {}
+      _options(xyzOptions) {}
 
-WebMapTileServiceVectorOverlay::~WebMapTileServiceVectorOverlay() {}
+XYZVectorOverlay::~XYZVectorOverlay() {}
 
 Future<VectorOverlay::CreateTileProviderResult>
-WebMapTileServiceVectorOverlay::createTileProvider(
+XYZVectorOverlay::createTileProvider(
     const CesiumAsync::AsyncSystem& asyncSystem,
     const std::shared_ptr<CesiumAsync::IAssetAccessor>& pAssetAccessor,
     const std::shared_ptr<CreditSystem>& pCreditSystem,
@@ -197,7 +197,7 @@ WebMapTileServiceVectorOverlay::createTileProvider(
             if (!pResponse) {
               return nonstd::make_unexpected(RasterOverlayLoadFailureDetails{
                   RasterOverlayLoadType::TileProvider,
-                  pRequest,
+                  std::move(pRequest),
                   "No response received from web map tile service."});
             }
 
@@ -206,7 +206,7 @@ WebMapTileServiceVectorOverlay::createTileProvider(
             {
               return nonstd::make_unexpected(RasterOverlayLoadFailureDetails{
                   RasterOverlayLoadType::TileProvider,
-                  pRequest,
+                  std::move(pRequest),
                   "No response received from web map tile service."});
             }
             std::string str(reinterpret_cast<const char*>(data.data()));
@@ -218,7 +218,7 @@ WebMapTileServiceVectorOverlay::createTileProvider(
             if (error != tinyxml2::XMLError::XML_SUCCESS) {
               return nonstd::make_unexpected(RasterOverlayLoadFailureDetails{
                   RasterOverlayLoadType::TileProvider,
-                  pRequest,
+                  std::move(pRequest),
                   "Could not parse web map tile service XML."});
             }
 
@@ -227,7 +227,7 @@ WebMapTileServiceVectorOverlay::createTileProvider(
             {
               return nonstd::make_unexpected(RasterOverlayLoadFailureDetails{
                   RasterOverlayLoadType::TileProvider,
-                  pRequest,
+                  std::move(pRequest),
                   "Web map tile service XML document does not have a root "
                   "element."});
             }
@@ -237,7 +237,7 @@ WebMapTileServiceVectorOverlay::createTileProvider(
             {
               return nonstd::make_unexpected(RasterOverlayLoadFailureDetails{
                   RasterOverlayLoadType::TileProvider,
-                  pRequest,
+                  std::move(pRequest),
                   "Web map tile service XML document does not have a Contents "
                   "element."});
             }
@@ -247,7 +247,7 @@ WebMapTileServiceVectorOverlay::createTileProvider(
             {
               return nonstd::make_unexpected(RasterOverlayLoadFailureDetails{
                   RasterOverlayLoadType::TileProvider,
-                  pRequest,
+                  std::move(pRequest),
                   "Web map tile service XML document does not have a Layer "
                   "element."});
             }
@@ -278,7 +278,7 @@ WebMapTileServiceVectorOverlay::createTileProvider(
                   return nonstd::make_unexpected(
                       RasterOverlayLoadFailureDetails{
                           RasterOverlayLoadType::TileProvider,
-                          pRequest,
+                          std::move(pRequest),
                           "Web map tile service XML document does not have a "
                           "Contents "
                           "element."});
@@ -387,7 +387,7 @@ WebMapTileServiceVectorOverlay::createTileProvider(
 			{
                 projection = CesiumGeospatial::WebMercatorProjection();
                 tilingSchemeRectangle = CesiumGeospatial::WebMercatorProjection::MAXIMUM_GLOBE_RECTANGLE;
-                StartColCount = 2;
+                StartColCount = 1;
             } 
 			else 
 			{
@@ -405,14 +405,7 @@ WebMapTileServiceVectorOverlay::createTileProvider(
                 rootTilesX,
                 rootTilesY);
 
-            CesiumGltf::VectorStyle vecStyle;
-            vecStyle.isFill = options.isFill;
-            vecStyle.fillColor = options.fillColor;
-            vecStyle.isOutline = options.isOutline;
-            vecStyle.lineWidth = options.lineWidth;
-            vecStyle.outlineColor = options.outlineColor;
-
-            WMTSVectorTileProvider* provider = new WMTSVectorTileProvider(
+            XYZVectorTileProvider* provider = new XYZVectorTileProvider(
                 pOwner,
                 asyncSystem,
                 pAssetAccessor,
@@ -436,7 +429,6 @@ WebMapTileServiceVectorOverlay::createTileProvider(
 			provider->_boxExtent = std::move(extent);
             provider->_TileMatrixMap = std::move(matrixMap);
 			provider->_TileMatrixSetMap = std::move(matrixSetMap);
-            provider->_vecStyle = std::move(vecStyle);
             return provider;
           });
 }

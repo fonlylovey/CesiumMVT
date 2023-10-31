@@ -1,6 +1,6 @@
 #pragma once
 
-#include "IPrepareRendererResources.h"
+#include "IPrepareVectorMapResources.h"
 #include "VectorOverlayTile.h"
 
 #include <CesiumGeometry/Rectangle.h>
@@ -158,7 +158,7 @@ public:
    * @param tile The owner tile.
    * @return The {@link MoreDetailAvailable} state.
    */
-  bool update(IPrepareRendererResources& pPrepareRendererResources, Tile& tile);
+  bool update(IPrepareVectorMapResources& pPrepareMapResources, Tile& tile);
 
   /**
    * @brief Detach the Vector from the given tile.
@@ -167,7 +167,7 @@ public:
    * @param tile The owner tile.
    */
   void detachFromTile(
-      IPrepareRendererResources& pPrepareRendererResources,
+      IPrepareVectorMapResources& pPrepareMapResources,
       Tile& tile) noexcept;
 
   /**

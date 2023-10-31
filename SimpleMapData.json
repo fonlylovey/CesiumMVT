@@ -1,0 +1,88 @@
+{
+    "version": 8,
+    "name": "QYMap",
+    "center": [
+      120.718253,
+      31.294479
+    ],
+    "zoom": 15,
+    "sprite": "https://www.mapmost.com/cdn/sprites/sample_data/sprite",
+    "glyphs": "https://www.mapmost.com/cdn/fonts/{fontstack}/{range}.pbf",
+    "sources": {
+      "QYMap": {
+        "type": "vector",
+        "tiles": [
+          "http://127.0.0.1:8080/geoserver/YQMap/gwc/service/wmts?REQUEST=GetTile&SERVICE=WMTS&VERSION=1.0.0&LAYER=YQMap:QYMap&STYLE=&TILEMATRIX=EPSG:4326:{z}&TILEMATRIXSET=EPSG:4326&FORMAT=application/vnd.mapbox-vector-tile&TILECOL={x}}&TILEROW={y}"
+        ]
+      }
+    },
+    "layers": [
+      {
+        "id": "water",
+        "type": "fill",
+        "source": "QYMap",
+        "source-layer": "water",
+        "paint": {
+          "backgrfillound-color": "rgba(89, 167, 189, 1)"
+        }
+      },
+      {
+        "id": "ground",
+        "type": "fill",
+        "source": "QYMap",
+        "source-layer": "ground",
+        "paint": {
+          "fill-color": "rgba(139, 142, 159, 1)"
+        }
+      },
+      {
+        "id": "building",
+        "type": "fill",
+        "source": "QYMap",
+        "source-layer": "building",
+        "paint": {
+          "fill-color": "rgba(151, 167, 175, 1)"
+        }
+      },
+      {
+        "id": "road_line",
+        "type": "fill",
+        "source": "QYMap",
+        "source-layer": "road_line",
+        "paint": {
+          "fill-color": "rgba(115, 141, 163, 1)"
+        }
+      },
+      {
+        "id": "road_polygon",
+        "type": "fill",
+        "source": "QYMap",
+        "source-layer": "road_polygon",
+        "paint": {
+          "fill-color": "rgba(84, 145, 80, 1)",
+          "fill-opacity": 1
+        }
+      },
+      {
+        "id": "road_stroke",
+        "type": "fill",
+        "source": "QYMap",
+        "source-layer": "road_stroke",
+        "paint": {
+          "fill-color": "rgba(84, 145, 80, 1)",
+          "fill-opacity": 1
+        }
+      },
+      {
+        "id": "point_poi",
+        "type": "fill",
+        "source": "QYMap",
+        "source-layer": "point_poi",
+        "paint": {
+          "fill-color": "rgba(84, 145, 80, 1)",
+          "fill-opacity": 1
+        }
+      }
+    ],
+    "id": "5wafurf6k"
+}

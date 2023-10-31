@@ -20,7 +20,7 @@ namespace Cesium3DTilesSelection {
 
 struct Credit;
 class CreditSystem;
-class IPrepareRendererResources;
+class IPrepareVectorMapResources;
 class VectorOverlayTileProvider;
 class VectorOverlayCollection;
 
@@ -210,8 +210,8 @@ public:
       const CesiumAsync::AsyncSystem& asyncSystem,
       const std::shared_ptr<CesiumAsync::IAssetAccessor>& pAssetAccessor,
       const std::shared_ptr<CreditSystem>& pCreditSystem,
-      const std::shared_ptr<IPrepareRendererResources>&
-          pPrepareRendererResources,
+      const std::shared_ptr<IPrepareVectorMapResources>&
+          pPrepareMapResources,
       const std::shared_ptr<spdlog::logger>& pLogger,
       CesiumUtility::IntrusivePointer<const VectorOverlay> pOwner) const = 0;
 
