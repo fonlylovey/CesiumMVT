@@ -141,6 +141,7 @@ UnrealAssetAccessor::get(
   const TMap<FString, FString>& cesiumRequestHeaders =
       this->_cesiumRequestHeaders;
 
+
   return asyncSystem.createFuture<std::shared_ptr<CesiumAsync::IAssetRequest>>(
       [&url, &headers, &userAgent, &cesiumRequestHeaders](const auto& promise) {
         FHttpModule& httpModule = FHttpModule::Get();
@@ -148,6 +149,13 @@ UnrealAssetAccessor::get(
             httpModule.CreateRequest();
         pRequest->SetURL(UTF8_TO_TCHAR(url.c_str()));
 
+        if (url.find("tianditu") != std::string::npos)
+        {
+            FString Cookie = TEXT("HWWAFSESID=;");
+            Cookie += TEXT("HWWAFSESTIME=");
+            pRequest->AppendToHeader(TEXT("Cookie"), Cookie);
+        }
+        
         for (const auto& header : headers) {
           pRequest->SetHeader(
               UTF8_TO_TCHAR(header.first.c_str()),

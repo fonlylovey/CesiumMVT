@@ -7,7 +7,7 @@
 #include "CesiumWebMapTileServiceVectorOverlay.generated.h"
 
 
-UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
+UCLASS(ClassGroup=(Cesium), meta=(BlueprintSpawnableComponent))
 class CESIUMRUNTIME_API UCesiumWebMapTileServiceVectorOverlay : public UCesiumVectorOverlay
 {
 	GENERATED_BODY()
