@@ -216,7 +216,7 @@ VectorOverlayTileProvider::loadTileDataFromUrl(
 		loadedData.model->level = options.level;
 		loadedData.model->row = options.Row;
 		loadedData.model->col = options.Col;
-        loadedData.model->style = vecStyle;
+        //loadedData.model->style = vecStyle;
         //½âÎöÍßÆ¬·¶Î§
         std::string strTileBound = pResponse->headers().at("geowebcache-tile-bounds");
         replace(strTileBound, ",", " ");

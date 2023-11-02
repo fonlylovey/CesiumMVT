@@ -8,7 +8,7 @@
 #include <glm/mat4x4.hpp>
 #include <glm/vec2.hpp>
 #include <gsl/span>
-
+#include <vector>
 #include <any>
 
 namespace CesiumAsync {
@@ -21,6 +21,7 @@ struct Rectangle;
 
 namespace CesiumGltf {
 struct VectorModel;
+struct MapLayerData;
 } // namespace CesiumGltf
 
 namespace Cesium3DTilesSelection {
@@ -129,6 +130,8 @@ public:
     int32_t overlayTextureCoordinateID,
     const VectorOverlayTile& VectorTile,
     void* pMainThreadRendererResources) noexcept = 0;
+
+    virtual void setLayers(const std::vector<CesiumGltf::MapLayerData>& laysers) = 0;
 };
 
 } // namespace Cesium3DTilesSelection

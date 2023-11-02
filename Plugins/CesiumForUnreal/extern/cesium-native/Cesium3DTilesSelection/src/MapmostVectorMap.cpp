@@ -7,6 +7,7 @@
 #include "Cesium3DTilesSelection/TilesetExternals.h"
 #include "Cesium3DTilesSelection/spdlog-cesium.h"
 #include "Cesium3DTilesSelection/tinyxml-cesium.h"
+#include "Cesium3DTilesSelection/IMapmostListens.h"
 
 #include <CesiumAsync/IAssetAccessor.h>
 #include <CesiumAsync/IAssetResponse.h>
@@ -27,28 +28,23 @@ using namespace CesiumUtility;
 
 namespace Cesium3DTilesSelection 
 {
-    MapmostVectorMap::MapmostVectorMap() 
+    MapmostVectorMap::MapmostVectorMap(const MapmostExternals& externals) 
+    : _externals(externals)
     {
         _pLoader = nullptr;
     }
 
-    void MapmostVectorMap::CreateMap(
-        const std::string& styleUrl,
-        const std::shared_ptr<CesiumAsync::IAssetAccessor>& pAssetAccessor,
-        const CesiumAsync::AsyncSystem& asyncSystem) 
+    void MapmostVectorMap::CreateMap(const std::string& styleUrl) 
     {
         if(_pLoader == nullptr)
         {
-            _pLoader = std::make_shared<VectorMapMetadataLoader>(pAssetAccessor, asyncSystem);
+            _pLoader = std::make_shared<VectorMapMetadataLoader>(_externals.pAssetAccessor, _externals.asyncSystem);
         }
         _pLoader->loadStyleData(styleUrl).thenInWorkerThread(
             [this](LoadedResult&& result) 
             {
                 CesiumGltf::MapMetaData* pStyleData = std::move(*result);
-                for(auto& source : pStyleData->sources) 
-                {
-                    this->AddSource(source);
-                }
+                this->_externals.pMapListens->finishLoadStyle(pStyleData);
             });
 
         

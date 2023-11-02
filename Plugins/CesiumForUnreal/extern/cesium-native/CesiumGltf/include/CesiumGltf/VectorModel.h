@@ -76,20 +76,6 @@ namespace CesiumGltf
 	
     };
 
-    // 一个矢量图层
-    struct VectorLayer
-    {
-	    uint32_t version = 0;
-
-	    std::string name = "";
-
-	    //瓦片的大小
-	    uint32_t extent = 4096;
-
-	    std::vector<VectorFeature> features;
-    };
-
-
     struct VectorStyle
     {
         //是否填充多边形
@@ -108,6 +94,22 @@ namespace CesiumGltf
     };
 
 
+    // 一个矢量图层
+    struct VectorLayer
+    {
+	    uint32_t version = 0;
+
+	    std::string name = "";
+
+	    //瓦片的大小
+	    uint32_t extent = 4096;
+
+	    std::vector<VectorFeature> features;
+
+        VectorStyle style;
+    };
+
+
     /** @copydoc VectorModel */
     struct CESIUMGLTF_API VectorModel
     {
@@ -118,8 +120,6 @@ namespace CesiumGltf
       }
       //一个瓦片中的所有图层
       std::vector<VectorLayer> layers {};
-
-      VectorStyle style;
 
       // 层级
       int level = 0;
