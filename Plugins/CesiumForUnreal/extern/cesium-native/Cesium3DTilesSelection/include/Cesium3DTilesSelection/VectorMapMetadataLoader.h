@@ -32,7 +32,7 @@ namespace Cesium3DTilesSelection
 {
 
     using LoadedResult = nonstd::expected<
-    CesiumGltf::MapStyleData*,
+    CesiumGltf::MapMetaData*,
     CesiumGltf::FailureInfos>;
 /**
  * @brief The loader interface to load the map style

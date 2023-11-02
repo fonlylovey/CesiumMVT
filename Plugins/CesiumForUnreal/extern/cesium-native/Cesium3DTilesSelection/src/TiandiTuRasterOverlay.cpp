@@ -97,7 +97,7 @@ protected:
     uint32_t level = tileID.level;
     if (level < _tileSetLevel.size()) {
 
-        uint32_t tile_Y = pow(2, tileID.level) - 1;
+        uint32_t tile_Y = (int)pow(2, tileID.level) - 1;
         tile_Y -= tileID.y;
        int num =1+ rand() % 7;
         std::string url =

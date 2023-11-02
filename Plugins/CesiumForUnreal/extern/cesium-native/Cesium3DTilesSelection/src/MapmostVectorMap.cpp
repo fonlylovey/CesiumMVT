@@ -44,7 +44,7 @@ namespace Cesium3DTilesSelection
         _pLoader->loadStyleData(styleUrl).thenInWorkerThread(
             [this](LoadedResult&& result) 
             {
-                CesiumGltf::MapStyleData* pStyleData = std::move(*result);
+                CesiumGltf::MapMetaData* pStyleData = std::move(*result);
                 for(auto& source : pStyleData->sources) 
                 {
                     this->AddSource(source);

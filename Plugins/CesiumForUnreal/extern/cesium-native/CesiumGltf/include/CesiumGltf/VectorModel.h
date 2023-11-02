@@ -8,6 +8,7 @@
 #include "glm/vec2.hpp"
 #include "glm/vec3.hpp"
 #include "glm/vec4.hpp"
+#include <memory>
 /*
 Ê¸Á¿ÍßÆ¬±ê×¼ https://github.com/jingsam/vector-tile-spec/blob/master/2.1/README_zh.md#42-%E8%A6%81%E7%B4%A0
 4.1. Í¼²ã
@@ -27,163 +28,179 @@ POLYGON¼¸ºÎÀàÐÍ±íÊ¾Ãæ»ò¶àÃæ¼¸ºÎ£¬Ã¿¸öÃæÓÐÇÒÖ»ÓÐÒ»¸öÍâ»·ºÍÁã¸ö»ò¶à¸öÄÚ»·¡£Ãæ¼¸ºÎµ
 Áã¸ö»ò¶à¸öInteriorRing
 
 */
+
+namespace CesiumAsync
+{
+    class IAssetRequest;
+}
+
 namespace CesiumGltf
 {
+    class FailureInfos 
+    {
+    public:
 
-class FailureInfos 
-{
-public:
+      std::shared_ptr<CesiumAsync::IAssetRequest> pRequest = nullptr;
 
-  std::shared_ptr<CesiumAsync::IAssetRequest> pRequest = nullptr;
+      std::string message = "";
+    };
 
-  std::string message = "";
-};
+    enum class FeatureType { UNKNOWN, Point, LineString, Polygon };
 
-enum class FeatureType { UNKNOWN, Point, LineString, Polygon };
+    enum class RingType { Outer, Inner, Invalid };
 
-enum class RingType { Outer, Inner, Invalid };
+    struct VectorGeometry 
+    {
+      // ÒªËØ×ø±ê¼¯ºÏ
+      std::vector<glm::ivec3> points;
 
-struct VectorGeometry 
-{
-  // ÒªËØ×ø±ê¼¯ºÏ
-  std::vector<glm::ivec3> points;
+      // ¶à±ßÐÎ»·µÄÀàÐÍ outer = 0,inner = 1, invalid = 2
+      RingType ringType = RingType::Invalid;
+    };
 
-  // ¶à±ßÐÎ»·µÄÀàÐÍ outer = 0,inner = 1, invalid = 2
-  RingType ringType = RingType::Invalid;
-};
+    //Ò»¸öÊ¸Á¿ÒªËØ
+    struct VectorFeature
+    {
 
-//Ò»¸öÊ¸Á¿ÒªËØ
-struct VectorFeature
-{
+	    std::vector<VectorGeometry> geometry;
 
-	std::vector<VectorGeometry> geometry;
+	    // Ê¸Á¿ÒªËØµÄÀàÐÍ
+	    FeatureType featureType = FeatureType::Point;
 
-	// Ê¸Á¿ÒªËØµÄÀàÐÍ
-	FeatureType featureType = FeatureType::Point;
+	    //ÒªËØID
+	    size_t featureID = 0;
 
-	//ÒªËØID
-	size_t featureID = 0;
-
-	//ÒªËØ¸öÊý
-	size_t featureCount = 0;
+	    //ÒªËØ¸öÊý
+	    size_t featureCount = 0;
 
 	
-};
+    };
 
-// Ò»¸öÊ¸Á¿Í¼²ã
-struct VectorLayer
-{
-	uint32_t version = 0;
+    // Ò»¸öÊ¸Á¿Í¼²ã
+    struct VectorLayer
+    {
+	    uint32_t version = 0;
 
-	std::string name = "";
+	    std::string name = "";
 
-	//ÍßÆ¬µÄ´óÐ¡
-	uint32_t extent = 4096;
+	    //ÍßÆ¬µÄ´óÐ¡
+	    uint32_t extent = 4096;
 
-	std::vector<VectorFeature> features;
-};
-
-
-struct VectorStyle
-{
-    //ÊÇ·ñÌî³ä¶à±ßÐÎ
-    bool isFill = true;
-
-    //Ìî³ä¶à±ßÐÎµÄÑÕÉ«
-    glm::dvec4 fillColor = glm::dvec4(0, 0, 0, 0);
-
-    //
-    bool isOutline = false;
-
-    float lineWidth = 5;
-
-    // Ìî³ä¶à±ßÐÎµÄÑÕÉ«
-    glm::dvec4 outlineColor = glm::dvec4(0, 0, 0, 0);
-};
+	    std::vector<VectorFeature> features;
+    };
 
 
-/** @copydoc VectorModel */
-struct CESIUMGLTF_API VectorModel
-{
-  char* TypeName = "VectorModel";
-  ~VectorModel()
-  {
-	  layers.clear();
-  }
-  //Ò»¸öÍßÆ¬ÖÐµÄËùÓÐÍ¼²ã
-  std::vector<VectorLayer> layers {};
+    struct VectorStyle
+    {
+        //ÊÇ·ñÌî³ä¶à±ßÐÎ
+        bool isFill = true;
 
-  VectorStyle style;
+        //Ìî³ä¶à±ßÐÎµÄÑÕÉ«
+        glm::dvec4 fillColor = glm::dvec4(0, 0, 0, 0);
 
-  // ²ã¼¶
-  int level = 0;
+        //
+        bool isOutline = false;
 
-  // ÐÐºÅ
-  int row = 0;
+        float lineWidth = 5;
 
-  // ÁÐºÅ
-  int col = 0;
+        // Ìî³ä¶à±ßÐÎµÄÑÕÉ«
+        glm::dvec4 outlineColor = glm::dvec4(0, 0, 0, 0);
+    };
 
-  //ÍßÆ¬·¶Î§µÄ×óÏÂ½Ç ¾­Î³¶È
-  glm::dvec2 extentMin = glm::dvec2();
 
-  //ÍßÆ¬·¶Î§µÄÓÒÉÏ½Ç ¾­Î³¶È
-  glm::dvec2 extentMax = glm::dvec2();
+    /** @copydoc VectorModel */
+    struct CESIUMGLTF_API VectorModel
+    {
+      char* TypeName = "VectorModel";
+      ~VectorModel()
+      {
+	      layers.clear();
+      }
+      //Ò»¸öÍßÆ¬ÖÐµÄËùÓÐÍ¼²ã
+      std::vector<VectorLayer> layers {};
 
-};
+      VectorStyle style;
+
+      // ²ã¼¶
+      int level = 0;
+
+      // ÐÐºÅ
+      int row = 0;
+
+      // ÁÐºÅ
+      int col = 0;
+
+      //ÍßÆ¬·¶Î§µÄ×óÏÂ½Ç ¾­Î³¶È
+      glm::dvec2 extentMin = glm::dvec2();
+
+      //ÍßÆ¬·¶Î§µÄÓÒÉÏ½Ç ¾­Î³¶È
+      glm::dvec2 extentMax = glm::dvec2();
+
+    };
 
 
 /************************************************************************/
 /* Ê¸Á¿ÍßÆ¬µØÍ¼Ïà¹Ø¶¨Òå                                                  */
 /************************************************************************/
 
-enum class SoureType
-{
-    Vector,
-    Raster,
-    RasterDEM,
-    Geojson,
-    Image,
-    Video
-};
+    enum class SoureType
+    {
+        Vector,
+        Raster,
+        RasterDEM,
+        Geojson,
+        Image,
+        Video
+    };
 
-enum class LayerType 
-{ 
-    Background,
-    Circle,
-    Line,
-    Fill,
-    Symbol,
-    Raster,
-    FillExtrusion,
-    Heatmap,
-    Hillshade
-};
+    enum class LayerType 
+    { 
+        Background,
+        Circle,
+        Line,
+        Fill,
+        Symbol,
+        Raster,
+        FillExtrusion,
+        Heatmap,
+        Hillshade
+    };
 
-struct MapSourceData 
-{
-std::string sourceName = "";
-SoureType type = SoureType::Vector;
-std::string url = "";
-};
+    struct StyleData
+    {
+        glm::ivec4 color = glm::ivec4(255, 255, 0, 255);
+        float opacity = 1.0;
+        bool visibility = true;
+        void parseStringColor(std::string strColor);
+    };
 
-struct MapLayerData
-{
-std::string id = "";
-std::string source = "";
-std::string sourceLayer = "";
-LayerType type = LayerType::Background;
-};
+    struct MapSourceData 
+    {
+        std::string sourceName = "";
+        SoureType type = SoureType::Vector;
+        std::string url = "";
 
-struct MapStyleData 
-{
-int version = 8;
-std::string name = "";
-std::string sprite = "";
-std::string glyphs = "";
-std::vector<MapSourceData> sources;
-std::vector<MapLayerData> laysers;
-};
+        void setType(const std::string& strType);
+    };
 
+    struct MapLayerData
+    {
+        std::string id = "";
+        std::string source = "";
+        std::string sourceLayer = "";
+        LayerType type = LayerType::Background;
+        StyleData style;
+        void setType(const std::string& strType);
+    };
+
+    struct MapMetaData 
+    {
+        int version = 8;
+        std::string name = "";
+        std::string sprite = "";
+        std::string glyphs = "";
+        std::vector<MapSourceData> sources;
+        std::vector<MapLayerData> laysers;
+    };
 
 } // namespace CesiumGltf
