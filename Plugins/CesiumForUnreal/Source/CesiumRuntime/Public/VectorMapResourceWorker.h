@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Cesium3DTilesSelection/IPrepareVectorMapResources.h"
 #include "Cesium3DTileset.h"
+#include <string>
 
 /**
  * @brief 在native当中读取的数据通过void*的方式传递到UE层之后，在这个类当中转换为UE的类型
@@ -28,6 +29,9 @@ public:
 	virtual void freeVector(const Cesium3DTilesSelection::VectorOverlayTile& vectorTile, void* pLoadThreadResult,
 		void* pMainThreadResult) noexcept override;
 
+    virtual void setLayers(const std::vector<CesiumGltf::MapLayerData>& laysers);
+
 private:
 	ACesium3DTileset* _pActor;
+    TMap<FString, CesiumGltf::MapLayerData> _layers;
 };

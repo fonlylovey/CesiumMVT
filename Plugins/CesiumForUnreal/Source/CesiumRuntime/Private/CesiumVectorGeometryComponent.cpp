@@ -409,6 +409,7 @@ void UCesiumVectorGeometryComponent::buildPolygons(const FTileModel* tileModel, 
         FString strName = FString::FormatAsNumber(Level) + "_" + FString::FormatAsNumber(Row) + "_" + FString::FormatAsNumber(Col);
         //在这个函数里面主要是做坐标转换
 	    FTileModel* pTileModelData = new FTileModel;
+/*
         pTileModelData->Fill = pModelData->style.isFill;
 	    pTileModelData->FillColor = FLinearColor(pModelData->style.fillColor.x, pModelData->style.fillColor.y, 
                                                  pModelData->style.fillColor.z, pModelData->style.fillColor.w);
@@ -416,6 +417,7 @@ void UCesiumVectorGeometryComponent::buildPolygons(const FTileModel* tileModel, 
         pTileModelData->Outline = pModelData->style.isOutline;
         pTileModelData->OutlineColor = FLinearColor(pModelData->style.outlineColor.x, pModelData->style.outlineColor.y,
                                                  pModelData->style.outlineColor.z, pModelData->style.outlineColor.w);
+*/
 	    if(pModelData->layers.size() > 0)
         {
             //if (pModelData->level == 14 && pModelData->row == 5347 && pModelData->col == 27373)

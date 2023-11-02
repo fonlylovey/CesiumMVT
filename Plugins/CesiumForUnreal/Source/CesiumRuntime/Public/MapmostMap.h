@@ -2,15 +2,16 @@
 
 #pragma once
 
-#include "CesiumVectorOverlay.h"
 #include "CoreMinimal.h"
+#include "CesiumVectorOverlay.h"
 
 #include "Cesium3DTilesSelection/MapmostVectorMap.h"
 #include "MapmostMap.generated.h"
 
-namespace Cesium3DTilesSelection {
-    
-} 
+namespace Cesium3DTilesSelection
+{
+    MapmostExternals;
+}
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class CESIUMRUNTIME_API UMapmostMap : public USceneComponent
@@ -45,4 +46,6 @@ public:
 	FString MapStyleUrl;
 private:
     TUniquePtr<Cesium3DTilesSelection::MapmostVectorMap> _pMapmostMap;
+    TMap<FString, UCesiumVectorOverlay*> SourceDict;
+    TMap<FString, CesiumGltf::MapLayerData> LayerDict;
 };

@@ -13,9 +13,9 @@ void* VectorMapResourceWorker::prepareVectorInLoadThread(CesiumGltf::VectorModel
         return nullptr;
     }
     auto pOptions = *ppOptions;
-    FVectorRasterizer rasterizer;
-    GeometryTile* tileData = rasterizer.LoadTileModel(pModel);
-    return tileData;
+    //FVectorRasterizer rasterizer;
+    //GeometryTile* tileData = rasterizer.LoadTileModel(pModel, _layers);
+    return pModel;
 }
 
 void* VectorMapResourceWorker::prepareVectorInMainThread(Cesium3DTilesSelection::VectorOverlayTile& vectorTile, void* pLoadThreadResult)
@@ -23,12 +23,13 @@ void* VectorMapResourceWorker::prepareVectorInMainThread(Cesium3DTilesSelection:
     if(pLoadThreadResult != nullptr)
     {
         //pLoadThreadResult就是prepareVectorInLoadThread()函数的返回值
-        GeometryTile* pModelData = static_cast<GeometryTile*>(pLoadThreadResult);
-        if (pModelData->GeometryList.empty())
+        CesiumGltf::VectorModel* pModelData = static_cast<CesiumGltf::VectorModel*>(pLoadThreadResult);
+        if (pModelData->layers.empty())
         {
+            return nullptr;
         }
         FVectorRasterizer rasterizer;
-        UTexture2D* pTexture = rasterizer.Rasterizer(pModelData);
+        UTexture2D* pTexture = rasterizer.Rasterizer(pModelData, _layers);
         pTexture->AddressX = TA_MAX;
         pTexture->AddressY = TA_MAX;
         delete pModelData;
@@ -87,4 +88,13 @@ void VectorMapResourceWorker::freeVector(const Cesium3DTilesSelection::VectorOve
            pTexture->RemoveFromRoot();
            CesiumTextureUtility::destroyTexture(pTexture);
        }
+}
+
+
+void VectorMapResourceWorker::setLayers(const std::vector<CesiumGltf::MapLayerData>& laysers)
+{
+    for (const CesiumGltf::MapLayerData& layer : laysers)
+    {
+        _layers.Add(FString(layer.sourceLayer.c_str()), layer);
+    }
 }

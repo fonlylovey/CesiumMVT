@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Components/SceneComponent.h"
 #include <Cesium3DTilesSelection/VectorOverlayTileProvider.h>
+#include "Materials/MaterialInterface.h"
 #include "CesiumVectorGeometryComponent.generated.h"
 
 namespace CesiumGltf {
