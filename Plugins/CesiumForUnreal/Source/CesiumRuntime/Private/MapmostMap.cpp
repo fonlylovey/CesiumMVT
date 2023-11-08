@@ -7,6 +7,7 @@
 #include "Cesium3DTilesSelection/IMapmostListens.h"
 #include "Cesium3DTileset.h"
 #include "CesiumWebMapTileServiceVectorOverlay.h"
+#include "MapmostLayer.h"
 
 using namespace CesiumGltf;
 
@@ -36,46 +37,25 @@ private:
 class CESIUMRUNTIME_API FMapmostListener : public Cesium3DTilesSelection::IMapmostListens
 {
 public:
-	FMapmostListener(ACesium3DTileset* pActor) : _pActor(pActor) {}
+	FMapmostListener(UMapmostMap* pMapmost) : _pMapmost(pMapmost) {}
 	~FMapmostListener() = default;
 
 	virtual void finishLoadStyle(CesiumGltf::MapMetaData* styleData) override
     {
         for (const MapSourceData& source : styleData->sources)
         {
-            FString strName = FString(source.sourceName.c_str());
-            UCesiumWebMapTileServiceVectorOverlay* wmtsOverlay = NewObject<UCesiumWebMapTileServiceVectorOverlay>(_pActor, FName(*strName));
-            wmtsOverlay->bSpecifyZoomLevels = true;
-            wmtsOverlay->MinimumLevel = 0;
-            wmtsOverlay->MaximumLevel = 20;
-            wmtsOverlay->Fill = true;
-            wmtsOverlay->FillColor = FLinearColor::Yellow;
-            wmtsOverlay->Outline = false;
-            wmtsOverlay->LineWidth = 5;
-            wmtsOverlay->OutlineColor = FLinearColor::Yellow;
-            wmtsOverlay->Url = FString(source.url.c_str());
+            _pMapmost->AddSource(source);
         }
-        
-        
-        /*
-        UCesiumWebMapTileServiceRasterOverlay* wmtsLayer = NewObject<UCesiumWebMapTileServiceRasterOverlay>(actor, FName(layerId + "-" + baseUrl + layer));
-        wmtsLayer->Url = baseUrl;
-        wmtsLayer->Layer = layer;
-        wmtsLayer->MinimumLevel = minimumLevel;
-        wmtsLayer->MaximumLevel = maximumLevel;
-        wmtsLayer->TileMatrixSet = tileMatrixSet;
-        wmtsLayer->Style = style;
-        wmtsLayer->Format = format;
-        wmtsLayer->MaterialLayerKey = layerId;
-        wmtsLayer->SetActive(true);
-        wmtsLayer->bSpecifyZoomLevels = true;
-        actor->AddInstanceComponent(wmtsLayer);
-        wmtsLayer->RegisterComponent();
-    */
+
+        _pMapmost->GetCesiumActor()->GetTileset()->getExternals().pPrepareMapResources->setLayers(styleData->laysers);
+        for (const MapLayerData& layer : styleData->laysers)
+        {
+            _pMapmost->AddLayer(layer);
+        }
     }
 
 private:
-	ACesium3DTileset* _pActor;
+	UMapmostMap* _pMapmost;
 };
 
 
@@ -98,7 +78,8 @@ void UMapmostMap::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedE
 
 void UMapmostMap::OnAttachmentChanged()
 {
-
+    _pCesiumActor = Cast<ACesium3DTileset>(this->GetOwner());
+    assert(_pCesiumActor != nullptr);
 }
 
 void UMapmostMap::BeginDestroy()
@@ -106,17 +87,19 @@ void UMapmostMap::BeginDestroy()
     Super::BeginDestroy();
 }
 
-void UMapmostMap::LoadMap()
+ACesium3DTileset* UMapmostMap::GetCesiumActor()
+{
+    return _pCesiumActor;
+}
+
+void UMapmostMap::LoadMapMetaStyle()
 {
     UE_LOG(LogCesium, Warning, TEXT("Create Mapmost Map..."));
     if(_pMapmostMap == nullptr)
     {
-        auto cesiumActor = Cast<ACesium3DTileset>(this->GetOwner());
-        assert(cesiumActor != nullptr);
-        cesiumActor->GetTileset()->getExternals().pPrepareMapResources;
         Cesium3DTilesSelection::MapmostExternals externals
         {
-            std::make_shared<FMapmostListener>(cesiumActor),
+            std::make_shared<FMapmostListener>(this),
             getAsyncSystem(),
             getAssetAccessor()
         };
@@ -124,19 +107,72 @@ void UMapmostMap::LoadMap()
     }
     if (!MapStyleUrl.IsEmpty())
     {
-        _pMapmostMap->CreateMap(TCHAR_TO_UTF8(*MapStyleUrl));
+        _pMapmostMap->loadMetaStyle(TCHAR_TO_UTF8(*MapStyleUrl));
     }
+}
+
+void UMapmostMap::DestorMapStyle()
+{
+    SourceDict.Empty();
+    LayerDict.Empty();
+    
 }
 
 void UMapmostMap::Refresh()
 {
-    this->LoadMap();
+    //this->LoadMapMetaStyle();
+}
+
+void UMapmostMap::AddSource(const CesiumGltf::MapSourceData& sourceData)
+{
+    FString strName = FString(sourceData.sourceName.c_str());
+    SourceDict.Add(strName, sourceData);
+
+     //会修改成xyz的方式
+    UCesiumWebMapTileServiceVectorOverlay* pOverlay = NewObject<UCesiumWebMapTileServiceVectorOverlay>(_pCesiumActor, FName(*strName));
+    pOverlay->bSpecifyZoomLevels = true;
+    pOverlay->MinimumLevel = 0;
+    pOverlay->MaximumLevel = 20;
+    pOverlay->Fill = true;
+    pOverlay->FillColor = FLinearColor::Yellow;
+    pOverlay->Outline = false;
+    pOverlay->LineWidth = 5;
+    pOverlay->OutlineColor = FLinearColor::Yellow;
+    pOverlay->Url = FString(sourceData.url.c_str());
+    pOverlay->SourceName = FString(sourceData.sourceName.c_str());
+    pOverlay->LayerName = TEXT("YQMap");
+    pOverlay->SetActive(false);
+    pOverlay->RegisterComponent();
+    _pCesiumActor->AddInstanceComponent(pOverlay);
+    SourceOverlayDict.Add(strName, pOverlay);
+}
+
+void UMapmostMap::AddSource(const FString& SourceName, const CesiumGltf::SoureType SourceType, const FString& SourceURL)
+{
+
+}
+
+void UMapmostMap::AddLayer(const CesiumGltf::MapLayerData& layerData)
+{
+    FString strSourceName = FString(layerData.source.c_str());
+    FString strLayerName = FString(layerData.id.c_str());
+
+    LayerDict.Add(strLayerName, layerData);
+
+    auto sourceData = SourceDict.FindRef(strSourceName);
+    auto pOverlay = SourceOverlayDict.FindRef(strSourceName);
+    FActorSpawnParameters info;
+    info.Name = FName(strLayerName);
+    info.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+    //AMapmostLayer* layer = GetWorld()->SpawnActor<AMapmostLayer>(info);
+    //layer->CreateLayer(pOverlay, layerData);
+
 }
 
 void UMapmostMap::Activate(bool bReset)
 {
     Super::Activate(bReset);
-    this->LoadMap();
+    this->Refresh();
 }
 
 void UMapmostMap::Deactivate()

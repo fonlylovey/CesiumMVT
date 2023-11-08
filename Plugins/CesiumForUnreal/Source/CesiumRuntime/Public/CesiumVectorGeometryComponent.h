@@ -9,7 +9,7 @@
 #include "CesiumVectorGeometryComponent.generated.h"
 
 namespace CesiumGltf {
-struct VectorModel;
+struct VectorTile;
 }
 namespace Cesium3DTilesSelection {
 class Tile;
@@ -29,7 +29,7 @@ public:
 	// Sets default values for this component's properties
 	UCesiumVectorGeometryComponent();
 
-     void CreateMesh(const CesiumGltf::VectorModel* pModelData, 
+     void CreateMesh(const CesiumGltf::VectorTile* pModelData, 
                      Cesium3DTilesSelection::VectorOverlayTile& vectorTile);
 
 protected:
@@ -54,7 +54,7 @@ private:
                             Cesium3DTilesSelection::BoxExtent tileExtent,
 							Cesium3DTilesSelection::VectorOverlayTileProvider* provider);
 
-    FTileModel* CreateModel(const CesiumGltf::VectorModel* pModelData,
+    FTileModel* CreateModel(const CesiumGltf::VectorTile* pModelData,
                              Cesium3DTilesSelection::VectorOverlayTileProvider* provider);
 private:
 	UPROPERTY(EditAnywhere, Category = "Cesium")

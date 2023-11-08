@@ -7,7 +7,7 @@
 class UMaterialInterface;
 
 namespace CesiumGltf {
-struct VectorModel;
+struct VectorTile;
 }
 
 namespace Cesium3DTilesSelection {
@@ -23,7 +23,7 @@ class CESIUMRUNTIME_API UCesiumVectorComponent : public USceneComponent
 
 public:
 	static UCesiumVectorComponent* CreateOnGameThread(
-        const CesiumGltf::VectorModel* pModelData,
+        const CesiumGltf::VectorTile* pModelData,
         Cesium3DTilesSelection::VectorOverlayTile& vectorTile,
         AActor* pOwner);
 
@@ -34,10 +34,10 @@ public:
 
 private:
     // using Raster way render
-    void RenderRaster(const CesiumGltf::VectorModel* pModelData);
+    void RenderRaster(const CesiumGltf::VectorTile* pModelData);
 
     // using geometry way render
-    void RenderGeometry(const CesiumGltf::VectorModel* pModelData,
+    void RenderGeometry(const CesiumGltf::VectorTile* pModelData,
                       Cesium3DTilesSelection::VectorOverlayTile& vectorTile);
 
     // using Tencil Volume Shadow way render

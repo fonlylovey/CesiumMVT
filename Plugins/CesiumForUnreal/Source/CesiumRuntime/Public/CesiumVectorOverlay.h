@@ -61,7 +61,7 @@ public:
    * sample from this overlay.
    */
   UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cesium")
-  FString MaterialLayerKey = "Overlay0";
+  FString MaterialLayerKey = "Overlay1";
 
   /**
    * Sets the texture filter and texture group of raster tile images. Depending

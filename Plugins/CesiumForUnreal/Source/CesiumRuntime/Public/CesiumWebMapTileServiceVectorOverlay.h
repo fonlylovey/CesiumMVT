@@ -71,4 +71,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Vector Styles")
 	FLinearColor OutlineColor = FLinearColor::Yellow;
 
+    UPROPERTY()
+    FString SourceName;
+
 };

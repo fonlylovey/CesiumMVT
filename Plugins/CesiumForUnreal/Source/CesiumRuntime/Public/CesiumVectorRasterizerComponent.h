@@ -9,7 +9,7 @@
 #include "CesiumVectorRasterizerComponent.generated.h"
 
 namespace CesiumGltf {
-struct VectorModel;
+struct VectorTile;
 }
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -21,7 +21,7 @@ public:
 	// Sets default values for this component's properties
 	UCesiumVectorRasterizerComponent();
 
-    void CreateDecal(const CesiumGltf::VectorModel* pModelData);
+    void CreateDecal(const CesiumGltf::VectorTile* pModelData);
 
 protected:
 	// Called when the game starts

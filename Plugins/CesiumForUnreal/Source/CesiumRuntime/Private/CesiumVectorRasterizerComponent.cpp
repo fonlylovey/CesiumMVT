@@ -32,7 +32,7 @@ UCesiumVectorRasterizerComponent::UCesiumVectorRasterizerComponent()
     BaseMaterial = Cast<UMaterialInterface>(StaticLoadObject(UMaterialInterface::StaticClass(), nullptr, *str));
 }
 
-void UCesiumVectorRasterizerComponent::CreateDecal(const CesiumGltf::VectorModel* pModelData)
+void UCesiumVectorRasterizerComponent::CreateDecal(const CesiumGltf::VectorTile* pModelData)
 {
     int tileWidth = 4096;
 }

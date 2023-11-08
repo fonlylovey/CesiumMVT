@@ -7,7 +7,7 @@
 
 
 UCesiumVectorComponent* UCesiumVectorComponent::CreateOnGameThread(
-	const CesiumGltf::VectorModel* pModelData,
+	const CesiumGltf::VectorTile* pModelData,
     Cesium3DTilesSelection::VectorOverlayTile& vectorTile,
 	AActor* pOwner)
 {
@@ -74,7 +74,7 @@ void UCesiumVectorComponent::BeginDestroy()
      }
 }
 
-void UCesiumVectorComponent::RenderRaster(const CesiumGltf::VectorModel* pModelData)
+void UCesiumVectorComponent::RenderRaster(const CesiumGltf::VectorTile* pModelData)
 {
     //计算地图的变化范围
     auto Geo = ACesiumGeoreference::GetDefaultGeoreference(this->GetOwner());
@@ -84,7 +84,7 @@ void UCesiumVectorComponent::RenderRaster(const CesiumGltf::VectorModel* pModelD
     rasterComponent->SetWorldLocation(uePos);
 }
 
-void UCesiumVectorComponent::RenderGeometry(const CesiumGltf::VectorModel* pModelData,
+void UCesiumVectorComponent::RenderGeometry(const CesiumGltf::VectorTile* pModelData,
         Cesium3DTilesSelection::VectorOverlayTile& vectorTile)
 {
     UCesiumVectorGeometryComponent* geomComponent = NewObject<UCesiumVectorGeometryComponent>(this);

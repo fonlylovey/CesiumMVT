@@ -21,7 +21,7 @@ std::unique_ptr<Cesium3DTilesSelection::VectorOverlay> UCesiumWebMapTileServiceV
     wmtsOptions.lineWidth = LineWidth;
     wmtsOptions.outlineColor = glm::dvec4(OutlineColor.R, OutlineColor.G, OutlineColor.B, OutlineColor.A);
     wmtsOptions.layers = TCHAR_TO_UTF8(*LayerName);
-
+    wmtsOptions.sourceName = TCHAR_TO_UTF8(*SourceName);
     return std::make_unique<Cesium3DTilesSelection::WebMapTileServiceVectorOverlay>(
         TCHAR_TO_UTF8(*this->MaterialLayerKey),
         TCHAR_TO_UTF8(*this->Url),

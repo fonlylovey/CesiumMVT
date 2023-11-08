@@ -4,7 +4,12 @@
 #include "CesiumVectorOverlay.h"
 #include "VectorRasterizer.h"
 
-void* VectorMapResourceWorker::prepareVectorInLoadThread(CesiumGltf::VectorModel* pModel, const std::any& rendererOptions)
+VectorMapResourceWorker::~VectorMapResourceWorker()
+{
+    _layers.Empty();
+}
+
+void* VectorMapResourceWorker::prepareVectorInLoadThread(CesiumGltf::VectorTile* pModel, const std::any& rendererOptions)
 {
     auto ppOptions = std::any_cast<FVectorOverlayRendererOptions*>(&rendererOptions);
     check(ppOptions != nullptr && *ppOptions != nullptr);
@@ -23,16 +28,20 @@ void* VectorMapResourceWorker::prepareVectorInMainThread(Cesium3DTilesSelection:
     if(pLoadThreadResult != nullptr)
     {
         //pLoadThreadResult就是prepareVectorInLoadThread()函数的返回值
-        CesiumGltf::VectorModel* pModelData = static_cast<CesiumGltf::VectorModel*>(pLoadThreadResult);
+        CesiumGltf::VectorTile* pModelData = static_cast<CesiumGltf::VectorTile*>(pLoadThreadResult);
         if (pModelData->layers.empty())
         {
             return nullptr;
         }
         FVectorRasterizer rasterizer;
         UTexture2D* pTexture = rasterizer.Rasterizer(pModelData, _layers);
-        pTexture->AddressX = TA_MAX;
-        pTexture->AddressY = TA_MAX;
-        delete pModelData;
+        if (pTexture != nullptr)
+        {
+            //pTexture->AddressX = TA_MAX;
+            //pTexture->AddressY = TA_MAX;
+        }
+        
+        //delete pModelData;
         return pTexture;
     }
     return nullptr;

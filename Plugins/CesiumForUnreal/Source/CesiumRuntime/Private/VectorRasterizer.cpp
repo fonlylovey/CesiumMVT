@@ -9,7 +9,6 @@
 #endif//PLATFORM_WINDOWS
 #include "OpenCVHelper.h"
 #include "Engine/Texture2D.h"
-#include <CesiumGltf/VectorModel.h>
 
 
 FVectorRasterizer::~FVectorRasterizer()
@@ -18,7 +17,7 @@ FVectorRasterizer::~FVectorRasterizer()
 }
 
 
-GeometryTile* FVectorRasterizer::LoadTileModel(CesiumGltf::VectorModel* pModel, const TMap<FString, CesiumGltf::MapLayerData>& layers)
+GeometryTile* FVectorRasterizer::LoadTileModel(CesiumGltf::VectorTile* pModel, const TMap<FString, CesiumGltf::MapLayerData>& layers)
 {
     int tileWidth = 4096;
     GeometryTile* tileData = new GeometryTile;
@@ -103,7 +102,7 @@ UTexture2D* FVectorRasterizer::Rasterizer(const GeometryTile* pTileModel)
     return texture;
 }
 
-UTexture2D* FVectorRasterizer::Rasterizer(const CesiumGltf::VectorModel* pTileModel, const TMap<FString, CesiumGltf::MapLayerData>& layers)
+UTexture2D* FVectorRasterizer::Rasterizer(const CesiumGltf::VectorTile* pTileModel, const TMap<FString, CesiumGltf::MapLayerData>& layers)
 {
     int tileWidth = 4096;
     UTexture2D* texture = nullptr;
@@ -113,7 +112,18 @@ UTexture2D* FVectorRasterizer::Rasterizer(const CesiumGltf::VectorModel* pTileMo
     for (const CesiumGltf::VectorLayer& layer : pTileModel->layers)
 	{
         const CesiumGltf::MapLayerData* layerStyle = layers.Find(FString(layer.name.c_str()));
-        const CesiumGltf::StyleData& paintStyle = layerStyle->style;
+        cv::Scalar fillColor = cv::Scalar(255, 0, 0, 255);
+        CesiumGltf::StyleData paintStyle;
+        if(layerStyle != nullptr)
+        {
+            paintStyle = layerStyle->style;
+            fillColor = cv::Scalar(paintStyle.color.x, paintStyle.color.y, paintStyle.color.z, paintStyle.color.w);
+        }
+        //设置可见性
+        if(!paintStyle.visibility)
+        {
+            continue;
+        }
 		for (const CesiumGltf::VectorFeature& feature : layer.features)
 		{
             if(feature.featureType == CesiumGltf::FeatureType::Point)
@@ -127,8 +137,8 @@ UTexture2D* FVectorRasterizer::Rasterizer(const CesiumGltf::VectorModel* pTileMo
                         int pixX = Clamp(pixelPosS.x, 0, tileWidth) / 16;
                         int pixY = Clamp(pixelPosS.y, 0, tileWidth) / 16;
                         cvPoints.emplace_back(cv::Point(pixX, pixY));
+                        cv::circle(image, cv::Point(pixX, pixY), 2, 2);
 					}
-                    //cv::drawCircle();
                 }
             }
             else if (feature.featureType == CesiumGltf::FeatureType::LineString)
@@ -144,7 +154,7 @@ UTexture2D* FVectorRasterizer::Rasterizer(const CesiumGltf::VectorModel* pTileMo
                         cvLineString.emplace_back(cv::Point(pixX, pixY));
 					}
                     //cv::Scalar color = glmColorToCVColor(pTileModel->Style.fillColor);
-                    //cv::polylines(image, geomList, false, color, pTileModel->Style.lineWidth);
+                    cv::polylines(image, cvLineString, false, fillColor, 2);
                 }
             } 
             else  if (feature.featureType == CesiumGltf::FeatureType::Polygon)
@@ -168,7 +178,6 @@ UTexture2D* FVectorRasterizer::Rasterizer(const CesiumGltf::VectorModel* pTileMo
                     else
                         hierarchy.push_back(cv::Vec4i(-1, -1, 1, -1));
                     
-                    cv::Scalar fillColor = cv::Scalar(paintStyle.color.x, paintStyle.color.y, paintStyle.color.z, paintStyle.color.w);
                     //cv::Scalar outlineColor = glmColorToCVColor(pTileModel->Style.outlineColor);
                     //cv::polylines(image, geomList, false, fillColor, 1, cv::LineTypes::LINE_4);
                     cv::fillPoly(image, geomList, fillColor, cv::LineTypes::LINE_AA, 0);
@@ -176,6 +185,7 @@ UTexture2D* FVectorRasterizer::Rasterizer(const CesiumGltf::VectorModel* pTileMo
             }
 		}
 	}
+    texture = FOpenCVHelper::TextureFromCvMat(image);
     return texture;
 }
 
@@ -260,7 +270,7 @@ UTexture2D* FVectorRasterizer::RasterizerNone(const GeometryTile* pTileModel)
     return tex;
 }
 
-UTexture2D* FVectorRasterizer::RasterizerTile(const CesiumGltf::VectorModel* pTileModel)
+UTexture2D* FVectorRasterizer::RasterizerTile(const CesiumGltf::VectorTile* pTileModel)
 {
     return nullptr;
 }

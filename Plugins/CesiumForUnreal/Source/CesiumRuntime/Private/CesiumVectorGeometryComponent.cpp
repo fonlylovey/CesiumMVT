@@ -55,7 +55,7 @@ void UCesiumVectorGeometryComponent::BeginDestroy()
 	 }*/
 }
 
-void UCesiumVectorGeometryComponent::CreateMesh(const CesiumGltf::VectorModel* pModelData, 
+void UCesiumVectorGeometryComponent::CreateMesh(const CesiumGltf::VectorTile* pModelData, 
                                                 Cesium3DTilesSelection::VectorOverlayTile& vectorTile)
 {
     auto provider = &vectorTile.getTileProvider();
@@ -400,7 +400,7 @@ void UCesiumVectorGeometryComponent::buildPolygons(const FTileModel* tileModel, 
 		return pbfWorld;
 	}
 
-    FTileModel* UCesiumVectorGeometryComponent::CreateModel(const CesiumGltf::VectorModel* pModelData,
+    FTileModel* UCesiumVectorGeometryComponent::CreateModel(const CesiumGltf::VectorTile* pModelData,
                             Cesium3DTilesSelection::VectorOverlayTileProvider* provider)
     {
         int Row = pModelData->row;

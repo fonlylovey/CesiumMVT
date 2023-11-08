@@ -845,6 +845,10 @@ private:
       meta = (ShowOnlyInnerProperties))
   FCustomDepthParameters CustomDepthParameters;
 
+
+  UPROPERTY()
+  class UMapmostMap* Mapmost = nullptr;
+
 protected:
   UPROPERTY()
   FString PlatformName;

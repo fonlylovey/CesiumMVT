@@ -60,6 +60,7 @@
 #include <spdlog/spdlog.h>
 #include "CesiumVectorOverlay.h"
 #include "Cesium3DTilesSelection/MVTUtilities.h"
+#include "MapmostMap.h"
 
 FCesium3DTilesetLoadFailure OnCesium3DTilesetLoadFailure{};
 
@@ -891,6 +892,14 @@ void ACesium3DTileset::LoadTileset() {
     return;
   }
 
+  //查找和添加Map
+  TArray<UMapmostMap*> maps;
+  this->GetComponents<UMapmostMap>(maps);
+  for (UMapmostMap* pMap : maps) {
+    Mapmost = pMap;
+    Mapmost->LoadMapMetaStyle();
+  }
+
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION == 0
   AWorldSettings* pWorldSettings = pWorld->GetWorldSettings();
   if (pWorldSettings && !pWorldSettings->bEnableLargeWorlds) {
@@ -1174,6 +1183,11 @@ void ACesium3DTileset::DestroyTileset() {
           pOverlay->RemoveFromTileset();
       }
   }
+
+  if (Mapmost != nullptr)
+    {
+      Mapmost->DestorMapStyle();
+    }
 
   if (!this->_pTileset) {
     return;

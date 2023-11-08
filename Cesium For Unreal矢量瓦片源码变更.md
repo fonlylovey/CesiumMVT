@@ -15,7 +15,7 @@ set(CESIUM_NATIVE_EXTERN_DIR "${CMAKE_CURRENT_LIST_DIR}/" CACHE INTERNAL
     "Include directory extern"
 )
 ```
-#### 2、CesiumGltf模块添加文件 iclude/VectorModel.h、src/VectorModel.cpp
+#### 2、CesiumGltf模块添加文件 iclude/VectorTile.h、src/VectorTile.cpp
 #### 3、CesiumGltfReader模块添加文件 iclude/VectorReader.h、src/VectorReader.cpp
 #### 4、Cesium3DTilesSelection模块添加文件
 ```
@@ -414,11 +414,11 @@ const VectorOverlayCollection& Tileset::getVectorOverlays() const noexcept {
 
 #### 11、修改Cesium3DTilesSelection/IPrepareRendererResources.h
 11.1 添加前置声明 
-11.1.1 CesiumGltf命名空间中添加VectorModel
+11.1.1 CesiumGltf命名空间中添加VectorTile
 ```
 struct ImageCesium;
 struct Model;
-struct VectorModel;
+struct VectorTile;
 ```
 命名空间Cesium3DTilesSelection中添加
 ```
@@ -441,7 +441,7 @@ class VectorOverlayTile;
        * `pLoadThreadResult` parameter.
        */
       virtual void* prepareVectorInLoadThread(
-          CesiumGltf::VectorModel* model,
+          CesiumGltf::VectorTile* model,
           const std::any& rendererOptions) = 0;
 
     /**
@@ -570,7 +570,7 @@ MMCorner.h
 在detachRasterInMainThread()函数之后添加
 ```
   virtual void* prepareVectorInLoadThread(
-          CesiumGltf::VectorModel* pModel,
+          CesiumGltf::VectorTile* pModel,
           const std::any& rendererOptions)
   {
     auto ppOptions = std::any_cast<FVectorOverlayRendererOptions*>(&rendererOptions);
@@ -582,7 +582,7 @@ MMCorner.h
     auto pOptions = *ppOptions;
     /*
     //在这个函数出栈之后 参数model会被析构，变成野指针，所以需要new一个新的指针接收数据后续使用
-    CesiumGltf::VectorModel* theModel = new CesiumGltf::VectorModel;
+    CesiumGltf::VectorTile* theModel = new CesiumGltf::VectorTile;
 	
 	
     //这个函数是异步线程，可以在这里面把所有坐标都转换好，然后到InMainThread主线程函数直接创建组件 
@@ -603,7 +603,7 @@ MMCorner.h
         void* pLoadThreadResult)
   {
         //pLoadThreadResult就是prepareVectorInLoadThread()函数的返回值
-        CesiumGltf::VectorModel* pModelData = static_cast<CesiumGltf::VectorModel*>(pLoadThreadResult);
+        CesiumGltf::VectorTile* pModelData = static_cast<CesiumGltf::VectorTile*>(pLoadThreadResult);
         UCesiumVectorComponent* pVectorContent = UCesiumVectorComponent::CreateOnGameThread(pModelData, vectorTile, _pActor);
        if (pModelData->level != pVectorContent->Level ||
            pModelData->row != pVectorContent->Row ||
