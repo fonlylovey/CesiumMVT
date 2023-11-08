@@ -137,7 +137,7 @@ UTexture2D* FVectorRasterizer::Rasterizer(const CesiumGltf::VectorTile* pTileMod
                         int pixX = Clamp(pixelPosS.x, 0, tileWidth) / 16;
                         int pixY = Clamp(pixelPosS.y, 0, tileWidth) / 16;
                         cvPoints.emplace_back(cv::Point(pixX, pixY));
-                        cv::circle(image, cv::Point(pixX, pixY), 2, 2);
+                        cv::circle(image, cv::Point(pixX, pixY), 5, fillColor, 2);
 					}
                 }
             }

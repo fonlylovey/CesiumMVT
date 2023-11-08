@@ -47,11 +47,13 @@ public:
 
     void Refresh();
 
-    UFUNCTION(BlueprintCallable)
-    void AddSource(const FString& SourceName, const CesiumGltf::SoureType SourceType, const FString& SourceURL);
-
+    UFUNCTION(BlueprintCallable, Category = "Mapmost")
+    void AddSource(const FString& SourceName, const FString& SourceType, const FString& SourceURL);
 
     void AddSource(const CesiumGltf::MapSourceData& sourceData);
+
+    UFUNCTION(BlueprintCallable, Category = "Mapmost")
+    void AddLayer(const FString& LayerID, const FString& LayerType);
 
     void AddLayer(const CesiumGltf::MapLayerData& layerData);
 

@@ -147,7 +147,7 @@ void UMapmostMap::AddSource(const CesiumGltf::MapSourceData& sourceData)
     SourceOverlayDict.Add(strName, pOverlay);
 }
 
-void UMapmostMap::AddSource(const FString& SourceName, const CesiumGltf::SoureType SourceType, const FString& SourceURL)
+void UMapmostMap::AddSource(const FString& SourceName, const FString& SourceType, const FString& SourceURL)
 {
 
 }
@@ -166,6 +166,11 @@ void UMapmostMap::AddLayer(const CesiumGltf::MapLayerData& layerData)
     info.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
     //AMapmostLayer* layer = GetWorld()->SpawnActor<AMapmostLayer>(info);
     //layer->CreateLayer(pOverlay, layerData);
+
+}
+
+void UMapmostMap::AddLayer(const FString& LayerID, const FString& LayerType)
+{
 
 }
 

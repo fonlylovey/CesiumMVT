@@ -1013,6 +1013,8 @@ public:
 
   void UpdateLoadStatus();
 
+  UFUNCTION(BlueprintCallable)
+  UMapmostMap* GetMapmostMap() { return Mapmost;}
   // UObject overrides
 #if WITH_EDITOR
   virtual void
