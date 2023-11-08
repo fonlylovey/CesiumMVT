@@ -61,12 +61,13 @@ namespace
                 styleData.opacity = (float)JsonHelpers::getDoubleOrDefault(paintObj, strKey.data(), 1.0);
                 layerData.style = std::move(styleData);
 
-                /*
-                auto paintIter = paintObj->value.MemberBegin();
-                for (; paintIter != paintObj->value.MemberEnd(); paintIter++)
+                auto theIter = iter->FindMember("layout");
+                if(theIter != iter->MemberEnd())
                 {
-                    //none 
-                }*/
+                    //
+                    std::string strVisible = JsonHelpers::getStringOrDefault(theIter->value, "visibility", "none");
+                    layerData.style.visibility = strVisible == "visible" ? true : false;
+                }
 
                 metaData->laysers.emplace_back(layerData);
             }

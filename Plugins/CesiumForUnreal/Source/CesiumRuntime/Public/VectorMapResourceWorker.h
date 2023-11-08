@@ -12,9 +12,9 @@ class CESIUMRUNTIME_API VectorMapResourceWorker : public Cesium3DTilesSelection:
 {
 public:
 	VectorMapResourceWorker(ACesium3DTileset* pActor) : _pActor(pActor) {}
-	~VectorMapResourceWorker() = default;
+	~VectorMapResourceWorker();
 
-	virtual void* prepareVectorInLoadThread(CesiumGltf::VectorModel* pModel, const std::any& rendererOptions) override;
+	virtual void* prepareVectorInLoadThread(CesiumGltf::VectorTile* pModel, const std::any& rendererOptions) override;
 
 	virtual void* prepareVectorInMainThread(Cesium3DTilesSelection::VectorOverlayTile& vectorTile, void* pLoadThreadResult) override;
 

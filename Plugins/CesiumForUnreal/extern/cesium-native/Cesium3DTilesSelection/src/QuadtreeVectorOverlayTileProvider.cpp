@@ -456,7 +456,7 @@ QuadtreeVectorOverlayTileProvider::loadTileData(
                 {
                   return LoadedVectorOverlayData{nullptr, Rectangle(), {}, {}, {}};
                 }
-                VectorModel* model = models.at(0).pLoaded->vectorModel;
+                VectorTile* model = models.at(0).pLoaded->vectorModel;
                 return LoadedVectorOverlayData{std::move(model), rectangle, {}, {}, {}};
             }
     );

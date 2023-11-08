@@ -46,7 +46,7 @@ public:
       const std::string& version,
       const std::string& layers,
       const std::string& format,
-      const std::string& style,
+      const std::string& sourceName,
       const std::string& tileMatrixSet,
       uint32_t width,
       uint32_t height,
@@ -71,7 +71,7 @@ public:
         _version(version),
         _layers(layers),
         _format(format),
-        _style(style),
+        _sourceName(sourceName),
         _tileMatrixSet(tileMatrixSet)
         {}
 
@@ -107,7 +107,7 @@ protected:
         {"baseUrl", this->_url},
         {"version", this->_version},
         {"layer", this->_layers},
-        {"style", this->_style},
+        {"style", ""},
         {"tileMatrix", this->_tileMatrixSet + ":" + std::to_string(tileID.level)},
         {"tileMatrixSet", this->_tileMatrixSet},
         {"tileRow", std::to_string((int)wmtsY)},
@@ -116,6 +116,7 @@ protected:
     options.level = tileID.level;
     options.Row = (int)wmtsY;
     options.Col = tileID.x;
+    options.sourceName = this->_sourceName;
 
     std::string url = CesiumUtility::Uri::substituteTemplateParameters(
         urlTemplate,
@@ -134,7 +135,7 @@ private:
   std::string _layers;
   std::string _format;
   std::string _tileMatrixSet;
-  std::string _style;
+  std::string _sourceName;
   std::vector<IAssetAccessor::THeader> _headers;
 };
 
@@ -252,36 +253,20 @@ WebMapTileServiceVectorOverlay::createTileProvider(
                   "element."});
             }
 
-            tinyxml2::XMLElement* pTitle = pLayer->FirstChildElement("ows:Title");
-            std::string strLayerName = "";//sip:sip_road
-            if (pTitle != nullptr)
+            std::string strLayerName = "";//sip_road
+            
+            while (strLayerName != options.layers) 
             {
-                strLayerName = pTitle->GetText();
-            }
-            tinyxml2::XMLElement* pLayerName = pLayer->FirstChildElement("ows:Identifier");
-            if (pTitle != nullptr) {
-                strLayerName = pLayerName->GetText();
-            }
-
-            while (strLayerName != options.layers) {
                 pLayer = pLayer->NextSiblingElement();
-                if (pLayer != nullptr && strcmp("Layer", pLayer->Name()) == 0)
+                if (pLayer != nullptr)
                 {
-                  tinyxml2::XMLElement* pLayerNameElement =
-                      pLayer->FirstChildElement("ows:Identifier");
-                  if (pTitle != nullptr) {
-                    strLayerName = pLayerNameElement->GetText();
-                  }
-                }
-                else
-                {
-                  return nonstd::make_unexpected(
-                      RasterOverlayLoadFailureDetails{
-                          RasterOverlayLoadType::TileProvider,
-                          pRequest,
-                          "Web map tile service XML document does not have a "
-                          "Contents "
-                          "element."});
+                    tinyxml2::XMLElement* pLayerNameElement = pLayer->FirstChildElement("ows:Identifier");
+                    if (pLayerNameElement != nullptr)
+                    {
+                        strLayerName = pLayerNameElement->GetText();
+                    }
+                    if (strcmp(pLayer->Name(), "Layer") != 0)
+                        break;
                 }
             }
 
@@ -427,7 +412,7 @@ WebMapTileServiceVectorOverlay::createTileProvider(
                 options.version,
                 strLayerName,
                 options.format,
-                options.style,
+                options.sourceName,
                 options.tileMatrixSet,
                 options.tileWidth < 1 ? 1 : uint32_t(options.tileWidth),
                 options.tileHeight < 1 ? 1 : uint32_t(options.tileHeight),

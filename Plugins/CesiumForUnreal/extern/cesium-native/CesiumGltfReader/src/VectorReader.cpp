@@ -26,7 +26,7 @@ namespace
         count;
         VectorGeometry geom;
 		feature.featureType = FeatureType::Point;
-		feature.geometry.emplace_back(geom);
+		feature.geometry.push_back(geom);
 	}
 
 	virtual void points_point(const vtzero::point_3d &pt)
@@ -43,7 +43,7 @@ namespace
 	{
 		count;
 		VectorGeometry geom;
-		feature.geometry.emplace_back(geom);
+		feature.geometry.push_back(geom);
 	}
 
 	virtual void linestring_point(const vtzero::point_3d&pt)
@@ -60,7 +60,7 @@ namespace
 	{
 		count;
 		VectorGeometry geom;
-		feature.geometry.emplace_back(geom);
+		feature.geometry.push_back(geom);
 	}
 
 	virtual void ring_point(const vtzero::point_3d &pt)
@@ -78,7 +78,7 @@ namespace
 	{
 		count;
         VectorGeometry geom;
-        feature.geometry.emplace_back(geom);
+        feature.geometry.push_back(geom);
 	}
 
 	void controlpoints_point(const vtzero::point_3d pt) 
@@ -95,7 +95,7 @@ namespace
 	{
 		count;
 		VectorGeometry geom;
-		feature.geometry.emplace_back(geom);
+		feature.geometry.push_back(geom);
 	}
 
 	void knots_value(const int64_t /*value*/) 
@@ -108,9 +108,9 @@ namespace
 	};
 
 	//解析二进制的矢量数据
-	CesiumGltf::VectorModel* resolvingGeoData(const std::string& strData) 
+	CesiumGltf::VectorTile* resolvingGeoData(const std::string& strData) 
 	{
-        CesiumGltf::VectorModel* tileModel = new CesiumGltf::VectorModel;
+        CesiumGltf::VectorTile* tileModel = new CesiumGltf::VectorTile;
 
 		vtzero::vector_tile tile(strData);
 		for (const auto layer : tile)
@@ -123,10 +123,10 @@ namespace
 				feature.decode_geometry(*handler);
                 handler->feature.featureID = feature.integer_id();
                 handler->feature.featureType = static_cast<FeatureType>(feature.geometry_type());
-                vlayer.features.emplace_back(handler->feature);
+                vlayer.features.push_back(handler->feature);
                 delete handler;
 			}
-            tileModel->layers.emplace_back(vlayer);
+            tileModel->layers.push_back(vlayer);
 		}
 		return tileModel;
 	}
@@ -142,7 +142,7 @@ namespace
 	VectorReaderResult result;
 	try
 	{
-		CesiumGltf::VectorModel* tileModel = resolvingGeoData(data);
+		CesiumGltf::VectorTile* tileModel = resolvingGeoData(data);
         result.model = tileModel;
 	}
 	catch (std::runtime_error ex)

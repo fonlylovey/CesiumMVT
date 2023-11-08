@@ -31,11 +31,7 @@ namespace Cesium3DTilesSelection
         MapmostVectorMap(const MapmostExternals& externals);
         ~MapmostVectorMap() = default;
 
-        void CreateMap(const std::string& styleUrl);
-
-        void AddSource(const CesiumGltf::MapSourceData& mapSource);
-
-        void AddLayer(const CesiumGltf::MapLayerData& mapLayer);
+        void loadMetaStyle(const std::string& styleUrl);
 
         const MapmostExternals& getExternals() const noexcept
         {

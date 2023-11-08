@@ -20,7 +20,7 @@ struct Rectangle;
 }
 
 namespace CesiumGltf {
-struct VectorModel;
+struct VectorTile;
 struct MapLayerData;
 } // namespace CesiumGltf
 
@@ -59,7 +59,7 @@ public:
        * `pLoadThreadResult` parameter.
        */
       virtual void* prepareVectorInLoadThread(
-          CesiumGltf::VectorModel* model,
+          CesiumGltf::VectorTile* model,
           const std::any& rendererOptions) = 0;
 
     /**

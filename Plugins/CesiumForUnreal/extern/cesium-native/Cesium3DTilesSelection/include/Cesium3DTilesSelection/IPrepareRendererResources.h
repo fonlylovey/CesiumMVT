@@ -22,7 +22,7 @@ struct Rectangle;
 namespace CesiumGltf {
 struct ImageCesium;
 struct Model;
-struct VectorModel;
+struct VectorTile;
 } // namespace CesiumGltf
 
 namespace Cesium3DTilesSelection {

@@ -34,31 +34,30 @@ namespace Cesium3DTilesSelection
         _pLoader = nullptr;
     }
 
-    void MapmostVectorMap::CreateMap(const std::string& styleUrl) 
+    void MapmostVectorMap::loadMetaStyle(const std::string& styleUrl) 
     {
         if(_pLoader == nullptr)
         {
             _pLoader = std::make_shared<VectorMapMetadataLoader>(_externals.pAssetAccessor, _externals.asyncSystem);
         }
-        _pLoader->loadStyleData(styleUrl).thenInWorkerThread(
-            [this](LoadedResult&& result) 
-            {
-                CesiumGltf::MapMetaData* pStyleData = std::move(*result);
-                this->_externals.pMapListens->finishLoadStyle(pStyleData);
-            });
+        _pLoader->loadStyleData(styleUrl)
+            .thenInWorkerThread
+            (
+                [](LoadedResult&& result)
+                {
+                    CesiumGltf::MapMetaData* pStyleData = std::move(*result);
+                    return pStyleData;
+                }
+            )
+            .thenInMainThread
+            (
+                [this](CesiumGltf::MapMetaData* pStyleData)
+                {
+                    this->_externals.pMapListens->finishLoadStyle(pStyleData);
+                }
+            );
 
         
-    }
-
-
-    void MapmostVectorMap::AddSource(const CesiumGltf::MapSourceData& mapSource)
-    {
-        mapSource;
-    }
-
-    void MapmostVectorMap::AddLayer(const CesiumGltf::MapLayerData& mapLayer)
-    {
-        mapLayer;
     }
 
 // namespace Cesium3DTilesSelection

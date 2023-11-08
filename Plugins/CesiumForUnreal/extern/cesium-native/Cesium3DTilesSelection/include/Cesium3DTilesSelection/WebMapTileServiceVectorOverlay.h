@@ -66,7 +66,7 @@ struct WebMapTileServiceVectorOverlayOptions {
    */
   int32_t tileHeight = 256;
 
-  std::string style = "";
+  std::string sourceName = "";
 
   std::string tileMatrixSet = "EPSG:4326";
 

@@ -28,7 +28,7 @@ struct CESIUMGLTFREADER_API VectorReaderResult {
   /**
    * @brief The read model, or std::nullopt if the model could not be read.
    */
-  CesiumGltf::VectorModel* model;
+  CesiumGltf::VectorTile* model;
 
   /**
    * @brief Errors, if any, that occurred during the load process.

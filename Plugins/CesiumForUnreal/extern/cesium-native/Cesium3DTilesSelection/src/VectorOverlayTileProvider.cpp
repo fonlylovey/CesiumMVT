@@ -160,13 +160,14 @@ VectorOverlayTileProvider::loadTileDataFromUrl(
               {}};
         }
 
-	    auto noneModel = new CesiumGltf::VectorModel;
+	    auto noneModel = new CesiumGltf::VectorTile;
         noneModel->level = options.level;
         noneModel->row = options.Row;
         noneModel->col = options.Col;
+        noneModel->sourceName = options.sourceName;
         if(pResponse->statusCode() == 400) 
         {
-            noneModel->TypeName = "400 None Data";
+            noneModel->status = "400 None Data";
           return LoadedVectorOverlayData{
               noneModel,
               options.rectangle,
@@ -180,6 +181,7 @@ VectorOverlayTileProvider::loadTileDataFromUrl(
           std::string message = "vector response code " +
                                 std::to_string(pResponse->statusCode()) +
                                 " for " + tileUrl;
+          noneModel->status = std::to_string(pResponse->statusCode()) + " None Data";
           return LoadedVectorOverlayData{
               nullptr,
               options.rectangle,
@@ -190,7 +192,7 @@ VectorOverlayTileProvider::loadTileDataFromUrl(
 
         if (pResponse->data().empty())
         {
-            noneModel->TypeName = "200 None Data";
+            noneModel->status = "200 None Data";
           return LoadedVectorOverlayData{
               noneModel,
               options.rectangle,
@@ -216,6 +218,7 @@ VectorOverlayTileProvider::loadTileDataFromUrl(
 		loadedData.model->level = options.level;
 		loadedData.model->row = options.Row;
 		loadedData.model->col = options.Col;
+        loadedData.model->sourceName = options.sourceName;
         //loadedData.model->style = vecStyle;
         //½âÎöÍßÆ¬·¶Î§
         std::string strTileBound = pResponse->headers().at("geowebcache-tile-bounds");
@@ -239,6 +242,8 @@ VectorOverlayTileProvider::loadTileDataFromUrl(
             std::move(options.credits),
             std::move(loadedData.errors),
             std::move(loadedData.warnings)};
+
+        delete noneModel;
         return resurl;
       }
   );
@@ -248,7 +253,7 @@ VectorOverlayTileProvider::loadTileDataFromUrl(
 namespace {
 struct LoadResult {
   VectorOverlayTile::LoadState state = VectorOverlayTile::LoadState::Unloaded;
-  CesiumGltf::VectorModel* model = {};
+  CesiumGltf::VectorTile* model = {};
   CesiumGeometry::Rectangle rectangle = {};
   std::vector<Credit> credits = {};
   void* pRendererResources = nullptr;

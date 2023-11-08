@@ -111,12 +111,18 @@ namespace CesiumGltf
 
 
     /** @copydoc VectorModel */
-    struct CESIUMGLTF_API VectorModel
+    struct CESIUMGLTF_API VectorTile
     {
-      char* TypeName = "VectorModel";
-      ~VectorModel()
+      ~VectorTile()
       {
 	      layers.clear();
+          level = 0;
+          row = 0;
+          col = 0;
+          extentMin = glm::dvec2();
+          extentMax = glm::dvec2();
+          sourceName = "";
+          status = "";
       }
       //一个瓦片中的所有图层
       std::vector<VectorLayer> layers {};
@@ -136,6 +142,9 @@ namespace CesiumGltf
       //瓦片范围的右上角 经纬度
       glm::dvec2 extentMax = glm::dvec2();
 
+      std::string sourceName = "";
+
+      std::string status = "";
     };
 
 
