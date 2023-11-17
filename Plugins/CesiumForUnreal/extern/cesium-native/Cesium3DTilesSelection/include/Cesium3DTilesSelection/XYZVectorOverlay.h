@@ -20,59 +20,22 @@ class CreditSystem;
  * @brief Options for XYZ overlays.
  */
 struct XYZVectorOverlayOptions {
-
-  /**
-   * @brief The XYZ version. The default is "1.3.0".
-   */
-  std::string version = "1.0.0";
-
-  /**
-   * @brief Comma separated XYZ layer names to request.
-   */
-  std::string layers = "";
-
-  /**
-   * @brief The image format to request, expressed as a MIME type to be given to
-   * the server. The default is "application/vnd.mapbox-vector-tile".
-   */
-  std::string format = "application/vnd.mapbox-vector-tile";
-
-  /**
-   * @brief A credit for the data source, which is displayed on the canvas.
-   */
   std::optional<std::string> credit;
 
-  /**
-   * @brief The minimum level-of-detail supported by the imagery provider.
-   *
-   * Take care when specifying this that the number of tiles at the minimum
-   * level is small, such as four or less. A larger number is likely to
-   * result in rendering problems.
-   */
   int32_t minimumLevel = 0;
 
-  /**
-   * @brief The maximum level-of-detail supported by the imagery provider.
-   */
-  int32_t maximumLevel = 14;
+  int32_t maximumLevel = 20;
 
-  /**
-   * @brief Pixel width of image tiles.
-   */
-  int32_t tileWidth = 256;
+  std::string MatrixSet = "EPSG:4326";
 
-  /**
-   * @brief Pixel height of image tiles.
-   */
-  int32_t tileHeight = 256;
+  uint32_t tileWidth = 256;
 
-  std::string style = "";
+  uint32_t tileHeight = 256;
 
-  std::string tileMatrixSet = "EPSG:4326";
+  bool decode = false;
 
-  float OriginX = 0;
+  std::string sourceName = "";
 
-  float OriginY = 0;
 };
 
 /**

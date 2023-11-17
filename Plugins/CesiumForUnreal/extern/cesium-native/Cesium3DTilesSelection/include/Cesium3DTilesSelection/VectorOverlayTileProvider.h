@@ -110,6 +110,8 @@ struct LoadVectorTileDataFromUrlOptions {
   int Col = 0;
 
   std::string sourceName = "";
+
+  bool isDecode = false;
 };
 
 /**

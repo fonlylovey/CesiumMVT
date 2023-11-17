@@ -7,7 +7,9 @@
 #include "Cesium3DTilesSelection/IMapmostListens.h"
 #include "Cesium3DTileset.h"
 #include "CesiumWebMapTileServiceVectorOverlay.h"
+#include "CesiumXYZVectorOverlay.h"
 #include "MapmostLayer.h"
+#include "VectorMapResourceWorker.h"
 
 using namespace CesiumGltf;
 
@@ -42,15 +44,17 @@ public:
 
 	virtual void finishLoadStyle(CesiumGltf::MapMetaData* styleData) override
     {
-        for (const MapSourceData& source : styleData->sources)
+        if (styleData != nullptr)
         {
-            _pMapmost->AddSource(source);
-        }
+            for (const MapSourceData& source : styleData->sources)
+            {
+                _pMapmost->AddSource(source);
+            }
 
-        _pMapmost->GetCesiumActor()->GetTileset()->getExternals().pPrepareMapResources->setLayers(styleData->laysers);
-        for (const MapLayerData& layer : styleData->laysers)
-        {
-            _pMapmost->AddLayer(layer);
+            for (const MapLayerData& layer : styleData->laysers)
+            {
+                _pMapmost->AddLayer(layer);
+            }
         }
     }
 
@@ -71,10 +75,12 @@ UMapmostMap::~UMapmostMap()
    
 }
 
+#if WITH_EDITOR
 void UMapmostMap::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
     //Refresh();
 }
+#endif
 
 void UMapmostMap::OnAttachmentChanged()
 {
@@ -128,7 +134,7 @@ void UMapmostMap::AddSource(const CesiumGltf::MapSourceData& sourceData)
     FString strName = FString(sourceData.sourceName.c_str());
     SourceDict.Add(strName, sourceData);
 
-     //会修改成xyz的方式
+    /*
     UCesiumWebMapTileServiceVectorOverlay* pOverlay = NewObject<UCesiumWebMapTileServiceVectorOverlay>(_pCesiumActor, FName(*strName));
     pOverlay->bSpecifyZoomLevels = true;
     pOverlay->MinimumLevel = 0;
@@ -144,34 +150,111 @@ void UMapmostMap::AddSource(const CesiumGltf::MapSourceData& sourceData)
     pOverlay->SetActive(false);
     pOverlay->RegisterComponent();
     _pCesiumActor->AddInstanceComponent(pOverlay);
+
+*/
+    UCesiumXYZVectorOverlay* pOverlay = NewObject<UCesiumXYZVectorOverlay>(_pCesiumActor, FName(*strName));
+    pOverlay->bSpecifyZoomLevels = true;
+    pOverlay->MinimumLevel = 0;
+    pOverlay->MaximumLevel = 20;
+    pOverlay->SourceName = FString(sourceData.sourceName.c_str());
+    pOverlay->Url = FString(sourceData.url.c_str());
+    pOverlay->bDecode = true;
+    pOverlay->RegisterComponent();
+    _pCesiumActor->AddInstanceComponent(pOverlay);
+
     SourceOverlayDict.Add(strName, pOverlay);
 }
 
 void UMapmostMap::AddSource(const FString& SourceName, const FString& SourceType, const FString& SourceURL)
 {
-
+    CesiumGltf::MapSourceData sourceData;
+    sourceData.sourceName = TCHAR_TO_UTF8(*SourceName);
+    sourceData.setType(TCHAR_TO_UTF8(*SourceName));
+    sourceData.url = TCHAR_TO_UTF8(*SourceURL);
+    AddSource(sourceData);
 }
 
 void UMapmostMap::AddLayer(const CesiumGltf::MapLayerData& layerData)
 {
     FString strSourceName = FString(layerData.source.c_str());
-    FString strLayerName = FString(layerData.id.c_str());
-
-    LayerDict.Add(strLayerName, layerData);
-
-    auto sourceData = SourceDict.FindRef(strSourceName);
+    FString strLayerName = FString(layerData.sourceLayer.c_str());
     auto pOverlay = SourceOverlayDict.FindRef(strSourceName);
-    FActorSpawnParameters info;
-    info.Name = FName(strLayerName);
-    info.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+    if(!LayerDict.Contains(strLayerName) && pOverlay != nullptr)
+    {
+        LayerDict.Add(strLayerName, layerData);
+        auto worker = static_cast<VectorMapResourceWorker*>(
+            _pCesiumActor->GetTileset()->getExternals().pPrepareMapResources.get());
+        worker->setLayers(LayerDict);
+        pOverlay->Refresh();
+    }
+    
+    //auto sourceData = SourceDict.FindRef(strSourceName);
+    //auto pOverlay = SourceOverlayDict.FindRef(strSourceName);
+    //FActorSpawnParameters info;
+    //info.Name = FName(strLayerName);
+    //info.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
     //AMapmostLayer* layer = GetWorld()->SpawnActor<AMapmostLayer>(info);
     //layer->CreateLayer(pOverlay, layerData);
 
 }
 
-void UMapmostMap::AddLayer(const FString& LayerID, const FString& LayerType)
+void UMapmostMap::AddLayer(const FLayerData& LayerData)
 {
+    CesiumGltf::MapLayerData layerData;
+    layerData.id =  TCHAR_TO_UTF8(*LayerData.LayerID);
+    layerData.source = TCHAR_TO_UTF8(*LayerData.SourceName);
+    layerData.sourceLayer = TCHAR_TO_UTF8(*LayerData.SourceLayerName);
+    layerData.setType(TCHAR_TO_UTF8(*LayerData.LayerType));
+    layerData.style.visibility = LayerData.LayerStyle.Visibie;
+    FColor color = LayerData.LayerStyle.Color.ToFColor(true);
+    layerData.style.color = glm::ivec4(color.B, color.G, color.R, color.A);
+    AddLayer(layerData);
+}
 
+void UMapmostMap::SetLayerVisible(const FString& LayerID, bool isVisible)
+{
+    auto pLayer = LayerDict.Find(LayerID);
+    if (pLayer != nullptr)
+    {
+        pLayer->style.visibility = isVisible;
+        auto worker = static_cast<VectorMapResourceWorker*>(_pCesiumActor->GetTileset()->getExternals().pPrepareMapResources.get());
+        worker->setLayers(LayerDict);
+        auto pOverlay = SourceOverlayDict.FindRef(FString(pLayer->source.c_str()));
+        if(pOverlay)
+        {
+            pOverlay->Refresh();
+        }
+    }
+}
+
+void UMapmostMap::SetLayerColor(const FString& LayerID, const FLinearColor& layerColor)
+{
+    auto pLayer = LayerDict.Find(LayerID);
+    if (pLayer != nullptr)
+    {
+        FColor color = layerColor.ToFColor(true);
+        pLayer->style.color = glm::ivec4(color.B, color.G, color.R, color.A);
+        auto worker = static_cast<VectorMapResourceWorker*>(_pCesiumActor->GetTileset()->getExternals().pPrepareMapResources.get());
+        worker->setLayers(LayerDict);
+        auto pOverlay = SourceOverlayDict.FindRef(FString(pLayer->source.c_str()));
+        if(pOverlay)
+        {
+            pOverlay->Refresh();
+        }
+    }
+}
+
+FLayerData UMapmostMap::MakeLayerData(const FString& LayerID, const FString& LayerType, const FString& SourceName, const FString& SourceLayerName, bool IsVisible, const FLinearColor& color)
+{
+    FLayerData layer;
+    layer.LayerID = LayerID;
+    layer.LayerType = LayerType;
+    layer.SourceName = SourceName;
+    layer.SourceLayerName = SourceLayerName;
+    layer.LayerStyle.Visibie = IsVisible;
+    layer.LayerStyle.Color = color;
+    return layer;
 }
 
 void UMapmostMap::Activate(bool bReset)

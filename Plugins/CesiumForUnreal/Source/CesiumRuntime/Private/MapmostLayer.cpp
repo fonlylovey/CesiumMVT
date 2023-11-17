@@ -12,10 +12,12 @@ AMapmostLayer::~AMapmostLayer()
 {
 }
 
+#if WITH_EDITOR
 void AMapmostLayer::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
     this->Visible = Visible;
 }
+#endif
 
 void AMapmostLayer::CreateLayer(const CesiumGltf::MapSourceData& sourceData, const CesiumGltf::MapLayerData& layerData)
 {

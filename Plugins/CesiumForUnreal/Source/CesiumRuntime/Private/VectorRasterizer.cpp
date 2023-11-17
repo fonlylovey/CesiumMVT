@@ -102,13 +102,17 @@ UTexture2D* FVectorRasterizer::Rasterizer(const GeometryTile* pTileModel)
     return texture;
 }
 
-UTexture2D* FVectorRasterizer::Rasterizer(const CesiumGltf::VectorTile* pTileModel, const TMap<FString, CesiumGltf::MapLayerData>& layers)
+UTexture2D* FVectorRasterizer::Rasterizer(const CesiumGltf::VectorTile* pTileModel,
+ const TMap<FString, CesiumGltf::MapLayerData>& layers)
 {
     int tileWidth = 4096;
     UTexture2D* texture = nullptr;
     //必须使用8字节4通道的图像
     cv::Mat image =cv:: Mat(256, 256, CV_8UC4, cv::Scalar(0, 0, 0, 0));
-
+    if(layers.IsEmpty())
+    {
+        return nullptr;
+    }
     for (const CesiumGltf::VectorLayer& layer : pTileModel->layers)
 	{
         const CesiumGltf::MapLayerData* layerStyle = layers.Find(FString(layer.name.c_str()));
@@ -118,6 +122,10 @@ UTexture2D* FVectorRasterizer::Rasterizer(const CesiumGltf::VectorTile* pTileMod
         {
             paintStyle = layerStyle->style;
             fillColor = cv::Scalar(paintStyle.color.x, paintStyle.color.y, paintStyle.color.z, paintStyle.color.w);
+        }
+        else
+        {
+            continue;
         }
         //设置可见性
         if(!paintStyle.visibility)

@@ -362,7 +362,7 @@ void UCesiumVectorGeometryComponent::buildPolygons(const FTileModel* tileModel, 
 
 }
 
-//根据pbf协议，将像素坐标转换成WGS84经纬度坐标
+    //根据pbf协议，将像素坐标转换成WGS84经纬度坐标
 	glm::dvec3 UCesiumVectorGeometryComponent::PixelToWGS84(glm::ivec3& pbfPos,
 							int Row,
 							int Col,

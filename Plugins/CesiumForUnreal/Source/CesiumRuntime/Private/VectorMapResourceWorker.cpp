@@ -94,16 +94,16 @@ void VectorMapResourceWorker::freeVector(const Cesium3DTilesSelection::VectorOve
      if (pMainThreadResult) 
        {
            UTexture* pTexture = static_cast<UTexture*>(pMainThreadResult);
-           pTexture->RemoveFromRoot();
-           CesiumTextureUtility::destroyTexture(pTexture);
+           if (IsValid(pTexture))
+           {
+               pTexture->RemoveFromRoot();
+               CesiumTextureUtility::destroyTexture(pTexture);
+           }
        }
 }
 
 
-void VectorMapResourceWorker::setLayers(const std::vector<CesiumGltf::MapLayerData>& laysers)
+void VectorMapResourceWorker::setLayers(const TMap<FString, CesiumGltf::MapLayerData>& laysers)
 {
-    for (const CesiumGltf::MapLayerData& layer : laysers)
-    {
-        _layers.Add(FString(layer.sourceLayer.c_str()), layer);
-    }
+   _layers = laysers;
 }

@@ -5,7 +5,7 @@
 #include <CesiumAsync/IAssetResponse.h>
 
 #include <CesiumUtility/Uri.h>
-#include <VectorTileReader.hpp>
+#include <VectorTileReader.h>
 
 
 using namespace CesiumAsync;
@@ -136,30 +136,21 @@ namespace
 		const CesiumJsonReader::ExtensionReaderContext& context,
 	const std::string& data)
 	{
-	context;
-	//VTR::VectorTileReader mvtReader;
-	//std::string strData = mvtReader.readData(data, da);
-	VectorReaderResult result;
-	try
-	{
-		CesiumGltf::VectorTile* tileModel = resolvingGeoData(data);
-        result.model = tileModel;
-	}
-	catch (std::runtime_error ex)
-	{
-        result.model = nullptr;
-		result.errors.push_back("Failed to process data!");
-	}
+	    context;
+	    VectorReaderResult result;
+	    try
+	    {
+		    CesiumGltf::VectorTile* tileModel = resolvingGeoData(data);
+            result.model = tileModel;
+	    }
+	    catch (std::runtime_error ex)
+	    {
+            result.model = nullptr;
+		    result.errors.push_back("Failed to process data!");
+	    }
    
-	return result;
-	}
-
-	// ½âÂëÊý¾Ý
-	void decodeData(VectorReaderResult& readVector) {
-	readVector;
-	}
-
-
+	    return result;
+	    }
 
 } // namespace
 
@@ -181,12 +172,14 @@ VectorReaderResult VectorReader::readVector(
     const std::string& data,
     const VectorReaderOptions& options) const
 {
-    const CesiumJsonReader::ExtensionReaderContext& context =
-        this->getExtensions();
-    VectorReaderResult result = readBinaryVector(context, data);
-    if (options.decodeDraco) {
-      //decodeData(result);
+    const CesiumJsonReader::ExtensionReaderContext& context = this->getExtensions();
+    std::string strData = data;
+    if (options.decodeDraco)
+    {
+        VTR::VectorTileReader reader;
+        strData = reader.mvtDecode(data);
     }
+    VectorReaderResult result = readBinaryVector(context, strData);
 
     return result;
 }

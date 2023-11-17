@@ -49,6 +49,7 @@ namespace CesiumGltf
 
     enum class RingType { Outer, Inner, Invalid };
 
+    //一个几何体
     struct VectorGeometry 
     {
       // 要素坐标集合
@@ -93,7 +94,6 @@ namespace CesiumGltf
         glm::dvec4 outlineColor = glm::dvec4(0, 0, 0, 0);
     };
 
-
     // 一个矢量图层
     struct VectorLayer
     {
@@ -109,8 +109,7 @@ namespace CesiumGltf
         VectorStyle style;
     };
 
-
-    /** @copydoc VectorModel */
+    //一个矢量瓦片
     struct CESIUMGLTF_API VectorTile
     {
       ~VectorTile()

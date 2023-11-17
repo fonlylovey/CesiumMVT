@@ -205,7 +205,9 @@ VectorOverlayTileProvider::loadTileDataFromUrl(
         size_t dataSize = std::stoll(strDataLength);
         const char* charData = reinterpret_cast<const char*>(data.data());
         const std::string stringData(charData, dataSize);
-        CesiumGltfReader::VectorReaderResult loadedData = _vectorReader.readVector(stringData);
+        VectorReaderOptions readOpt;
+        readOpt.decodeDraco = options.isDecode;
+        CesiumGltfReader::VectorReaderResult loadedData = _vectorReader.readVector(stringData, readOpt);
         if (!loadedData.errors.empty())
         {
           return LoadedVectorOverlayData{

@@ -131,7 +131,6 @@ public:
     const VectorOverlayTile& VectorTile,
     void* pMainThreadRendererResources) noexcept = 0;
 
-    virtual void setLayers(const std::vector<CesiumGltf::MapLayerData>& laysers) = 0;
 };
 
 } // namespace Cesium3DTilesSelection

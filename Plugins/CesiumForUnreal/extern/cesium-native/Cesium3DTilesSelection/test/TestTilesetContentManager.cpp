@@ -23,6 +23,8 @@
 
 #include <filesystem>
 #include <vector>
+#include "../include/Cesium3DTilesSelection/IPrepareVectorMapResources.h"
+#include "../include/Cesium3DTilesSelection/VectorOverlayCollection.h"
 
 using namespace Cesium3DTilesSelection;
 using namespace CesiumGeospatial;
@@ -188,12 +190,15 @@ TEST_CASE("Test the manager can be initialized with correct loaders") {
       std::map<std::string, std::shared_ptr<SimpleAssetRequest>>{});
   auto pMockedPrepareRendererResources =
       std::make_shared<SimplePrepareRendererResource>();
+
+  auto pVMapResources = std::make_shared<IPrepareVectorMapResources>();
   CesiumAsync::AsyncSystem asyncSystem{std::make_shared<SimpleTaskProcessor>()};
   auto pMockedCreditSystem = std::make_shared<CreditSystem>();
 
   TilesetExternals externals{
       pMockedAssetAccessor,
       pMockedPrepareRendererResources,
+      pVMapResources,
       asyncSystem,
       pMockedCreditSystem};
 
@@ -299,12 +304,14 @@ TEST_CASE("Test tile state machine") {
       std::map<std::string, std::shared_ptr<SimpleAssetRequest>>{});
   auto pMockedPrepareRendererResources =
       std::make_shared<SimplePrepareRendererResource>();
+  auto pVMapResources = std::make_shared<IPrepareVectorMapResources>();
   CesiumAsync::AsyncSystem asyncSystem{std::make_shared<SimpleTaskProcessor>()};
   auto pMockedCreditSystem = std::make_shared<CreditSystem>();
 
   TilesetExternals externals{
       pMockedAssetAccessor,
       pMockedPrepareRendererResources,
+      pVMapResources,
       asyncSystem,
       pMockedCreditSystem};
 
@@ -339,6 +346,7 @@ TEST_CASE("Test tile state machine") {
             externals,
             options,
             RasterOverlayCollection{loadedTiles, externals},
+            VectorOverlayCollection{loadedTiles, externals},
             {},
             std::move(pMockedLoader),
             std::move(pRootTile)};
@@ -443,6 +451,7 @@ TEST_CASE("Test tile state machine") {
             externals,
             options,
             RasterOverlayCollection{loadedTiles, externals},
+            VectorOverlayCollection{loadedTiles, externals},
             {},
             std::move(pMockedLoader),
             std::move(pRootTile)};
@@ -518,6 +527,7 @@ TEST_CASE("Test tile state machine") {
             externals,
             options,
             RasterOverlayCollection{loadedTiles, externals},
+            VectorOverlayCollection{loadedTiles, externals},
             {},
             std::move(pMockedLoader),
             std::move(pRootTile)};
@@ -619,6 +629,7 @@ TEST_CASE("Test tile state machine") {
             externals,
             options,
             RasterOverlayCollection{loadedTiles, externals},
+            VectorOverlayCollection{loadedTiles, externals},
             {},
             std::move(pMockedLoader),
             std::move(pRootTile)};
@@ -713,12 +724,14 @@ TEST_CASE("Test the tileset content manager's post processing for gltf") {
       std::map<std::string, std::shared_ptr<SimpleAssetRequest>>{});
   auto pMockedPrepareRendererResources =
       std::make_shared<SimplePrepareRendererResource>();
+  auto pVMapResources = std::make_shared<IPrepareVectorMapResources>();
   CesiumAsync::AsyncSystem asyncSystem{std::make_shared<SimpleTaskProcessor>()};
   auto pMockedCreditSystem = std::make_shared<CreditSystem>();
 
   TilesetExternals externals{
       pMockedAssetAccessor,
       pMockedPrepareRendererResources,
+      pVMapResources,
       asyncSystem,
       pMockedCreditSystem};
 
@@ -770,6 +783,7 @@ TEST_CASE("Test the tileset content manager's post processing for gltf") {
             externals,
             {},
             RasterOverlayCollection{loadedTiles, externals},
+            VectorOverlayCollection{loadedTiles, externals},
             {},
             std::move(pMockedLoader),
             std::move(pRootTile)};
@@ -838,6 +852,7 @@ TEST_CASE("Test the tileset content manager's post processing for gltf") {
             externals,
             options,
             RasterOverlayCollection{loadedTiles, externals},
+            VectorOverlayCollection{loadedTiles, externals},
             {},
             std::move(pMockedLoader),
             std::move(pRootTile)};
@@ -902,6 +917,7 @@ TEST_CASE("Test the tileset content manager's post processing for gltf") {
             externals,
             {},
             RasterOverlayCollection{loadedTiles, externals},
+            VectorOverlayCollection{loadedTiles, externals},
             {},
             std::move(pMockedLoader),
             std::move(pRootTile)};
@@ -949,6 +965,7 @@ TEST_CASE("Test the tileset content manager's post processing for gltf") {
     IntrusivePointer<TilesetContentManager> pManager =
         new TilesetContentManager{
             externals,
+            {},
             {},
             std::move(rasterOverlayCollection),
             {},
@@ -1183,6 +1200,7 @@ TEST_CASE("Test the tileset content manager's post processing for gltf") {
     IntrusivePointer<TilesetContentManager> pManager =
         new TilesetContentManager{
             externals,
+            {},
             {},
             std::move(rasterOverlayCollection),
             {},

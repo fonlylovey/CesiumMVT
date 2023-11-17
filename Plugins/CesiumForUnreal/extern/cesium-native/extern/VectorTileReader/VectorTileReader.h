@@ -2,6 +2,13 @@
 #ifndef MVT_UTILS_H
 #define MVT_UTILS_H
 
+#if defined(_WIN32)
+#define CESIUMVTR_API __declspec(dllexport)
+#else
+#define CESIUMVTR_API
+#endif
+
+
 #include <vtzero/vector_tile.hpp>
 #include <detail/geometry.hpp>
 #include <cstdlib>
@@ -15,61 +22,6 @@
 //Vector Tile Reader
 namespace VTR
 {
-    /**
-     * Read complete contents of a file into a string.
-     *
-     * The file is read in binary mode.
-     *
-     * @param filename The file name. Can be empty or "-" to read from STDIN.
-     * @returns a string with the contents of the file.
-     * @throws various exceptions if there is an error
-     */
-    static std::string read_file(const std::string& filename)
-	{
-        if (filename.empty() || (filename.size() == 1 && filename[0] == '-')) 
-        {
-            return std::string{std::istreambuf_iterator<char>(std::cin.rdbuf()),
-                            std::istreambuf_iterator<char>()};
-        }
-
-        std::ifstream stream{filename, std::ios_base::in | std::ios_base::binary};
-        if (!stream) {
-            throw std::runtime_error{std::string{"Can not open file '"} + filename + "'"};
-        }
-
-        stream.exceptions(std::ifstream::failbit);
-
-        std::string buffer{std::istreambuf_iterator<char>(stream.rdbuf()),
-                        std::istreambuf_iterator<char>()};
-        stream.close();
-
-        return buffer;
-    }
-
-    /**
-     * Write contents of a buffer into a file.
-     *
-     * The file is written in binary mode.
-     *
-     * @param buffer The data to be written.
-     * @param filename The file name.
-     * @throws various exceptions if there is an error
-     */
-    static void write_data_to_file(const std::string& buffer, const std::string& filename)
-	{
-        std::ofstream stream{filename, std::ios_base::out | std::ios_base::binary};
-        if (!stream) 
-        {
-            throw std::runtime_error{std::string{"Can not open file '"} + filename + "'"};
-        }
-
-        stream.exceptions(std::ifstream::failbit);
-
-        stream.write(buffer.data(), static_cast<std::streamsize>(buffer.size()));
-
-        stream.close();
-    }
-
     class GeometryHandler
     {
     public:
@@ -224,22 +176,26 @@ namespace VTR
         Byte
     };
 
-    class VectorTileReader
+    class CESIUMVTR_API VectorTileReader
     {
     public:
-        VectorTileReader()
-        {
-        }
+        VectorTileReader() = default;
+        ~VectorTileReader();
 
 		/*
 		* 如果是二进制数据就什么都不做，如果是文件路径就读取出二进制数据
+        * data: 可以是数据流和文件路径 
+        * type: 说明data数据室文件还是数据流  
 		*/
-        std::string readData(const std::string& data, DataType type = DataType::Byte)
-		{
-            m_type = type;
-            m_data = (m_type == DataType::File) ? read_file(data) : data;
-		}
+        std::string readVectorTile(const std::string& data, DataType type = DataType::Byte);
        
+        std::string readFile(const std::string& filePath);
+
+        void writeFile(const std::string& buffer, const std::string& filePath);
+
+        std::string mvtDecode(const std::string& strData);
+
+    private:
         std::string m_data;
         DataType m_type = DataType::Byte;
     };

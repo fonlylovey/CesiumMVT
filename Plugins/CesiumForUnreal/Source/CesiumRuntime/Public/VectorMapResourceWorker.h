@@ -29,7 +29,7 @@ public:
 	virtual void freeVector(const Cesium3DTilesSelection::VectorOverlayTile& vectorTile, void* pLoadThreadResult,
 		void* pMainThreadResult) noexcept override;
 
-    virtual void setLayers(const std::vector<CesiumGltf::MapLayerData>& laysers);
+    virtual void setLayers(const TMap<FString, CesiumGltf::MapLayerData>& laysers);
 
 private:
 	ACesium3DTileset* _pActor;

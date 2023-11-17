@@ -4,6 +4,7 @@
 #include "SimpleAssetRequest.h"
 #include "SimpleAssetResponse.h"
 #include "SimplePrepareRendererResource.h"
+#include "Cesium3DTilesSelection/IPrepareVectorMapResources.h"
 #include "SimpleTaskProcessor.h"
 #include "readFile.h"
 
@@ -78,6 +79,8 @@ TEST_CASE("Test create layer json terrain loader") {
   auto pMockedPrepareRendererResources =
       std::make_shared<SimplePrepareRendererResource>();
 
+  auto pVMapResources = std::make_shared<IPrepareVectorMapResources>();
+
   CesiumAsync::AsyncSystem asyncSystem{std::make_shared<SimpleTaskProcessor>()};
 
   auto pMockedCreditSystem = std::make_shared<CreditSystem>();
@@ -85,6 +88,7 @@ TEST_CASE("Test create layer json terrain loader") {
   TilesetExternals externals{
       pMockedAssetAccessor,
       pMockedPrepareRendererResources,
+      pVMapResources,
       asyncSystem,
       pMockedCreditSystem};
 
