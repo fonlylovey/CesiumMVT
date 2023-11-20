@@ -369,10 +369,11 @@ WebMapTileServiceVectorOverlay::createTileProvider(
 				StartColCount = 2;
             } 
 			else if (options.tileMatrixSet == "EPSG:3857"  || options.tileMatrixSet == "EPSG:900913") 
+
 			{
                 projection = CesiumGeospatial::WebMercatorProjection();
                 tilingSchemeRectangle = CesiumGeospatial::WebMercatorProjection::MAXIMUM_GLOBE_RECTANGLE;
-                StartColCount = 2;
+                StartColCount = 1;
             } 
 			else 
 			{

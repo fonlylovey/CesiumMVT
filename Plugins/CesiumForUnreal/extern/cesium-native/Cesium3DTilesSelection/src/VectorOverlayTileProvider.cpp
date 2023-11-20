@@ -165,7 +165,8 @@ VectorOverlayTileProvider::loadTileDataFromUrl(
         noneModel->row = options.Row;
         noneModel->col = options.Col;
         noneModel->sourceName = options.sourceName;
-        if(pResponse->statusCode() == 400) 
+        int statusCode = pResponse->statusCode();
+        if(statusCode == 400 || statusCode == 204) 
         {
             noneModel->status = "400 None Data";
           return LoadedVectorOverlayData{
@@ -176,12 +177,12 @@ VectorOverlayTileProvider::loadTileDataFromUrl(
               {}};
         }
 
-        if (pResponse->statusCode() != 200)
+        if (statusCode != 200)
         {
           std::string message = "vector response code " +
-                                std::to_string(pResponse->statusCode()) +
+                                std::to_string(statusCode) +
                                 " for " + tileUrl;
-          noneModel->status = std::to_string(pResponse->statusCode()) + " None Data";
+          noneModel->status = std::to_string(statusCode) + " None Data";
           return LoadedVectorOverlayData{
               nullptr,
               options.rectangle,
@@ -201,11 +202,18 @@ VectorOverlayTileProvider::loadTileDataFromUrl(
               {}};
         }
         const gsl::span<const std::byte> data = pResponse->data();
+        if (pResponse->headers().find("x-encrypted") != pResponse->headers().end())
+        {
+            std::string strEncrypted = pResponse->headers().at("x-encrypted");
+            bool isDecode = strEncrypted._Equal("true");
+            isDecode;
+        }
         std::string strDataLength = pResponse->headers().at("Content-Length");
         size_t dataSize = std::stoll(strDataLength);
         const char* charData = reinterpret_cast<const char*>(data.data());
         const std::string stringData(charData, dataSize);
         VectorReaderOptions readOpt;
+        
         readOpt.decodeDraco = options.isDecode;
         CesiumGltfReader::VectorReaderResult loadedData = _vectorReader.readVector(stringData, readOpt);
         if (!loadedData.errors.empty())
@@ -223,13 +231,16 @@ VectorOverlayTileProvider::loadTileDataFromUrl(
         loadedData.model->sourceName = options.sourceName;
         //loadedData.model->style = vecStyle;
         //½âÎöÍßÆ¬·¶Î§
-        std::string strTileBound = pResponse->headers().at("geowebcache-tile-bounds");
-        replace(strTileBound, ",", " ");
-        std::istringstream streamBound(strTileBound);
-        streamBound >> loadedData.model->extentMin.x;
-        streamBound >> loadedData.model->extentMin.y;
-        streamBound >> loadedData.model->extentMax.x;
-        streamBound >> loadedData.model->extentMax.y;
+        if (pResponse->headers().find("geowebcache-tile-bounds") != pResponse->headers().end())
+        {
+            std::string strTileBound = pResponse->headers().at("geowebcache-tile-bounds");
+            replace(strTileBound, ",", " ");
+            std::istringstream streamBound(strTileBound);
+            streamBound >> loadedData.model->extentMin.x;
+            streamBound >> loadedData.model->extentMin.y;
+            streamBound >> loadedData.model->extentMax.x;
+            streamBound >> loadedData.model->extentMax.y;
+        }
 
         if (!loadedData.errors.empty()) {
           loadedData.errors.push_back("tile url: " + tileUrl);

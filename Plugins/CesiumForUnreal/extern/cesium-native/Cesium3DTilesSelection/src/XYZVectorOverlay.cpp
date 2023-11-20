@@ -87,7 +87,7 @@ protected:
     double wmtsY = glm::pow(2, tileID.level) - 1.f - (double)tileID.y;
     wmtsY;
     options.level = tileID.level;
-    options.Row = tileID.y;
+    options.Row = (int)wmtsY;
     options.Col = tileID.x;
     options.isDecode = _isDecode;
     options.sourceName = _sourceName;
@@ -159,6 +159,7 @@ XYZVectorOverlay::createTileProvider(
 			int StartColCount = 2;
 			CesiumGeospatial::Projection projection;
             CesiumGeospatial::GlobeRectangle tilingSchemeRectangle(0.0, 0.0, 0.0, 0.0);
+            /*
 			if (options.MatrixSet == "EPSG:4326") 
 			{
 				projection = CesiumGeospatial::GeographicProjection();
@@ -166,15 +167,15 @@ XYZVectorOverlay::createTileProvider(
 				StartColCount = 2;
             } 
 			else if (options.MatrixSet == "EPSG:3857"  || options.MatrixSet == "EPSG:900913") 
-			{
+			{*/
                 projection = CesiumGeospatial::WebMercatorProjection();
                 tilingSchemeRectangle = CesiumGeospatial::WebMercatorProjection::MAXIMUM_GLOBE_RECTANGLE;
                 StartColCount = 1;
-            } 
+            //} 
 
             CesiumGeometry::Rectangle coverageRectangle = projectRectangleSimple(projection, tilingSchemeRectangle);
 
-            const int rootTilesX = StartColCount;
+            const int rootTilesX = 1;
             const int rootTilesY = 1;
             CesiumGeometry::QuadtreeTilingScheme tilingScheme(
                 coverageRectangle,

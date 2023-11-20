@@ -34,15 +34,20 @@ void* VectorMapResourceWorker::prepareVectorInMainThread(Cesium3DTilesSelection:
             return nullptr;
         }
         FVectorRasterizer rasterizer;
-        UTexture2D* pTexture = rasterizer.Rasterizer(pModelData, _layers);
-        if (pTexture != nullptr)
+        if (pModelData->sourceName.empty())
         {
-            //pTexture->AddressX = TA_MAX;
-            //pTexture->AddressY = TA_MAX;
+            UTexture2D* pTexture = rasterizer.Rasterizer(pModelData);
+            return pTexture;
+        }
+        else
+        {
+            UTexture2D* pTexture = rasterizer.Rasterizer(pModelData, _layers);
+            return pTexture;
         }
         
+        
         //delete pModelData;
-        return pTexture;
+       
     }
     return nullptr;
 }

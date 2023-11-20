@@ -102,7 +102,7 @@ public class CesiumRuntime : ModuleRules
             "webpdecoder",
             "ktx_read",
             "VectorTileReader",
-            "mapmost"
+            "MapmostDecryption"
         };
 
         // Use our own copy of MikkTSpace on Android.
